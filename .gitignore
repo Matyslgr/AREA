@@ -1,0 +1,46 @@
+# ===========================
+# IDE / Editors
+# ===========================
+.vscode/
+.idea/
+
+# ===========================
+# C / C++
+# ===========================
+
+# Prerequisites
+*.d
+
+# Object files
+*.o
+*.ko
+*.obj
+*.elf
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+
+# Executables
+*.exe
+*.out
+*.app
+*.x86_64
+*.hex
+
+# ===========================
+# Python
+# ===========================
+__pycache__/
+*.py[codz]
+.env
+venv/
+*.sqlite3

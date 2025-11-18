@@ -1,0 +1,58 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  ci:
+    name: 🛠 Build & Test
+    runs-on: ubuntu-latest
+    container: epitechcontent/epitest-docker:latest
+    timeout-minutes: 8
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🛠 Make scripts executable
+        run: |
+          chmod +x ./scripts/build.sh
+          chmod +x ./scripts/run_tests.sh
+          chmod +x ./scripts/check_executables.sh
+
+      - name: 🧱 Build the project
+        run: ./scripts/build.sh
+
+      - name: ✅ Check required executables
+        run: ./scripts/check_executables.sh
+
+      - name: 🧪 Run tests
+        run: ./scripts/run_tests.sh
+
+  push_to_mirror:
+    name: 🔁 Push to Mirror Repository
+    needs: ci
+    runs-on: ubuntu-latest
+    if: github.repository_owner == 'Matyslgr'
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 📝 Show current branch and last commit
+        run: |
+          echo "Branch: $(git rev-parse --abbrev-ref HEAD)"
+          git log -1 --oneline
+
+      - name: 🔄 Push to mirror
+        uses: pixta-dev/repository-mirroring-action@v1
+        with:
+          target_repo_url: ${{ vars.MIRROR_URL }}
+          ssh_private_key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
