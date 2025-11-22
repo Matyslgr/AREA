@@ -9,24 +9,9 @@ on:
       - main
 
 jobs:
-  push_to_mirror:
-    name: 🔁 Push to Mirror Repository
-    runs-on: ubuntu-latest
-    if: github.repository_owner == 'Matyslgr'
+  sync:
+    uses: Matyslgr/.github/.github/workflows/mirror.yml@main
 
-    steps:
-      - name: 📥 Checkout Repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: 📝 Show current branch and last commit
-        run: |
-          echo "Branch: $(git rev-parse --abbrev-ref HEAD)"
-          git log -1 --oneline
-
-      - name: 🔄 Push to mirror
-        uses: pixta-dev/repository-mirroring-action@v1
-        with:
-          target_repo_url: ${{ vars.MIRROR_URL }}
-          ssh_private_key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
+    with:
+      mirror_url: ${{ vars.MIRROR_URL }}
+    secrets: inherit
