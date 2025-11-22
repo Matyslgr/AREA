@@ -10,7 +10,7 @@ on:
 
 jobs:
   sync:
-    uses: Matyslgr/.github/.github/workflows/mirror.yml@main
+    uses: Matyslgr/.github/.github/workflows/mirror.yaml@main
 
     with:
       mirror_url: ${{ vars.MIRROR_URL }}
