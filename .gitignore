@@ -1,13 +1,17 @@
 # ===========================
-# IDE / Editors
+# IDE / Editors / OS
 # ===========================
 .vscode/
 .idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+.history/
 
 # ===========================
-# C / C++
+# C / C++ (If mixed project)
 # ===========================
-
 # Prerequisites
 *.d
 
@@ -36,11 +40,99 @@
 *.x86_64
 *.hex
 
+# Debugging (Valgrind)
+vgcore.*
+
 # ===========================
-# Python
+# Python (If backend is Python)
 # ===========================
 __pycache__/
 *.py[codz]
 .env
 venv/
+.venv/
+env/
 *.sqlite3
+
+# ===========================
+# Web - Dependencies
+# ===========================
+node_modules/
+.pnpm-store/
+
+# ===========================
+# Web - Package Manager Logs
+# ===========================
+# We keep package-lock.json and yarn.lock, but ignore debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ===========================
+# Web - Build Outputs
+# ===========================
+dist/
+build/
+out/
+_site/
+
+# ===========================
+# Web - Framework Specifics
+# ===========================
+# Next.js
+.next/
+
+# Nuxt.js
+.nuxt/
+.output/
+
+# Vite / others
+.vite/
+
+# Vercel
+.vercel/
+
+# Astro
+.astro/
+
+# Turborepo
+.turbo/
+
+# ===========================
+# Environment Variables
+# ===========================
+# MUST be ignored to prevent secret leaks
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+*.env.*
+
+# Exception: Always commit the example file
+!*.env.example
+!.env.example
+
+# ===========================
+# Testing & Coverage
+# ===========================
+coverage/
+.nyc_output/
+
+# Cypress
+cypress/videos/
+cypress/screenshots/
+
+# Playwright
+test-results/
+playwright-report/
+blob-report/
+
+# ===========================
+# Logs & Databases
+# ===========================
+*.log
+*.sql
+*.sqlite
