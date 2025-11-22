@@ -4,14 +4,50 @@ on:
   push:
     branches:
       - main
+    tags:
+      - 'v*'
   pull_request:
     branches:
       - main
 
 jobs:
+  # ─────────────────────────────────────────────────────────────
+  # 2. BUILD (TODO: Configure when needed)
+  # ─────────────────────────────────────────────────────────────
+  # build:
+  #   name: 🏗️ Build Project
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: 📥 Checkout
+  #       uses: actions/checkout@v4
+  #
+  #     - name: 🛠️ Compilation / Build
+  #       run: |
+  #         # Ex: make, npm run build, cargo build...
+  #         echo "Building project..."
+  #
+  #     - name: 📤 Upload Artifact
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: project-build
+  #         path: dist/ # ou ton binaire
+
   sync:
+    name: 🔁 Push to Mirror
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     uses: Matyslgr/.github/.github/workflows/mirror.yml@main
 
     with:
       mirror_url: ${{ vars.MIRROR_URL }}
     secrets: inherit
+
+  # ─────────────────────────────────────────────────────────────
+  # 3. RELEASE (TODO: Decomment when build is ready)
+  # ─────────────────────────────────────────────────────────────
+  # release:
+  #   name: 📦 Create Release
+  #   needs: [build]
+  #   if: startsWith(github.ref, 'refs/tags/')
+  #   uses: Matyslgr/.github/.github/workflows/release_maker.yml@main
+  #   with:
+  #     artifact_pattern: "*"
