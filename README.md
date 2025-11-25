@@ -1,65 +1,117 @@
 # AREA — Automation Platform
 
-AREA is a modular automation platform inspired by IFTTT and Zapier.
-It enables users to connect **Actions** (event triggers) from various services to **Reactions** (operations) in a unified, extensible ecosystem. The platform is composed of three main components:
+> *Action-REAction: Create your own automation flow.*
 
-- **Application Server (API)** — Hosts all business logic, manages users, services, and AREA executions.
-- **Web Client** — Browser interface for configuring accounts, services, and AREA workflows.
-- **Mobile Client (Android)** — Mobile UI for interacting with the platform, distributed as an APK.
+AREA is a modular automation platform inspired by IFTTT and Zapier. It enables users to connect **Actions** (event triggers) from various services to **Reactions** (operations) in a unified, extensible ecosystem.
 
-This repository contains the full codebase and infrastructure required to run the project using **Docker Compose**.
+The platform is built as a **Monorepo** orchestrating three main micro-services:
 
----
-
-## 📌 Features (Work in Progress)
-
-- User registration, authentication, and OAuth2 account linking
-- Service subscription and credential management
-- Configurable Actions and Reactions
-- AREA creation: link one Action to one or multiple Reactions
-- Hook engine for detecting events and executing workflows
-- REST API fully consumed by Web and Mobile clients
-- Accessibility-friendly Web interface
-- Android APK automatically built and served through the Web Client
+- **Application Server (API)**: Powered by **Fastify**. Hosts business logic, user management, and the AREA engine.
+- **Web Client**: Powered by **React (Vite)**. Browser interface for configuring workflows.
+- **Mobile Client**: Powered by **React Native (Expo)**. Android application to manage automations on the go.
 
 ---
 
-## 🐳 Running the Project
+## 🏗️ Architecture
 
-The entire stack is orchestrated using Docker Compose.
+The project runs on a containerized environment orchestrated by Docker Compose.
 
-```bash
-docker-compose build
-docker-compose up
+```mermaid
+graph TD
+    User((User))
+    Mobile[Mobile Client<br/>Android APK]
+    Web[Web Client<br/>React :8081]
+    Server[API Server<br/>Fastify :8080]
+    DB[(PostgreSQL<br/>Database)]
+    Vol((Shared Volume))
+
+    User -->|HTTP| Web
+    User -->|App| Mobile
+    Web -->|REST API| Server
+    Mobile -->|REST API| Server
+    Server -->|SQL| DB
+    Mobile -.->|Writes APK| Vol
+    Web -.->|Reads APK| Vol
 ```
 
-This will start:
-- API server on `http://localhost:8080`
-- Web Client on `http://localhost:8081`
-- Mobile Client (builds APK into shared volume)
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- [Docker](https://www.docker.com/get-started)
+- [Docker Compose](https://docs.docker.com/compose/install/)
+- [Node.js](https://nodejs.org/) (for local development)
+- [Git](https://git-scm.com/)
+
+### 🐳 Running with Docker (Recommended)
+
+This is the standard way to run the project for testing and review.
+
+1. **Clone the repository:**
+
+    ```bash
+    git clone https://github.com/Matyslgr/AREA.git
+    cd AREA
+    ```
+
+2. **Launch the stack:**
+
+    ```bash
+    docker-compose up --build
+    ```
+
+3. **Access the services:**
+    - **Web Client**: `http://localhost:8081`
+    - **API Server**: `http://localhost:8080`
+    - **Mobile APK**: Downloadable at `http://localhost:8081/shared/client.apk` and install it on your Android device.
+
+### 💻 Local Development (Monorepo)
+
+If you want to contribute to the code, use Turborepo to run services locally with hot-reload.
+
+1. **Install dependencies:**
+
+    ```bash
+    npm install
+    ```
+
+2. **Run services:**
+
+    ```bash
+    npm run dev
+    ```
+
+    *This will start the Server (Fastify), Web (Vite), and Mobile (Expo) in parallel.*
 
 ---
 
 ## 📚 Documentation
 
-The following documents will be added as the project evolves:
+Detailed documentation is available in the `docs/` folder:
 
-- **API Reference**
-- **System Architecture**
-- **Class and Sequence Diagrams**
-- **HOWTOCONTRIBUTE.md** — Adding services, actions, and reactions
-- **Security considerations**
-- **Database design**
+- [API Specification](./docs/API_SPECIFICATION.md): List of endpoints and JSON formats.
+- [Database Schema](./docs/DATABASE_SCHEMA.md): ER diagrams and table descriptions.
+- [Security Strategy](./docs/SECURITY_STRATEGY.md): Overview of authentication and data protection measures.
 
 ---
 
-## 🧱 Project Status
+## 🛠️ Tech Stack
 
-This is an early-stage version of the README.
-More technical details, diagrams, and contributor guidelines will be added as development progresses.
+| Component | Technology |
+| :--- | :--- |
+| Monorepo | Turborepo |
+| Server | Node.js, Fastify, TypeScript, Prisma (ORM) |
+| Database | PostgreSQL |
+| Web | React, Vite, TypeScript, TailwindCSS, shadcn/ui |
+| Mobile | React Native, Expo |
+| DevOps | Docker, GitHub Actions |
 
 ---
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please refer to the `HOWTOCONTRIBUTE.md` document for guidelines on adding new services, actions, and reactions.
+We welcome contributions!
+
+- For **Git Workflow** (branches, commits), please read [CONTRIBUTING.md](https://github.com/Matyslgr/.github/blob/main/CONTRIBUTING.md).
+- For **Adding Features** (New Services, Actions), please read [HOWTOCONTRIBUTE.md](./docs/HOWTOCONTRIBUTE.md).
