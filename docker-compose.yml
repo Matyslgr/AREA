@@ -1,0 +1,80 @@
+services:
+  # ---------------------------------------------------------------------------
+  # 1. DATABASE (PostgreSQL)
+  # ---------------------------------------------------------------------------
+  db:
+    image: postgres:15-alpine
+    container_name: area-db
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: area
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - area-net
+
+  # ---------------------------------------------------------------------------
+  # 2. SERVER (Fastify)
+  # ---------------------------------------------------------------------------
+  server:
+    container_name: area-server
+    build:
+      context: .
+      dockerfile: apps/server/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: postgres://user:password@db:5432/area
+      PORT: 8080
+    depends_on:
+      - db
+    networks:
+      - area-net
+
+  # ---------------------------------------------------------------------------
+  # 3. WEB CLIENT (React)
+  # ---------------------------------------------------------------------------
+  web_client:
+    container_name: area-web
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      VITE_API_URL: http://localhost:8080
+    depends_on:
+      - server
+    networks:
+      - area-net
+    volumes:
+      # Mount the shared volume to access shared APKs if needed
+      - apk_share:/app/dist/shared
+
+  # ---------------------------------------------------------------------------
+  # 4. MOBILE CLIENT (Builder APK)
+  # ---------------------------------------------------------------------------
+  mobile_client:
+    container_name: area-mobile
+    build:
+      context: .
+      dockerfile: apps/mobile/Dockerfile
+    volumes:
+      # Mount the shared volume to output the generated APK
+      - apk_share:/shared
+    networks:
+      - area-net
+
+# ---------------------------------------------------------------------------
+# VOLUMES & NETWORKS
+# ---------------------------------------------------------------------------
+volumes:
+  db_data:
+  apk_share: # The shared volume for APKs
+
+networks:
+  area-net:
+    driver: bridge
