@@ -1,138 +1,61 @@
-# ===========================
-# IDE / Editors / OS
-# ===========================
-.vscode/
-.idea/
-*.swp
-*.swo
-.DS_Store
-Thumbs.db
-.history/
+# --- Dependencies ---
+node_modules
+.pnp
+.pnp.js
 
-# ===========================
-# C / C++ (If mixed project)
-# ===========================
-# Prerequisites
-*.d
-
-# Object files
-*.o
-*.ko
-*.obj
-*.elf
-
-# Shared objects (inc. Windows DLLs)
-*.dll
-*.so
-*.so.*
-*.dylib
-
-# Libraries
-*.lib
-*.a
-*.la
-*.lo
-
-# Executables
-*.exe
-*.out
-*.app
-*.x86_64
-*.hex
-
-# Debugging (Valgrind)
-vgcore.*
-
-# ===========================
-# Python (If backend is Python)
-# ===========================
-__pycache__/
-*.py[codz]
-.env
-venv/
-.venv/
-env/
-*.sqlite3
-
-# ===========================
-# Web - Dependencies
-# ===========================
-node_modules/
-.pnpm-store/
-
-# ===========================
-# Web - Package Manager Logs
-# ===========================
-# We keep package-lock.json and yarn.lock, but ignore debug logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-
-# ===========================
-# Web - Build Outputs
-# ===========================
-dist/
-build/
-out/
-_site/
-
-# ===========================
-# Web - Framework Specifics
-# ===========================
-# Next.js
-.next/
-
-# Nuxt.js
-.nuxt/
-.output/
-
-# Vite / others
-.vite/
-
-# Vercel
-.vercel/
-
-# Astro
-.astro/
-
-# Turborepo
-.turbo/
-
-# ===========================
-# Environment Variables
-# ===========================
-# MUST be ignored to prevent secret leaks
+# --- Local Environment & Secrets ---
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
-*.env
-*.env.*
+*.pem
 
-# Exception: Always commit the example file
-!*.env.example
-!.env.example
+# --- Turborepo ---
+.turbo
 
-# ===========================
-# Testing & Coverage
-# ===========================
-coverage/
-.nyc_output/
+# --- Build Outputs (Web & Server) ---
+dist
+build
+out
+.next
+.vercel
+coverage
 
-# Cypress
-cypress/videos/
-cypress/screenshots/
+# --- Mobile: Expo & React Native ---
+.expo/
+web-build/
+*.jks
+*.p12
+*.key
+*.mobileprovision
 
-# Playwright
-test-results/
-playwright-report/
-blob-report/
+# Native Builds
+android/app/build
+android/.gradle
+ios/Pods/
+ios/build/
+ios/*.xcworkspace
 
-# ===========================
-# Logs & Databases
-# ===========================
-*.log
-*.sql
-*.sqlite
+# Binaries
+*.apk
+*.aab
+*.ipa
+
+# --- IDE & OS Files ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# --- Docker & Database ---
+postgres-data/
+db_data/
+
+# --- Logs ---
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
