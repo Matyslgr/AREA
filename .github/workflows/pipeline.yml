@@ -1,0 +1,64 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: ['main']
+    tags: ['v*']
+  pull_request:
+    branches: ['main']
+
+jobs:
+  build:
+    name: 🏗️ Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: 📦 Install Dependencies
+        run: npm ci
+
+      - name: 🏗️ Build Project
+        run: npm run build
+
+      - name: 🧹 Lint Check
+        run: npm run lint --if-present
+
+      - name: 🧪 Run Tests
+        run: npm test --if-present
+
+      - name: 📱 Generate Release APK (Simulation)
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          mkdir -p release-assets
+          echo "Fake APK version ${{ github.ref_name }}" > release-assets/client.apk
+
+      - name: 📤 Upload Artifacts
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-files
+          path: release-assets/
+
+  mirror:
+    name: 🪞 Push to Epitech Mirror
+    needs: [build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    uses: Matyslgr/.github/.github/workflows/mirror.yml@main
+    with:
+      mirror_url: ${{ vars.MIRROR_URL }}
+    secrets: inherit
+
+  release:
+    name: 📦 Create GitHub Release
+    needs: [build]
+    if: startsWith(github.ref, 'refs/tags/')
+    uses: Matyslgr/.github/.github/workflows/release_maker.yml@main
+    with:
+      artifact_pattern: "release-files/*"
