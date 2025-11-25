@@ -21,7 +21,7 @@ erDiagram
         UUID id PK
         UUID user_id FK "User link"
         String provider "Ex: google, discord"
-        String provider_id "Unique ID at the provider"
+        String provider_account_id "User ID provided by the platform (ex: 10239...)"
         String access_token "Encrypted API token"
         String refresh_token "For renewing access"
         DateTime expires_at "Token expiration date"
@@ -39,7 +39,7 @@ erDiagram
         UUID id PK
         UUID area_id FK "Area link"
         UUID account_id FK "Account link (Nullable)"
-        String type "Ex: GITHUB_NEW_ISSUE"
+        String name "Ex: GITHUB_NEW_ISSUE"
         JSON parameters "Flexible config"
     }
 
@@ -47,7 +47,7 @@ erDiagram
         UUID id PK
         UUID area_id FK "Area link"
         UUID account_id FK "Account link (Nullable)"
-        String type "Ex: DISCORD_SEND_MSG"
+        String name "Ex: DISCORD_SEND_MSG"
         JSON parameters "Flexible config"
     }
 
