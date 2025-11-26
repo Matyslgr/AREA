@@ -43,7 +43,7 @@ area-monorepo/
 ├── apps/
 │   ├── web/              # React + shadcn/ui
 │   ├── mobile/           # React Native + RNR
-│   └── api/              # Fastify
+│   └── server/              # Fastify
 ├── packages/
 │   ├── ui/               # Shared components
 │   ├── services/         # Business services
@@ -387,16 +387,6 @@ Exclusions:
   ❌ Postman (manual documentation)
   ❌ Zod (redundant with JSON Schema)
 ```
-
----
-
-## Recommendations
-
-1. **TurboRepo Training**: 1 day
-2. **shadcn/ui Workshop**: 2 hours
-3. **Fastify + Swagger Masterclass**: 1 day
-4. **Host Swagger UI**: `https://api.area.com/docs`
-5. **CI/CD**: Automatic client SDK generation
 
 ---
 
