@@ -20,6 +20,10 @@ COPY --from=builder /app/package.json .
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/apps/server/dist ./apps/server/dist
 COPY --from=builder /app/apps/server/package.json ./apps/server/package.json
+COPY --from=builder /app/apps/server/prisma ./apps/server/prisma
+
+# Generate Prisma Client
+RUN npx prisma generate --schema=./apps/server/prisma/schema.prisma
 
 EXPOSE 8080
 
