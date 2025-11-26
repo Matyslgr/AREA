@@ -122,6 +122,7 @@ export default defineConfig({
 - Native ES modules in development (no bundling)
 - Instant Hot Module Replacement (50ms)
 - Rollup-based production builds with automatic code splitting
+- no need for ssr
 
 ---
 
