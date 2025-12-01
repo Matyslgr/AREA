@@ -4,6 +4,7 @@ import { GithubProvider } from './providers/github.provider';
 import { SpotifyProvider } from './providers/spotify.provider';
 import { TwitchProvider } from './providers/twitch.provider';
 import { NotionProvider } from './providers/notion.provider';
+import { LinkedinProvider } from './providers/linkedin.provider';
 
 export class OAuthFactory {
   private static providers: Record<string, IOAuthProvider> = {
@@ -12,6 +13,7 @@ export class OAuthFactory {
     spotify: new SpotifyProvider(),
     twitch: new TwitchProvider(),
     notion: new NotionProvider(),
+    linkedin: new LinkedinProvider(),
   };
 
   static getProvider(providerName: string): IOAuthProvider {
