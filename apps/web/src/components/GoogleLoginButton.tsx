@@ -2,6 +2,8 @@ import { Button } from './ui/button';
 
 export const GoogleLoginButton = () => {
   const handleLogin = () => {
+    localStorage.setItem('oauth_provider', 'google');
+
     const rootUrl = 'https://accounts.google.com/o/oauth2/v2/auth';
 
     const options = {
