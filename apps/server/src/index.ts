@@ -30,7 +30,7 @@ const start = async () => {
         },
         servers: [
           {
-            url: 'http://localhost:8080',
+            url: 'http://127.0.0.1:8080',
             description: 'Development server'
           }
         ]
@@ -76,8 +76,8 @@ const start = async () => {
     });
 
     await server.listen({ port: 8080, host: '0.0.0.0' });
-    console.log('Server running at http://localhost:8080');
-    console.log('Swagger docs available at http://localhost:8080/docs');
+    console.log('Server running at http://127.0.0.1:8080');
+    console.log('Swagger docs available at http://127.0.0.1:8080/docs');
   } catch (err) {
     server.log.error(err);
     process.exit(1);

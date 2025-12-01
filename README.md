@@ -62,9 +62,9 @@ This is the standard way to run the project for testing and review.
     ```
 
 3. **Access the services:**
-    - **Web Client**: `http://localhost:8081`
-    - **API Server**: `http://localhost:8080`
-    - **Mobile APK**: Downloadable at `http://localhost:8081/shared/client.apk` and install it on your Android device.
+    - **Web Client**: `http://127.0.0.1:8081`
+    - **API Server**: `http://127.0.0.1:8080`
+    - **Mobile APK**: Downloadable at `http://127.0.0.1:8081/shared/client.apk` and install it on your Android device.
 
 ### 💻 Local Development (Monorepo)
 
