@@ -5,6 +5,9 @@ import { ProtectedRoute } from '@/components/ProtectedRoute'
 import SigninPage from './pages/SigninPage'
 import SignupPage from './pages/SignupPage'
 import HomePage from './pages/HomePage'
+import { AuthCallback } from '@/pages/AuthCallback';
+import Dashboard from '@/pages/Dashboard';
+
 
 function App() {
   return (
@@ -23,6 +26,8 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/dashboard" element={<Dashboard />} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>

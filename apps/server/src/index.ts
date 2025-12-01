@@ -1,8 +1,10 @@
 import 'dotenv/config';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import jwt from '@fastify/jwt';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
+import { oauthRoutes } from './routes/auth/oauth';
 import { signupRoute } from './routes/auth/signup';
 import { signinRoute } from './routes/auth/signin';
 
@@ -35,6 +37,11 @@ const start = async () => {
       }
     });
 
+    // Register JWT
+    await server.register(jwt, {
+      secret: process.env.JWT_SECRET || 'supersecret'
+    });
+
     // Register routes
     server.get('/', async (request, reply) => {
       return { hello: 'world' };
@@ -51,6 +58,8 @@ const start = async () => {
         }
       };
     });
+
+    await server.register(oauthRoutes, { prefix: '/auth' });
 
     // Register auth routes
     server.route(signupRoute);

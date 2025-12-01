@@ -2,6 +2,8 @@ import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { GoogleLoginButton } from "./GoogleLoginButton"
+
 import {
   Field,
   FieldDescription,
@@ -93,6 +95,16 @@ export function LoginForm({
           <Button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-yellow-400 via-amber-500 to-orange-600 text-white hover:from-yellow-500 hover:via-amber-600 hover:to-orange-700 shadow-md">
             {loading ? "Logging in..." : "Login"}
           </Button>
+
+            {/* --- SECTION OAUTH --- */}
+          <Field className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
+            <span className="relative z-10 bg-background px-2 text-muted-foreground">
+              Or continue with
+            </span>
+          </Field>
+          <GoogleLoginButton />
+          {/* --------------------- */}
+
         </Field>
         <FieldSeparator>Or continue with</FieldSeparator>
         <Field>
