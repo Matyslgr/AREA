@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { GoogleLoginButton } from "./GoogleLoginButton"
 import { GithubLoginButton } from "./GithubLoginButton"
 import { SpotifyLoginButton } from "./SpotifyLoginButton"
+import { TwitchLoginButton } from "./TwitchLoginButton"
 
 import {
   Field,
@@ -116,6 +117,7 @@ export function LoginForm({
           <GoogleLoginButton />
           <GithubLoginButton />
           <SpotifyLoginButton />
+          <TwitchLoginButton />
         </div>
 
         {/* Lien vers l'inscription */}
