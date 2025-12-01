@@ -15,11 +15,17 @@ export const AuthCallback = () => {
 
     if (!code) {
       console.error('No code found');
-      navigate('/login');
+      navigate('/login?error=missing_code');
       return;
     }
 
     const provider = localStorage.getItem('oauth_provider');
+
+    if (!provider) {
+      console.error('No provider found in LocalStorage');
+      navigate('/login?error=missing_context');
+      return;
+    }
 
     const login = async () => {
       try {

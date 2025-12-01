@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { GoogleLoginButton } from "./GoogleLoginButton"
 import { GithubLoginButton } from "./GithubLoginButton"
+import { SpotifyLoginButton } from "./SpotifyLoginButton"
 
 import {
   Field,
@@ -110,10 +111,11 @@ export function LoginForm({
         {/* Séparateur */}
         <FieldSeparator>Or continue with</FieldSeparator>
 
-        {/* Section OAuth (Google & GitHub) */}
+        {/* Section OAuth */}
         <div className="flex flex-col gap-2 w-full">
           <GoogleLoginButton />
           <GithubLoginButton />
+          <SpotifyLoginButton />
         </div>
 
         {/* Lien vers l'inscription */}

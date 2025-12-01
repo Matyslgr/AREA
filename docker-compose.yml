@@ -45,7 +45,7 @@ services:
     ports:
       - "8081:8081"
     environment:
-      VITE_API_URL: http://localhost:8080
+      VITE_API_URL: http://127.0.0.1:8080
     depends_on:
       - server
     networks:
