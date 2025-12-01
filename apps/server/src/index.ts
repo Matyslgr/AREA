@@ -7,10 +7,15 @@ import swaggerUi from '@fastify/swagger-ui';
 import { oauthRoutes } from './routes/auth/oauth';
 import { signupRoute } from './routes/auth/signup';
 import { signinRoute } from './routes/auth/signin';
+import { serviceManager } from './services/service.manager';
+import { TimerService } from './services/impl/timer/timer.service';
+import { AreaEngine } from './core/area.engine';
 
 const server = Fastify({
   logger: true
 });
+
+serviceManager.register(TimerService);
 
 const start = async () => {
   try {
@@ -54,7 +59,7 @@ const start = async () => {
         },
         server: {
           current_time: Math.floor(Date.now() / 1000),
-          services: []
+          services: serviceManager.getAllServices()
         }
       };
     });
@@ -85,3 +90,6 @@ const start = async () => {
 };
 
 start();
+
+const areaEngine = new AreaEngine();
+areaEngine.start(1000 * 10); // Check every 10 seconds

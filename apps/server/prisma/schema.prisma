@@ -50,15 +50,16 @@ model Area {
 }
 
 model Action {
-  id         String  @id @default(uuid())
-  area_id    String  @unique
-  account_id String?
-  name       String  // ex: "GITHUB_NEW_ISSUE"
-  parameters Json
+  id                String  @id @default(uuid())
+  area_id           String  @unique
+  account_id        String?
+  name              String  // ex: "GITHUB_NEW_ISSUE"
+  parameters        Json
+  state             Json?   // The memory of the Action
 
   // Relations
-  area    Area     @relation(fields: [area_id], references: [id], onDelete: Cascade)
-  account Account? @relation(fields: [account_id], references: [id])
+  area    Area      @relation(fields: [area_id], references: [id], onDelete: Cascade)
+  account Account?  @relation(fields: [account_id], references: [id])
 }
 
 model Reaction {
