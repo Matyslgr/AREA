@@ -6,6 +6,7 @@ import { GoogleLoginButton } from "./GoogleLoginButton"
 import { GithubLoginButton } from "./GithubLoginButton"
 import { SpotifyLoginButton } from "./SpotifyLoginButton"
 import { TwitchLoginButton } from "./TwitchLoginButton"
+import { NotionLoginButton } from "./NotionLoginButton"
 
 import {
   Field,
@@ -118,6 +119,7 @@ export function LoginForm({
           <GithubLoginButton />
           <SpotifyLoginButton />
           <TwitchLoginButton />
+          <NotionLoginButton />
         </div>
 
         {/* Lien vers l'inscription */}
