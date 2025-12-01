@@ -1,10 +1,11 @@
-import { GoogleProvider } from './providers/google.provider';
 import { IOAuthProvider } from '../../interfaces/auth.interface';
+import { GoogleProvider } from './providers/google.provider';
+import { GithubProvider } from './providers/github.provider';
 
 export class OAuthFactory {
   private static providers: Record<string, IOAuthProvider> = {
     google: new GoogleProvider(),
-    // github: new GithubProvider(),
+    github: new GithubProvider(),
   };
 
   static getProvider(providerName: string): IOAuthProvider {

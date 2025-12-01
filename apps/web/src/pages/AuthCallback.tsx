@@ -19,12 +19,16 @@ export const AuthCallback = () => {
       return;
     }
 
+    const provider = localStorage.getItem('oauth_provider');
+
     const login = async () => {
       try {
         const response = await axios.post(`${import.meta.env.VITE_API_URL}/auth/oauth/login`, {
-          provider: 'google',
+          provider: provider,
           code: code,
         });
+
+        localStorage.removeItem('oauth_provider');
 
         const { token, user } = response.data;
 
@@ -44,7 +48,7 @@ export const AuthCallback = () => {
 
   return (
     <div className="flex h-screen items-center justify-center">
-      <p>Connexion à Google en cours...</p>
+      <p>Authenticating...</p>
     </div>
   );
 };
