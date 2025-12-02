@@ -37,7 +37,17 @@ const start = async () => {
             url: 'https://server-production-613e.up.railway.app',
             description: 'Production server'
           }
-        ]
+        ],
+        components: {
+          securitySchemes: {
+            bearerAuth: {
+              type: 'http',
+              scheme: 'bearer',
+              bearerFormat: 'JWT',
+              description: 'Enter the JWT token returned from /auth/signin or /auth/signup'
+            }
+          }
+        }
       }
     });
 

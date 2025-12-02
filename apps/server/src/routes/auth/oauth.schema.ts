@@ -46,6 +46,7 @@ export const loginSchema = {
 export const linkSchema = {
   description: 'Link OAuth account to authenticated user',
   tags: ['auth'],
+  security: [{ bearerAuth: [] }],
   body: {
     type: 'object',
     required: ['provider', 'code'],
@@ -104,6 +105,7 @@ export const linkSchema = {
 export const getAccountsSchema = {
   description: 'Get all linked OAuth accounts',
   tags: ['auth'],
+  security: [{ bearerAuth: [] }],
   response: {
     200: {
       description: 'List of linked accounts',
@@ -143,6 +145,7 @@ export const getAccountsSchema = {
 export const unlinkAccountSchema = {
   description: 'Unlink OAuth account from user',
   tags: ['auth'],
+  security: [{ bearerAuth: [] }],
   params: {
     type: 'object',
     required: ['provider'],
