@@ -1,3 +1,33 @@
+export const getAuthUrlSchema = {
+  description: 'Get OAuth authorization URL to initiate OAuth flow',
+  tags: ['auth'],
+  params: {
+    type: 'object',
+    required: ['provider'],
+    properties: {
+      provider: { type: 'string', description: 'OAuth provider name (google, github, spotify, twitch, notion, linkedin)' }
+    }
+  },
+  response: {
+    200: {
+      description: 'Authorization URL generated successfully',
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'OAuth authorization URL - visit this URL in your browser to authorize' },
+        provider: { type: 'string' },
+        instructions: { type: 'string', description: 'Instructions on how to use this URL' }
+      }
+    },
+    400: {
+      description: 'Bad request - Provider not supported',
+      type: 'object',
+      properties: {
+        error: { type: 'string' }
+      }
+    }
+  }
+};
+
 export const loginSchema = {
   description: 'Login with OAuth provider',
   tags: ['auth'],
@@ -15,7 +45,7 @@ export const loginSchema = {
       type: 'object',
       properties: {
         message: { type: 'string' },
-        token: { type: 'string' },
+        token: { type: 'string', description: 'JWT token for authentication' },
         user: {
           type: 'object',
           properties: {
@@ -23,7 +53,10 @@ export const loginSchema = {
             username: { type: 'string' },
             email: { type: 'string' }
           }
-        }
+        },
+        isNewUser: { type: 'boolean', description: 'True if this is a newly created user' },
+        isNewAccount: { type: 'boolean', description: 'True if this OAuth account was just linked' },
+        hasPassword: { type: 'boolean', description: 'True if user has a password set' }
       }
     },
     400: {

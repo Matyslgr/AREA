@@ -21,6 +21,8 @@ export class AuthManager {
     });
 
     let userId = existingAccount?.user_id;
+    let isNewUser = false;
+    let isNewAccount = false;
 
     if (existingAccount) {
       await prisma.account.update({
@@ -34,11 +36,13 @@ export class AuthManager {
         }
       });
     } else {
+      isNewAccount = true;
       let user = await prisma.user.findUnique({
         where: { email: oauthUser.email }
       });
 
       if (!user) {
+        isNewUser = true;
         user = await prisma.user.create({
           data: {
             email: oauthUser.email,
@@ -64,7 +68,14 @@ export class AuthManager {
       userId = user.id;
     }
 
-    return prisma.user.findUniqueOrThrow({ where: { id: userId } });
+    const user = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
+
+    return {
+      user,
+      isNewUser,
+      isNewAccount,
+      hasPassword: !!user.password && user.password.length > 0
+    };
   }
 
   async linkOAuthAccount(userId: string, providerName: string, code: string) {
@@ -169,5 +180,88 @@ export class AuthManager {
     });
 
     return accounts;
+  }
+
+  async getAccountDetails(userId: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        accounts: {
+          select: {
+            id: true,
+            provider: true,
+            provider_account_id: true,
+            expires_at: true,
+          }
+        }
+      }
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    return {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      hasPassword: !!user.password && user.password.length > 0,
+      linkedAccounts: user.accounts
+    };
+  }
+
+  async updateAccount(userId: string, updates: { email?: string; username?: string; password?: string; currentPassword?: string }) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    // If updating password
+    if (updates.password) {
+      // If user has existing password, verify current password
+      if (user.password && user.password.length > 0) {
+        if (!updates.currentPassword) {
+          throw new Error('Current password required to set new password');
+        }
+
+        const bcrypt = require('bcrypt');
+        const isValid = await bcrypt.compare(updates.currentPassword, user.password);
+        if (!isValid) {
+          throw new Error('Current password is incorrect');
+        }
+      }
+
+      // Hash new password
+      const bcrypt = require('bcrypt');
+      const hashedPassword = await bcrypt.hash(updates.password, 10);
+      updates.password = hashedPassword;
+    }
+
+    // Build update data
+    const updateData: any = {};
+    if (updates.email) updateData.email = updates.email;
+    if (updates.username) updateData.username = updates.username;
+    if (updates.password) updateData.password = updates.password;
+
+    // Remove currentPassword from updates as it's not a user field
+    delete updateData.currentPassword;
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+      select: {
+        id: true,
+        email: true,
+        username: true,
+      }
+    });
+
+    return {
+      ...updatedUser,
+      hasPassword: !!updateData.password || (!!user.password && user.password.length > 0)
+    };
   }
 }
