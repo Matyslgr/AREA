@@ -7,6 +7,7 @@ import swaggerUi from '@fastify/swagger-ui';
 import { oauthRoutes } from './routes/auth/oauth';
 import { signupRoute } from './routes/auth/signup';
 import { signinRoute } from './routes/auth/signin';
+import { accountRoutes } from './routes/auth/account';
 
 const server = Fastify({
   logger: true
@@ -67,6 +68,7 @@ const start = async () => {
 
     // Register routes
     await server.register(oauthRoutes, { prefix: '/auth' });
+    await server.register(accountRoutes, { prefix: '/auth' });
 
     // Register auth routes
     server.route(signupRoute);
