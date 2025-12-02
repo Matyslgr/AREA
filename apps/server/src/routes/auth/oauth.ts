@@ -88,7 +88,7 @@ export async function oauthRoutes(fastify: FastifyInstance) {
       const accounts = await authManager.getLinkedAccounts(userId);
 
       return reply.send({
-        accounts: accounts.map(acc => ({
+        accounts: accounts.map((acc: any) => ({
           id: acc.id,
           provider: acc.provider,
           provider_account_id: acc.provider_account_id,
