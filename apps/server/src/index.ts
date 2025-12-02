@@ -42,23 +42,16 @@ const start = async () => {
       secret: process.env.JWT_SECRET || 'supersecret'
     });
 
+    // Add authenticate decorator
+    server.decorate('authenticate', async (request: any, reply: any) => {
+      try {
+        await request.jwtVerify();
+      } catch (err) {
+        reply.status(401).send({ error: 'Unauthorized' });
+      }
+    });
+
     // Register routes
-    server.get('/', async (request, reply) => {
-      return { hello: 'world' };
-    });
-
-    server.get('/about.json', async (request, reply) => {
-      return {
-        client: {
-          host: request.ip
-        },
-        server: {
-          current_time: Math.floor(Date.now() / 1000),
-          services: []
-        }
-      };
-    });
-
     await server.register(oauthRoutes, { prefix: '/auth' });
 
     // Register auth routes

@@ -35,6 +35,7 @@ export async function signupHandler(
     const user = await prisma.user.create({
       data: {
         email,
+        username: email.split('@')[0],
         password: hashedPassword
       }
     });
