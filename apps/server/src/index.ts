@@ -7,6 +7,8 @@ import swaggerUi from '@fastify/swagger-ui';
 import { oauthRoutes } from './routes/auth/oauth';
 import { signupRoute } from './routes/auth/signup';
 import { signinRoute } from './routes/auth/signin';
+import { forgotPasswordRoute } from './routes/auth/forgot-password';
+import { resetPasswordRoute } from './routes/auth/reset-password';
 
 const server = Fastify({
   logger: true
@@ -64,6 +66,8 @@ const start = async () => {
     // Register auth routes
     server.route(signupRoute);
     server.route(signinRoute);
+    server.route(forgotPasswordRoute);
+    server.route(resetPasswordRoute);
 
     // Register Swagger UI last (after all routes)
     await server.register(swaggerUi, {
