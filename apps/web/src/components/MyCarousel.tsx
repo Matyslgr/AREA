@@ -69,8 +69,8 @@ export function MyCarousel() {
             </CarouselItem>
           ))}
         </CarouselContent>
-        <CarouselPrevious />
-        <CarouselNext />
+        <CarouselPrevious className="carousel-previous" />
+        <CarouselNext className="carousel-next" />
       </Carousel>
     </div>
   )
