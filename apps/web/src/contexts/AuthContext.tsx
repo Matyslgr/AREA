@@ -1,8 +1,11 @@
 import { createContext, useContext, useState, useEffect } from "react"
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080"
+
 interface User {
+  id: number
   email: string
-  name: string
+  name?: string
 }
 
 interface AuthContextType {
@@ -19,31 +22,54 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
 
   useEffect(() => {
-    // Check if user is logged in on mount
-    const storedUser = localStorage.getItem("area-user")
-    if (storedUser) {
-      setUser(JSON.parse(storedUser))
+    // Check if user has a valid token on mount
+    const token = localStorage.getItem("area-token")
+    if (token) {
+      // Decode JWT to get user info (simple base64 decode of payload)
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]))
+        setUser({
+          id: payload.userId,
+          email: payload.email,
+          name: payload.name
+        })
+      } catch (error) {
+        // Invalid token, clear it
+        localStorage.removeItem("area-token")
+      }
     }
   }, [])
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    // Demo authentication - in production, this would call your API
     try {
-      const storedUsers = localStorage.getItem("area-users")
-      const users = storedUsers ? JSON.parse(storedUsers) : []
+      const response = await fetch(`${API_BASE_URL}/auth/signin`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      })
 
-      const foundUser = users.find(
-        (u: any) => u.email === email && u.password === password
-      )
-
-      if (foundUser) {
-        const user = { email: foundUser.email, name: foundUser.name }
-        setUser(user)
-        localStorage.setItem("area-user", JSON.stringify(user))
-        return true
+      if (!response.ok) {
+        if (response.status === 401) {
+          console.error('Invalid credentials')
+        }
+        return false
       }
 
-      return false
+      const data = await response.json()
+
+      // Store JWT token
+      localStorage.setItem("area-token", data.token)
+
+      // Set user state
+      setUser({
+        id: data.id,
+        email: data.email,
+        name: data.name
+      })
+
+      return true
     } catch (error) {
       console.error("Login error:", error)
       return false
@@ -55,25 +81,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     email: string,
     password: string
   ): Promise<boolean> => {
-    // Demo registration - in production, this would call your API
     try {
-      const storedUsers = localStorage.getItem("area-users")
-      const users = storedUsers ? JSON.parse(storedUsers) : []
+      const response = await fetch(`${API_BASE_URL}/auth/signup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      })
 
-      // Check if user already exists
-      if (users.find((u: any) => u.email === email)) {
+      if (!response.ok) {
+        if (response.status === 409) {
+          console.error('Email already exists')
+        }
         return false
       }
 
-      // Add new user
-      const newUser = { email, name, password }
-      users.push(newUser)
-      localStorage.setItem("area-users", JSON.stringify(users))
+      const data = await response.json()
 
-      // Auto-login after signup
-      const user = { email, name }
-      setUser(user)
-      localStorage.setItem("area-user", JSON.stringify(user))
+      // Store JWT token
+      localStorage.setItem("area-token", data.token)
+
+      // Set user state
+      setUser({
+        id: data.id,
+        email: data.email,
+        name: name // Use the name from the form since backend doesn't store it yet
+      })
 
       return true
     } catch (error) {
@@ -84,7 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = () => {
     setUser(null)
-    localStorage.removeItem("area-user")
+    localStorage.removeItem("area-token")
   }
 
   return (

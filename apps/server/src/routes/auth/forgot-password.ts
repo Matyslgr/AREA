@@ -2,10 +2,10 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import { PrismaClient } from '@prisma/client';
 import crypto from 'crypto';
 import { forgotPasswordSchema } from './forgot-password.schema';
-import { MockEmailAdapter } from '../../adapters/mock-email.adapter';
+import { NodemailerEmailAdapter } from '../../adapters/nodemailer-email.adapter';
 
 const prisma = new PrismaClient();
-const emailService = new MockEmailAdapter();
+const emailService = new NodemailerEmailAdapter();
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 const RESET_TOKEN_EXPIRATION_HOURS = parseInt(process.env.RESET_TOKEN_EXPIRATION || '1');
 
@@ -19,14 +19,19 @@ export async function forgotPasswordHandler(
 ) {
     const { email } = request.body;
 
+    console.log('🔐 Forgot password request for email:', email);
+
     try {
         // Find user by email
         const user = await prisma.user.findUnique({
             where: { email }
         });
 
+        console.log('👤 User found:', !!user);
+
         // Always return success to prevent email enumeration attacks
         if (!user) {
+            console.log('⚠️  No user found with this email - skipping email send');
             return reply.status(200).send({
                 message: 'If the email exists, a password reset link has been sent.'
             });
@@ -40,6 +45,7 @@ export async function forgotPasswordHandler(
         expiresAt.setHours(expiresAt.getHours() + RESET_TOKEN_EXPIRATION_HOURS);
 
         // Store token in database
+        console.log('💾 Creating password reset token in database...');
         await prisma.passwordResetToken.create({
             data: {
                 user_id: user.id,
@@ -48,11 +54,13 @@ export async function forgotPasswordHandler(
                 used: false
             }
         });
+        console.log('✅ Token created successfully');
 
         // Generate reset URL
         const resetUrl = `${FRONTEND_URL}/reset-password?token=${token}`;
 
         // Send email
+        console.log('📧 About to send email...');
         await emailService.sendPasswordResetEmail(email, resetUrl);
 
         return reply.status(200).send({
