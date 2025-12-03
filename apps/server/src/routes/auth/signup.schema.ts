@@ -24,7 +24,7 @@ export const signupSchema = {
       properties: {
         id: { type: 'string' },
         email: { type: 'string' },
-        token: { type: 'string' }
+        token: { type: 'string', description: 'JWT token for authentication' }
       }
     },
     400: {
@@ -36,6 +36,13 @@ export const signupSchema = {
     },
     409: {
       description: 'Conflict - Email already exists',
+      type: 'object',
+      properties: {
+        error: { type: 'string' }
+      }
+    },
+    500: {
+      description: 'Internal server error',
       type: 'object',
       properties: {
         error: { type: 'string' }

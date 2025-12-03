@@ -8,6 +8,7 @@ import { oauthRoutes } from './routes/auth/oauth';
 import { signupRoute } from './routes/auth/signup';
 import { signinRoute } from './routes/auth/signin';
 import { areaRoutes } from './routes/areas.route';
+import { accountRoutes } from './routes/auth/account';
 import { serviceManager } from './services/service.manager';
 import { TimerService } from './services/impl/timer/timer.service';
 import { GoogleService } from './services/impl/google/google.service';
@@ -40,8 +41,22 @@ const start = async () => {
           {
             url: 'http://127.0.0.1:8080',
             description: 'Development server'
+          },
+          {
+            url: 'https://server-production-613e.up.railway.app',
+            description: 'Production server'
           }
-        ]
+        ],
+        components: {
+          securitySchemes: {
+            bearerAuth: {
+              type: 'http',
+              scheme: 'bearer',
+              bearerFormat: 'JWT',
+              description: 'Enter the JWT token returned from /auth/signin or /auth/signup'
+            }
+          }
+        }
       }
     });
 
@@ -75,6 +90,7 @@ const start = async () => {
 
 
     await server.register(oauthRoutes, { prefix: '/auth' });
+    await server.register(accountRoutes, { prefix: '/auth' });
 
     // Register auth routes
     server.route(signupRoute);
