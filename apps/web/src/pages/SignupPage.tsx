@@ -1,10 +1,15 @@
-import { FaTwitch, FaSpotify, FaGoogle, FaGithub } from "react-icons/fa";
-import { SiNotion, SiLinkedin } from "react-icons/si";
 
 import { SignupForm } from "@/components/signup-form"
 
 import Navbar from "@/components/Navbar"
 import "./SignupPage.css"
+
+import GithubIcon from "@/assets/signup-icons/github.png"
+import GoogleIcon from "@/assets/signup-icons/google.png"
+import LinkedinIcon from "@/assets/signup-icons/linkedin.png"
+import NotionIcon from "@/assets/signup-icons/notion.png"
+import SpotifyIcon from "@/assets/signup-icons/spotify.png"
+import TwitchIcon from "@/assets/signup-icons/twitch.png"
 
 export default function SignupPage() {
   return (
@@ -25,27 +30,27 @@ export default function SignupPage() {
               <h3 className="signup-services-title">Or create an account with</h3>
               <div className="signup-services-content">
                 <button className="service-button service-button-google">
-                  <FaGoogle className="service-icon" />
+                  <img src={GoogleIcon} alt="Google" className="service-icon" />
                   Google
                 </button>
                 <button className="service-button service-button-github">
-                  <FaGithub className="service-icon" />
+                  <img src={GithubIcon} alt="Github" className="service-icon" />
                   Github
                 </button>
                 <button className="service-button service-button-spotify">
-                  <FaSpotify className="service-icon" />
+                  <img src={SpotifyIcon} alt="Spotify" className="service-icon" />
                   Spotify
                 </button>
                 <button className="service-button service-button-notion">
-                  <SiNotion className="service-icon" />
+                  <img src={NotionIcon} alt="Notion" className="service-icon" />
                   Notion
                 </button>
                 <button className="service-button service-button-linkedin">
-                  <SiLinkedin className="service-icon" />
+                  <img src={LinkedinIcon} alt="LinkedIn" className="service-icon" />
                   LinkedIn
                 </button>
                 <button className="service-button service-button-twitch">
-                  <FaTwitch className="service-icon" />
+                  <img src={TwitchIcon} alt="Twitch" className="service-icon" />
                   Twitch
                 </button>
               </div>

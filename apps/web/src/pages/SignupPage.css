@@ -101,57 +101,68 @@
 }
 
 .service-button-google {
-  background-color: #E8E8E8;
+  border: 2px solid #E8E8E8;
+  background-color: white;
   color: #333;
 }
 
 .service-button-google:hover {
-  background-color: #D0D0D0;
+  background-color: #d0d0d084;
 }
 
 .service-button-github {
-  background-color: #000000;
-  color: white;
+  border: 2px solid #000000;
+  background-color: white;
+  color: black;
 }
 
 .service-button-github:hover {
-  background-color: #1a1a1a;
+  background-color: #1a1a1ad5;
+  color: white;
 }
 
 .service-button-spotify {
-  background-color: #1DB954;
-  color: white;
+  border: 2px solid #1DB954;
+  background-color: white;
+  color: black;
 }
 
 .service-button-spotify:hover {
-  background-color: #1ed760;
+  background-color: #26d964aa;
+  color: white;
 }
 
 .service-button-notion {
-  background-color: #888888;
-  color: white;
+  border: 2px solid #888888;
+  background-color: white;
+  color: black;
 }
 
 .service-button-notion:hover {
   background-color: #6a6a6a;
+  color: white;
 }
 
 .service-button-linkedin {
-  background-color: #6097FF;
-  color: white;
+  border: 2px solid #6097FF;
+  background-color: white;
+  color: black;
 }
 
 .service-button-linkedin:hover {
   background-color: #4a7fd9;
+  color: white;
 }
 
 .service-button-twitch {
-  background-color: #C740C7;
-  color: white;
+  border: 2px solid #C740C7;
+  background-color: white;
+  color: black;
 }
 
 .service-button-twitch:hover {
   background-color: #a535a5;
+  color: white;
 }
 
 @media (min-width: 1025px) and (max-width: 1366px) {
