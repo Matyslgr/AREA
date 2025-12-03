@@ -7,6 +7,7 @@ import swaggerUi from '@fastify/swagger-ui';
 import { oauthRoutes } from './routes/auth/oauth';
 import { signupRoute } from './routes/auth/signup';
 import { signinRoute } from './routes/auth/signin';
+import { accountRoutes } from './routes/auth/account';
 
 const server = Fastify({
   logger: true
@@ -32,8 +33,22 @@ const start = async () => {
           {
             url: 'http://127.0.0.1:8080',
             description: 'Development server'
+          },
+          {
+            url: 'https://server-production-613e.up.railway.app',
+            description: 'Production server'
           }
-        ]
+        ],
+        components: {
+          securitySchemes: {
+            bearerAuth: {
+              type: 'http',
+              scheme: 'bearer',
+              bearerFormat: 'JWT',
+              description: 'Enter the JWT token returned from /auth/signin or /auth/signup'
+            }
+          }
+        }
       }
     });
 
@@ -42,24 +57,18 @@ const start = async () => {
       secret: process.env.JWT_SECRET || 'supersecret'
     });
 
+    // Add authenticate decorator
+    server.decorate('authenticate', async (request: any, reply: any) => {
+      try {
+        await request.jwtVerify();
+      } catch (err) {
+        reply.status(401).send({ error: 'Unauthorized' });
+      }
+    });
+
     // Register routes
-    server.get('/', async (request, reply) => {
-      return { hello: 'world' };
-    });
-
-    server.get('/about.json', async (request, reply) => {
-      return {
-        client: {
-          host: request.ip
-        },
-        server: {
-          current_time: Math.floor(Date.now() / 1000),
-          services: []
-        }
-      };
-    });
-
     await server.register(oauthRoutes, { prefix: '/auth' });
+    await server.register(accountRoutes, { prefix: '/auth' });
 
     // Register auth routes
     server.route(signupRoute);
