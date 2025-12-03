@@ -1,17 +1,36 @@
 import { useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { api } from "@/lib/api";
+
+interface AuthResponse {
+  token: string;
+  user: any;
+  message: string;
+}
+
+const parseState = (state: string | null) => {
+  if (!state) return null;
+  try {
+    const base64 = state.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonString = atob(base64);
+    return JSON.parse(jsonString);
+  } catch (e) {
+    console.warn("Invalid state format:", e);
+    return null;
+  }
+};
 
 export const AuthCallback = () => {
   const navigate = useNavigate();
   const called = useRef(false);
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     if (called.current) return;
     called.current = true;
 
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get('code');
+    const code = searchParams.get('code');
+    const state = searchParams.get('state');
 
     if (!code) {
       console.error('No code found');
@@ -19,28 +38,39 @@ export const AuthCallback = () => {
       return;
     }
 
-    const provider = localStorage.getItem('oauth_provider');
+    const stateData = parseState(state);
+    const provider = stateData?.provider;
 
     if (!provider) {
-      console.error('No provider found in LocalStorage');
-      navigate('/login?error=missing_context');
+      console.error('No provider found in state');
+      navigate('/login?error=missing_provider');
       return;
     }
 
-    const login = async () => {
+    const mode = stateData?.mode || 'login';
+
+    const processAuth = async () => {
       try {
-        const response = await axios.post(`${import.meta.env.VITE_API_URL}/auth/oauth/login`, {
-          provider: provider,
-          code: code,
-        });
+        let data: AuthResponse;
 
-        localStorage.removeItem('oauth_provider');
+        console.log(`🔄 Processing OAuth | Provider: ${provider} | Mode: ${mode}`);
 
-        const { token, user } = response.data;
+        if (mode === 'connect') {
+          data = await api.post('/auth/oauth/link', {
+            provider,
+            code
+          });
+        } else {
+          data = await api.post('/auth/oauth/login', {
+            provider,
+            code
+          });
 
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(user));
-
+          const { token, user } = data;
+          localStorage.setItem('token', token);
+          localStorage.setItem('area-user', JSON.stringify(user));
+        }
+        console.log("✅ Success:", data);
         navigate('/dashboard');
 
       } catch (error) {
@@ -49,12 +79,13 @@ export const AuthCallback = () => {
       }
     };
 
-    login();
-  }, [navigate]);
+    processAuth();
+  }, [navigate, searchParams]);
 
   return (
-    <div className="flex h-screen items-center justify-center">
-      <p>Authenticating...</p>
+    <div className="flex h-screen items-center justify-center flex-col gap-4">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+      <p className="text-gray-500">Authenticating...</p>
     </div>
   );
 };

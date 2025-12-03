@@ -1,6 +1,5 @@
 import { IOAuthProvider, OAuthTokens, OAuthUser } from '../../../interfaces/auth.interface';
-import { IHttpClient } from '../../../interfaces/http.interface';
-import { AxiosAdapter } from '../../../adapters/axios.adapter';
+import { IHttpClient, AxiosAdapter } from '@area/shared';
 
 interface TwitchTokenResponse {
   access_token: string;
@@ -22,6 +21,9 @@ interface TwitchUserResponse {
 
 export class TwitchProvider implements IOAuthProvider {
   name = 'twitch';
+  authorizationUrl = 'https://id.twitch.tv/oauth2/authorize';
+  defaultScopes = ['user:read:email'];
+
   private httpClient: IHttpClient;
 
   constructor(httpClient: IHttpClient = new AxiosAdapter()) {
@@ -46,6 +48,7 @@ export class TwitchProvider implements IOAuthProvider {
         access_token: data.access_token,
         refresh_token: data.refresh_token,
         expires_in: data.expires_in,
+        scope: Array.isArray(data.scope) ? data.scope.join(' ') : data.scope,
       };
     } catch (error: any) {
       console.error('Twitch Token Error:', error.response?.data || error.message);
@@ -64,7 +67,7 @@ export class TwitchProvider implements IOAuthProvider {
 
       const response = await this.httpClient.get<TwitchUserResponse>(url, { headers });
 
-      // Twitch renvoie un tableau 'data', on prend le premier élément
+      // Twitch returns an array of users, we take the first one
       const user = response.data[0];
 
       if (!user) {
@@ -81,5 +84,9 @@ export class TwitchProvider implements IOAuthProvider {
       console.error('Twitch UserInfo Error:', error.response?.data || error.message);
       throw new Error('Failed to retrieve Twitch user info');
     }
+  }
+
+  getAuthUrlParameters(): Record<string, string> {
+    return {};
   }
 }

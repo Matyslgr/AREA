@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { api } from "@/lib/api";
 
 interface User {
   email: string;
@@ -36,6 +37,20 @@ export default function Dashboard() {
     navigate("/");
   };
 
+  const handleConnectGmail = async () => {
+    try {
+      const scope = "https://www.googleapis.com/auth/gmail.send";
+      const encodedScope = encodeURIComponent(scope);
+      const { url } = await api.get<{ url: string }>(
+        `/auth/oauth/authorize/google?scope=${encodedScope}`
+      );
+
+      window.location.href = url;
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   if (!user) return null;
 
   return (
@@ -65,6 +80,9 @@ export default function Dashboard() {
               <p>Email: {user.email}</p>
               <p>Status: Connected</p>
             </div>
+            <Button onClick={handleConnectGmail} className="bg-blue-600 hover:bg-blue-700">
+              Connect your Gmail account
+            </Button>
           </CardContent>
         </Card>
 

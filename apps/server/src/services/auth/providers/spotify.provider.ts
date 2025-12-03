@@ -1,7 +1,5 @@
 import { IOAuthProvider, OAuthTokens, OAuthUser } from '../../../interfaces/auth.interface';
-import { IHttpClient } from '../../../interfaces/http.interface';
-import { AxiosAdapter } from '../../../adapters/axios.adapter';
-
+import { IHttpClient, AxiosAdapter } from '@area/shared';
 // Spotify raw response types
 interface SpotifyTokenResponse {
   access_token: string;
@@ -21,6 +19,9 @@ interface SpotifyUserResponse {
 
 export class SpotifyProvider implements IOAuthProvider {
   name = 'spotify';
+  authorizationUrl = 'https://accounts.spotify.com/authorize';
+  defaultScopes = ['user-read-email', 'user-read-private'];
+
   private httpClient: IHttpClient;
 
   constructor(httpClient: IHttpClient = new AxiosAdapter()) {
@@ -51,6 +52,7 @@ export class SpotifyProvider implements IOAuthProvider {
         access_token: data.access_token,
         refresh_token: data.refresh_token,
         expires_in: data.expires_in,
+        scope: data.scope,
       };
     } catch (error: any) {
       console.error('Spotify Token Error:', error.response?.data || error.message);
@@ -78,5 +80,9 @@ export class SpotifyProvider implements IOAuthProvider {
       console.error('Spotify UserInfo Error:', error.response?.data || error.message);
       throw new Error('Failed to retrieve Spotify user info');
     }
+  }
+
+  getAuthUrlParameters(): Record<string, string> {
+    return {};
   }
 }

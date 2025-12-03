@@ -1,4 +1,4 @@
-import { Prisma, User, Account } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 
 const userWithAccountsConfig = Prisma.validator<Prisma.UserDefaultArgs>()({
   include: { accounts: true }

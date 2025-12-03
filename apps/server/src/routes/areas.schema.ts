@@ -5,6 +5,9 @@ const areaObject = {
     name: { type: 'string' },
     is_active: { type: 'boolean' },
     user_id: { type: 'string' },
+    last_executed_at: { type: 'string', format: 'date-time', nullable: true },
+    error_log: { type: 'string', nullable: true },
+
     action: {
       type: 'object',
       properties: {
@@ -28,6 +31,7 @@ const areaObject = {
 export const createAreaSchema = {
   description: 'Create a new AREA (Automation)',
   tags: ['areas'],
+  security: [{ bearerAuth: [] }],
   body: {
     type: 'object',
     required: ['name', 'action', 'reactions'],
@@ -70,6 +74,7 @@ export const createAreaSchema = {
 export const listAreasSchema = {
   description: 'List all AREAs for the current user',
   tags: ['areas'],
+  security: [{ bearerAuth: [] }],
   response: {
     200: {
       description: 'List of AREAs',
@@ -82,6 +87,7 @@ export const listAreasSchema = {
 export const deleteAreaSchema = {
   description: 'Delete an AREA by ID',
   tags: ['areas'],
+  security: [{ bearerAuth: [] }],
   params: {
     type: 'object',
     properties: {
@@ -103,8 +109,9 @@ export const deleteAreaSchema = {
 };
 
 export const updateAreaSchema = {
-  description: 'Update an AREA (Enable/Disable)',
+  description: 'Update an AREA (Enable, Disable, or Change Params)',
   tags: ['areas'],
+  security: [{ bearerAuth: [] }],
   params: {
     type: 'object',
     properties: { id: { type: 'string', format: 'uuid' } }
@@ -112,7 +119,24 @@ export const updateAreaSchema = {
   body: {
     type: 'object',
     properties: {
-      is_active: { type: 'boolean' }
+      is_active: { type: 'boolean' },
+      name: { type: 'string' },
+      action: {
+        type: 'object',
+        properties: {
+          parameters: { type: 'object' }
+        }
+      },
+      reactions: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            parameters: { type: 'object' }
+          }
+        }
+      }
     }
   },
   response: {

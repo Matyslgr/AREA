@@ -1,7 +1,5 @@
 import { IOAuthProvider, OAuthTokens, OAuthUser } from '../../../interfaces/auth.interface';
-import { IHttpClient } from '../../../interfaces/http.interface';
-import { AxiosAdapter } from '../../../adapters/axios.adapter';
-
+import { IHttpClient, AxiosAdapter } from '@area/shared';
 interface LinkedInTokenResponse {
   access_token: string;
   expires_in: number;
@@ -20,6 +18,9 @@ interface LinkedInUserResponse {
 
 export class LinkedinProvider implements IOAuthProvider {
   name = 'linkedin';
+  authorizationUrl = 'https://www.linkedin.com/oauth/v2/authorization';
+  defaultScopes = ['openid', 'profile', 'email'];
+
   private httpClient: IHttpClient;
 
   constructor(httpClient: IHttpClient = new AxiosAdapter()) {
@@ -49,6 +50,7 @@ export class LinkedinProvider implements IOAuthProvider {
         access_token: data.access_token,
         refresh_token: undefined,
         expires_in: data.expires_in,
+        scope: data.scope,
       };
     } catch (error: any) {
       console.error('LinkedIn Token Error:', error.response?.data || error.message);
@@ -76,5 +78,9 @@ export class LinkedinProvider implements IOAuthProvider {
       console.error('LinkedIn UserInfo Error:', error.response?.data || error.message);
       throw new Error('Failed to retrieve LinkedIn user info');
     }
+  }
+
+  getAuthUrlParameters(): Record<string, string> {
+    return {};
   }
 }

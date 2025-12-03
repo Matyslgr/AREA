@@ -33,6 +33,7 @@ export class AuthManager {
             ? this.encryptionService.encrypt(tokens.refresh_token)
             : existingAccount.refresh_token,
           expires_at: new Date(Date.now() + tokens.expires_in * 1000),
+          scope: tokens.scope
         }
       });
     } else {
@@ -62,6 +63,7 @@ export class AuthManager {
             ? this.encryptionService.encrypt(tokens.refresh_token)
             : null,
           expires_at: new Date(Date.now() + tokens.expires_in * 1000),
+          scope: tokens.scope
         }
       });
 

@@ -28,6 +28,7 @@ model Account {
   access_token        String
   refresh_token       String?
   expires_at          DateTime?
+  scope               String?
 
   // Relations
   user      User       @relation(fields: [user_id], references: [id], onDelete: Cascade)
@@ -47,6 +48,9 @@ model Area {
   user     User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
   action   Action?
   reactions Reaction[]
+
+  last_executed_at  DateTime?
+  error_log         String?
 }
 
 model Action {

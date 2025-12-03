@@ -53,6 +53,7 @@ export class AreaEngine {
 
       console.log(`[Engine] ⚡ Triggered: ${area.name}`);
       const triggerData = result.data;
+      let hasError = false;
 
       for (const reactionDb of area.reactions) {
         const reactService = serviceManager.getAllServices().find(s =>
@@ -63,8 +64,6 @@ export class AreaEngine {
         if (reactionDef) {
           try {
             // --- DATA INTERPOLATION START ---
-            // Create a copy of parameters to avoid mutating the DB object
-            // We interpret parameters as a Record<string, any>
             const dynamicParams = { ...(reactionDb.parameters as Record<string, any>) };
 
             // Loop through each parameter to replace {{variables}}
@@ -78,13 +77,33 @@ export class AreaEngine {
             await reactionDef.execute(area.user, dynamicParams, triggerData);
             console.log(`   └─ ✅ Reaction executed: ${reactionDef.name}`);
             console.log(`       └─ Params:`, dynamicParams);
-          } catch (err) {
+          } catch (err: any) {
             console.error(`   └─ ❌ Reaction failed: ${reactionDef.name}`, err);
+            hasError = true;
+
+            await prisma.area.update({
+              where: { id: area.id },
+              data: { error_log: `Reaction ${reactionDef.name} failed: ${err.message}` }
+            });
           }
         }
       }
-    } catch (error) {
+
+      if (!hasError) {
+        await prisma.area.update({
+          where: { id: area.id },
+          data: {
+            last_executed_at: new Date(),
+            error_log: null
+          }
+        });
+      }
+    } catch (error: any) {
       console.error(`[Engine] Error processing AREA ${area.id}:`, error);
+      await prisma.area.update({
+        where: { id: area.id },
+        data: { error_log: `Engine Error: ${error.message}` }
+      });
     }
   }
 
@@ -94,7 +113,6 @@ export class AreaEngine {
   private interpolate(text: string, data: any): string {
     if (!data) return text;
 
-    // Regex to find {{ word }} patterns
     return text.replace(/\{\{(.*?)\}\}/g, (match, key) => {
       const trimmedKey = key.trim();
       const value = data[trimmedKey];
