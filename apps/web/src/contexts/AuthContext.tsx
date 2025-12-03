@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState } from "react"
-
+import { STORAGE_KEYS } from '@/lib/constants';
 interface User {
   email: string
   name: string
@@ -25,7 +25,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(() => {
     // Check if we are in a browser environment first (for SSR safety)
     if (typeof window !== "undefined") {
-      const storedUser = localStorage.getItem("area-user");
+      const storedUser = localStorage.getItem(STORAGE_KEYS.USER);
       return storedUser ? JSON.parse(storedUser) : null;
     }
     return null;
@@ -44,7 +44,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (foundUser) {
         const userData = { email: foundUser.email, name: foundUser.name }
         setUser(userData)
-        localStorage.setItem("area-user", JSON.stringify(userData))
+        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userData))
         return true
       }
 
@@ -78,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Auto-login after signup
       const userData = { email, name }
       setUser(userData)
-      localStorage.setItem("area-user", JSON.stringify(userData))
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userData))
 
       return true
     } catch (error) {
@@ -89,7 +89,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = () => {
     setUser(null)
-    localStorage.removeItem("area-user")
+    localStorage.removeItem(STORAGE_KEYS.USER);
+    localStorage.removeItem(STORAGE_KEYS.TOKEN);
   }
 
   return (

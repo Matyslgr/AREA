@@ -23,8 +23,6 @@ export const OAuthLoginButton = ({
     try {
       setIsLoading(true);
 
-      localStorage.setItem('oauth_provider', provider);
-
       const response = await api.get<{ url: string }>(`/auth/oauth/authorize/${provider}`);
 
       window.location.href = response.url;

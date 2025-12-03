@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { api } from "@/lib/api";
+import { STORAGE_KEYS } from '@/lib/constants';
 
 interface User {
   email: string;
@@ -15,7 +16,7 @@ export default function Dashboard() {
 
   const [user, setUser] = useState<User | null>(() => {
     if (typeof window !== "undefined") {
-      const storedUser = localStorage.getItem("area-user");
+      const storedUser = localStorage.getItem(STORAGE_KEYS.USER);
       return storedUser ? JSON.parse(storedUser) : null;
     }
     return null;
@@ -23,7 +24,7 @@ export default function Dashboard() {
 
   useEffect(() => {
 
-    const storedUser = localStorage.getItem("area-user");
+    const storedUser = localStorage.getItem(STORAGE_KEYS.USER);
 
     if (!storedUser) {
       navigate("/");
@@ -31,8 +32,8 @@ export default function Dashboard() {
   }, [navigate]);
 
   const handleLogout = () => {
-    localStorage.removeItem("area-user");
-    localStorage.removeItem("token");
+    localStorage.removeItem(STORAGE_KEYS.USER);
+    localStorage.removeItem(STORAGE_KEYS.TOKEN);
     setUser(null);
     navigate("/");
   };

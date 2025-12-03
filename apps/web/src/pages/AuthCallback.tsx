@@ -1,10 +1,15 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from "@/lib/api";
+import { STORAGE_KEYS } from '@/lib/constants';
 
 interface AuthResponse {
   token: string;
-  user: any;
+  user: {
+    id: string;
+    username: string;
+    email: string;
+  };
   message: string;
 }
 
@@ -67,8 +72,8 @@ export const AuthCallback = () => {
           });
 
           const { token, user } = data;
-          localStorage.setItem('token', token);
-          localStorage.setItem('area-user', JSON.stringify(user));
+          localStorage.setItem(STORAGE_KEYS.TOKEN, token);
+          localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
         }
         console.log("✅ Success:", data);
         navigate('/dashboard');
