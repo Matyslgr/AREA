@@ -9,8 +9,11 @@ export const getAccessToken = (
 ): string => {
   const account = user.accounts.find((a) => a.provider === provider);
 
-  if (!account || !account.access_token) {
-    throw new Error(`No connected account found for provider: ${provider}`);
+  if (!account) {
+    throw new Error(`No account found for provider: ${provider}`);
+  }
+  if (!account.access_token) {
+    throw new Error(`Account for provider '${provider}' exists but has no access token`);
   }
 
   return encryptionService.decrypt(account.access_token);
