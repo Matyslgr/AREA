@@ -14,6 +14,7 @@ export interface IAction<TParam = any, TState = any> {
   description: string;
   parameters: Parameter[];
   state: any;
+  scopes?: string[];
 
   /**
    * Verification function.
@@ -31,6 +32,7 @@ export interface IReaction<TParam = any> {
   name: string;
   description: string;
   parameters: Parameter[];
+  scopes?: string[];
 
   /**
    * Execution function.
