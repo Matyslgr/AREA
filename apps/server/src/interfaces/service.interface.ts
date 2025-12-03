@@ -1,5 +1,4 @@
-import { User } from '@prisma/client';
-
+import { UserWithAccounts } from '../types/user.types';
 export interface Parameter {
   name: string;
   description: string;
@@ -23,7 +22,7 @@ export interface IAction<TParam = any, TState = any> {
    * @param previousState The previous state stored for this action
    * @returns null if nothing, or a data object if triggered
    */
-  check: (user: User, params: TParam, previousState?: TState) => Promise<any | null>;
+  check: (user: UserWithAccounts, params: TParam, previousState?: TState) => Promise<any | null>;
 }
 
 // The Reaction (The Executor)
@@ -39,7 +38,7 @@ export interface IReaction<TParam = any> {
    * @param params The reaction parameters (ex: { channel_id: "123" })
    * @param actionData The data coming from the action (ex: { title: "Bug found" })
    */
-  execute: (user: User, params: TParam, actionData: any) => Promise<void>;
+  execute: (user: UserWithAccounts, params: TParam, actionData: any) => Promise<void>;
 }
 
 // The Service (The Group)

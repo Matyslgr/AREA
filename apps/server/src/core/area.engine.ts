@@ -17,13 +17,11 @@ export class AreaEngine {
     await Promise.all(areas.map((area) => this.processArea(area)));
   }
 
-  private async processArea(area: any) {
+  async processArea(area: any) {
     if (!area.action || !area.action.name)
       return;
 
-
     try {
-      // 1. Find the Service and Action definition in the Registry
       const service = serviceManager.getAllServices().find(s =>
         s.actions.find(a => a.id === area.action.name)
       );
@@ -36,22 +34,27 @@ export class AreaEngine {
       const actionDef = service.actions.find(a => a.id === area.action.name);
       if (!actionDef) return;
 
-      // 2. Execute the Check (Trigger)
-      // We use the state stored in the ACTION table (previous_state)
       const previousState = area.action.state || null;
 
-      // Call the action check function
-      // triggerData contains the context (e.g. { author: "Matys", title: "Bug" })
-      const triggerData = await actionDef.check(area.user, area.action.parameters, previousState);
+      const result = await actionDef.check(area.user, area.action.parameters, previousState);
 
-      // 3. If triggerData is null, nothing happened. Stop here.
-      if (!triggerData) return;
+      if (!result) return;
+
+      // Save new state if provided
+      if (result.save) {
+        await prisma.action.update({
+          where: { id: area.action.id },
+          data: { state: result.save }
+        });
+      }
+
+      // If no data returned, skip reactions
+      if (!result.data) return;
 
       console.log(`[Engine] ⚡ Triggered: ${area.name}`);
+      const triggerData = result.data;
 
-      // 4. Execute Reactions
       for (const reactionDb of area.reactions) {
-        // Find reaction definition
         const reactService = serviceManager.getAllServices().find(s =>
             s.reactions.find(r => r.id === reactionDb.name)
         );
@@ -80,14 +83,6 @@ export class AreaEngine {
           }
         }
       }
-
-      // 6. Sauvegarder le nouvel état pour la prochaine fois
-      // C'est CRUCIAL pour ne pas spammer
-      await prisma.action.update({
-        where: { id: area.action.id },
-        data: { state: triggerData }
-      });
-
     } catch (error) {
       console.error(`[Engine] Error processing AREA ${area.id}:`, error);
     }
@@ -118,3 +113,5 @@ export class AreaEngine {
     setInterval(() => this.checkTriggers(), intervalMs);
   }
 }
+
+export const areaEngine = new AreaEngine();

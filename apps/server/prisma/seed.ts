@@ -30,14 +30,14 @@ async function main() {
       action: {
         create: {
           name: 'TIMER_EVERY_X_MINUTES',
-          parameters: { interval: 0.1 }, // 0.1 min = 6 secondes (pour tester vite)
-          state: {} // État vide au début
+          parameters: { interval: 0.1 },
+          state: {}
         }
       },
 
       reactions: {
         create: {
-          name: 'TIMER_LOG', // L'ID de la réaction
+          name: 'TIMER_LOG',
           parameters: {
             message: "Action déclenchée le {{date}} à {{time}}."
           }

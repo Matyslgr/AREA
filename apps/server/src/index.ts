@@ -7,15 +7,18 @@ import swaggerUi from '@fastify/swagger-ui';
 import { oauthRoutes } from './routes/auth/oauth';
 import { signupRoute } from './routes/auth/signup';
 import { signinRoute } from './routes/auth/signin';
+import { areaRoutes } from './routes/areas.route';
 import { serviceManager } from './services/service.manager';
 import { TimerService } from './services/impl/timer/timer.service';
-import { AreaEngine } from './core/area.engine';
+import { GoogleService } from './services/impl/google/google.service';
+import { areaEngine } from './core/area.engine';
 
 const server = Fastify({
   logger: true
 });
 
 serviceManager.register(TimerService);
+serviceManager.register(GoogleService);
 
 const start = async () => {
   try {
@@ -47,11 +50,16 @@ const start = async () => {
       secret: process.env.JWT_SECRET || 'supersecret'
     });
 
-    // Register routes
-    server.get('/', async (request, reply) => {
-      return { hello: 'world' };
+    // Add authenticate decorator
+    server.decorate('authenticate', async (request: any, reply: any) => {
+      try {
+        await request.jwtVerify();
+      } catch (err) {
+        reply.status(401).send({ error: 'Unauthorized' });
+      }
     });
 
+    // Register routes
     server.get('/about.json', async (request, reply) => {
       return {
         client: {
@@ -64,11 +72,16 @@ const start = async () => {
       };
     });
 
+
+
     await server.register(oauthRoutes, { prefix: '/auth' });
 
     // Register auth routes
     server.route(signupRoute);
     server.route(signinRoute);
+
+    // Register area routes
+    await server.register(areaRoutes, { prefix: '/areas' });
 
     // Register Swagger UI last (after all routes)
     await server.register(swaggerUi, {
@@ -83,6 +96,9 @@ const start = async () => {
     await server.listen({ port: 8080, host: '0.0.0.0' });
     console.log('Server running at http://127.0.0.1:8080');
     console.log('Swagger docs available at http://127.0.0.1:8080/docs');
+
+    areaEngine.start(1000 * 10); // Check every 10 seconds
+
   } catch (err) {
     server.log.error(err);
     process.exit(1);
@@ -90,6 +106,3 @@ const start = async () => {
 };
 
 start();
-
-const areaEngine = new AreaEngine();
-areaEngine.start(1000 * 10); // Check every 10 seconds
