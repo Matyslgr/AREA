@@ -1,8 +1,14 @@
-import { createContext, useContext, useState, useEffect } from "react"
+/* eslint-disable react-refresh/only-export-components */
+import { createContext, useContext, useState } from "react"
 
 interface User {
   email: string
   name: string
+}
+
+// Interface locale pour typer les données brutes du localStorage
+interface StoredUser extends User {
+  password?: string
 }
 
 interface AuthContextType {
@@ -16,30 +22,29 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-
-  useEffect(() => {
-    // Check if user is logged in on mount
-    const storedUser = localStorage.getItem("area-user")
-    if (storedUser) {
-      setUser(JSON.parse(storedUser))
+  const [user, setUser] = useState<User | null>(() => {
+    // Check if we are in a browser environment first (for SSR safety)
+    if (typeof window !== "undefined") {
+      const storedUser = localStorage.getItem("area-user");
+      return storedUser ? JSON.parse(storedUser) : null;
     }
-  }, [])
+    return null;
+  });
 
   const login = async (email: string, password: string): Promise<boolean> => {
     // Demo authentication - in production, this would call your API
     try {
       const storedUsers = localStorage.getItem("area-users")
-      const users = storedUsers ? JSON.parse(storedUsers) : []
+      const users: StoredUser[] = storedUsers ? JSON.parse(storedUsers) : []
 
       const foundUser = users.find(
-        (u: any) => u.email === email && u.password === password
+        (u) => u.email === email && u.password === password
       )
 
       if (foundUser) {
-        const user = { email: foundUser.email, name: foundUser.name }
-        setUser(user)
-        localStorage.setItem("area-user", JSON.stringify(user))
+        const userData = { email: foundUser.email, name: foundUser.name }
+        setUser(userData)
+        localStorage.setItem("area-user", JSON.stringify(userData))
         return true
       }
 
@@ -58,10 +63,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Demo registration - in production, this would call your API
     try {
       const storedUsers = localStorage.getItem("area-users")
-      const users = storedUsers ? JSON.parse(storedUsers) : []
+      const users: StoredUser[] = storedUsers ? JSON.parse(storedUsers) : []
 
       // Check if user already exists
-      if (users.find((u: any) => u.email === email)) {
+      if (users.find((u) => u.email === email)) {
         return false
       }
 
@@ -71,9 +76,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem("area-users", JSON.stringify(users))
 
       // Auto-login after signup
-      const user = { email, name }
-      setUser(user)
-      localStorage.setItem("area-user", JSON.stringify(user))
+      const userData = { email, name }
+      setUser(userData)
+      localStorage.setItem("area-user", JSON.stringify(userData))
 
       return true
     } catch (error) {

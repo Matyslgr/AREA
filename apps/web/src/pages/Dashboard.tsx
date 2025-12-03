@@ -3,26 +3,36 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
+interface User {
+  email: string;
+  name?: string;
+  username?: string;
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [user, setUser] = useState<{ username: string; email: string } | null>(null);
+
+  const [user, setUser] = useState<User | null>(() => {
+    if (typeof window !== "undefined") {
+      const storedUser = localStorage.getItem("area-user");
+      return storedUser ? JSON.parse(storedUser) : null;
+    }
+    return null;
+  });
 
   useEffect(() => {
-    // 1. Vérification basique du token
-    const token = localStorage.getItem("token");
-    const storedUser = localStorage.getItem("user");
 
-    if (!token || !storedUser) {
-      navigate("/"); // Redirection vers login si pas connecté
-      return;
+    const storedUser = localStorage.getItem("area-user");
+
+    if (!storedUser) {
+      navigate("/");
     }
-
-    setUser(JSON.parse(storedUser));
   }, [navigate]);
 
   const handleLogout = () => {
+    localStorage.removeItem("area-user");
     localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    setUser(null);
     navigate("/");
   };
 
@@ -45,11 +55,11 @@ export default function Dashboard() {
         {/* Welcome Card */}
         <Card>
           <CardHeader>
-            <CardTitle>Welcome back, {user.username} 👋</CardTitle>
+            <CardTitle>Welcome back, {user.name || user.username} 👋</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground">
-              You are successfully authenticated via OAuth2 !
+              You are successfully authenticated!
             </p>
             <div className="mt-4 rounded-md bg-slate-100 p-4 font-mono text-sm dark:bg-slate-800">
               <p>Email: {user.email}</p>
