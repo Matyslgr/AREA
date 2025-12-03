@@ -1,9 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react"
-
-interface User {
-  email: string
-  name: string
-}
+import { authService } from "@/services/auth"
+import type { User } from "@/services/auth"
 
 interface AuthContextType {
   user: User | null
@@ -11,39 +8,39 @@ interface AuthContextType {
   signup: (name: string, email: string, password: string) => Promise<boolean>
   logout: () => void
   isAuthenticated: boolean
+  loading: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     // Check if user is logged in on mount
-    const storedUser = localStorage.getItem("area-user")
-    if (storedUser) {
-      setUser(JSON.parse(storedUser))
+    const initAuth = async () => {
+      try {
+        const token = authService.getStoredToken()
+        if (token) {
+          const currentUser = await authService.getCurrentUser()
+          setUser(currentUser)
+        }
+      } catch (error) {
+        console.error("Auth initialization error:", error)
+      } finally {
+        setLoading(false)
+      }
     }
+
+    initAuth()
   }, [])
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    // Demo authentication - in production, this would call your API
     try {
-      const storedUsers = localStorage.getItem("area-users")
-      const users = storedUsers ? JSON.parse(storedUsers) : []
-
-      const foundUser = users.find(
-        (u: any) => u.email === email && u.password === password
-      )
-
-      if (foundUser) {
-        const user = { email: foundUser.email, name: foundUser.name }
-        setUser(user)
-        localStorage.setItem("area-user", JSON.stringify(user))
-        return true
-      }
-
-      return false
+      const response = await authService.login({ email, password })
+      setUser(response.user)
+      return true
     } catch (error) {
       console.error("Login error:", error)
       return false
@@ -55,26 +52,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     email: string,
     password: string
   ): Promise<boolean> => {
-    // Demo registration - in production, this would call your API
     try {
-      const storedUsers = localStorage.getItem("area-users")
-      const users = storedUsers ? JSON.parse(storedUsers) : []
-
-      // Check if user already exists
-      if (users.find((u: any) => u.email === email)) {
-        return false
-      }
-
-      // Add new user
-      const newUser = { email, name, password }
-      users.push(newUser)
-      localStorage.setItem("area-users", JSON.stringify(users))
-
-      // Auto-login after signup
-      const user = { email, name }
-      setUser(user)
-      localStorage.setItem("area-user", JSON.stringify(user))
-
+      const response = await authService.signup({ name, email, password })
+      setUser(response.user)
       return true
     } catch (error) {
       console.error("Signup error:", error)
@@ -83,8 +63,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const logout = () => {
+    authService.logout()
     setUser(null)
-    localStorage.removeItem("area-user")
   }
 
   return (
@@ -95,6 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signup,
         logout,
         isAuthenticated: !!user,
+        loading,
       }}
     >
       {children}

@@ -1,41 +1,42 @@
-import { GalleryVerticalEnd } from "lucide-react"
-import { LoginForm } from "@/components/login-form"
-import { ThemeToggle } from "@/components/theme-toggle"
+import { SigninForm } from "@/components/signin-form"
+import Navbar from "@/components/Navbar"
+import "./SigninPage.css"
 
 export default function SigninPage() {
   return (
-    <div className="grid min-h-svh lg:grid-cols-2">
-      <div className="flex flex-col gap-4 p-6 md:p-10">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 font-medium">
-            <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
-              <GalleryVerticalEnd className="size-4" />
-            </div>
-            AREA
-          </div>
-          <ThemeToggle />
-        </div>
-        <div className="flex flex-1 items-center justify-center">
-          <div className="w-full max-w-xs">
-            <LoginForm />
-          </div>
+    <div className="signin-container">
+      <Navbar />
+
+      <div className="signin-main-section">
+        <div className="signin-form-wrapper">
+          <SigninForm />
         </div>
       </div>
-      <div className="relative hidden lg:block overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-yellow-400 via-amber-500 to-orange-600 dark:from-yellow-500 dark:via-yellow-600 dark:to-amber-700" />
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiMwMDAiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yLjIxIDEuNzktNCAzLjk5OC00QzQyLjIwOSAzMCA0NCAzMS43OSA0NCAzNGMwIDIuMjEtMS43OSA0LTQuMDAyIDRDMzcuNzg5IDM4IDM2IDM2LjIxIDM2IDM0eiIvPjwvZz48L2c+PC9zdmc+')] opacity-20 dark:opacity-10" />
-        <div className="absolute inset-0 flex items-center justify-center p-12">
-          <div className="space-y-6 text-center text-white">
-            <h2 className="text-4xl font-bold drop-shadow-lg">
-              Automate Your Workflow
-            </h2>
-            <p className="text-lg drop-shadow-md opacity-90">
-              Connect your favorite apps and services to create powerful
-              automation workflows.
+
+      <footer className="footer-section">
+        <div className="footer-content">
+          <div className="footer-left">
+            <h3 className="footer-brand">AREA</h3>
+            <p className="footer-tagline">
+              Automate your workflow by connecting your favorite apps and services.
+              Create powerful integrations to save time and boost productivity.
             </p>
+            <p className="footer-copyright">© 2025 AREA. All rights reserved.</p>
+          </div>
+
+          <div className="footer-right">
+            <h4 className="footer-services-title">Services</h4>
+            <div className="footer-services-grid">
+              <a href="/services/youtube" className="footer-service-link">YouTube</a>
+              <a href="/services/discord" className="footer-service-link">Discord</a>
+              <a href="/services/gmail" className="footer-service-link">Gmail</a>
+              <a href="/services/notion" className="footer-service-link">Notion</a>
+              <a href="/services/linkedin" className="footer-service-link">LinkedIn</a>
+              <a href="/services/github" className="footer-service-link">GitHub</a>
+            </div>
           </div>
         </div>
-      </div>
+      </footer>
     </div>
   )
 }

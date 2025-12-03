@@ -27,7 +27,7 @@ export default function HomePage() {
           <div className="hero-text-container">
             <div className="hero-text-wrapper">
               <h2 className="hero-title">
-                Welcome to AREA{user?.name ? `, ${user.name}` : ""} !
+                Welcome to AREA !
               </h2>
                 <p className="hero-description">
                 Automate your workflow by linking the accounts of your favorite apps and services.
