@@ -66,12 +66,12 @@ export class AreaEngine {
             // --- DATA INTERPOLATION START ---
             const dynamicParams = { ...(reactionDb.parameters as Record<string, any>) };
 
+            Object.keys(dynamicParams).forEach((key) => {
             // Loop through each parameter to replace {{variables}}
-            for (const key in dynamicParams) {
               if (typeof dynamicParams[key] === 'string') {
                 dynamicParams[key] = this.interpolate(dynamicParams[key], triggerData);
               }
-            }
+            });
             // --- DATA INTERPOLATION END ---
 
             await reactionDef.execute(area.user, dynamicParams, triggerData);
