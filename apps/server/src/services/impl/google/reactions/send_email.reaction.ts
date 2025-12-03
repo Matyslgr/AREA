@@ -1,7 +1,7 @@
-import { User } from '@prisma/client';
 import axios from 'axios';
 import { IReaction } from '../../../../interfaces/service.interface';
 import { getAccessToken } from '../../../../utils/token.utils';
+import { UserWithAccounts } from '../../../../types/user.types';
 
 interface GoogleSendEmailParams {
   to: string;
@@ -18,7 +18,8 @@ export const GoogleSendEmailReaction: IReaction<GoogleSendEmailParams> = {
     { name: 'subject', description: 'Subject Line', type: 'string', required: true },
     { name: 'body', description: 'Email Content', type: 'string', required: true },
   ],
-  execute: async (user: User, params: GoogleSendEmailParams, _actionData: any) => {
+  scopes: ['https://www.googleapis.com/auth/gmail.send'],
+  execute: async (user: UserWithAccounts, params: GoogleSendEmailParams, _actionData: any) => {
     try {
       const token = getAccessToken(user, 'google');
 

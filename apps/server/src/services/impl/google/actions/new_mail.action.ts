@@ -18,8 +18,12 @@ export const GoogleNewMailAction: IAction<GoogleNewMailParams, GoogleNewMailStat
   parameters: [
     { name: 'filter_subject', description: 'Filter by subject (optional)', type: 'string', required: false }
   ],
+  state: {
+    lastMessageId: ''
+  },
+  scopes: ['https://www.googleapis.com/auth/gmail.readonly'],
 
-  check: async (user: UserWithAccounts, params: GoogleNewMailParams, previousState: GoogleNewMailState) => {
+  check: async (user: UserWithAccounts, params: GoogleNewMailParams, previousState?: GoogleNewMailState) => {
     try {
       const token = getAccessToken(user, 'google');
 

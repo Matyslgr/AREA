@@ -18,7 +18,10 @@ export const EveryXMinutesAction: IAction<TimerActionParams, TimerState> = {
   parameters: [
     { name: 'interval', description: 'Interval (min)', type: 'number', required: true }
   ],
-  check: async (_user: UserWithAccounts, params: TimerActionParams, previousState: TimerState) => {
+  state: {
+    lastTrigger: 0
+  },
+  check: async (_user: UserWithAccounts, params: TimerActionParams, previousState?: TimerState) => {
     const interval = params.interval || 1; // Default 1 min
     const now = Date.now();
     const lastTrigger = previousState?.lastTrigger || 0;
