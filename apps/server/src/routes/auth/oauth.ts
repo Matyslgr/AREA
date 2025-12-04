@@ -1,8 +1,9 @@
 import '@fastify/jwt';
+import { prisma } from '../../lib/prisma';
 import { FastifyInstance } from 'fastify';
 import { AuthManager } from '../../services/auth/auth.manager';
 import { getAuthUrlSchema, loginSchema, linkSchema, getAccountsSchema, unlinkAccountSchema } from './oauth.schema';
-
+import { OAuthFactory } from '../../services/auth/oauth.factory';
 interface OAuthLoginBody {
   provider: string;
   code: string;
@@ -13,74 +14,97 @@ interface OAuthLinkBody {
   code: string;
 }
 
+interface AuthorizeQuery {
+  scope?: string;
+  mode?: 'login' | 'connect';
+}
+
 export async function oauthRoutes(fastify: FastifyInstance) {
   const authManager = new AuthManager();
 
-  fastify.get<{ Params: { provider: string } }>('/oauth/authorize/:provider', { schema: getAuthUrlSchema }, async (request, reply) => {
-    const { provider } = request.params;
+  fastify.get<{ Params: { provider: string }, Querystring: AuthorizeQuery }>('/oauth/authorize/:provider', {
+    schema: getAuthUrlSchema
+  }, async (request, reply) => {
+    const { provider: providerName } = request.params;
+    const {scope: requestedScope, mode } = request.query;
 
-    const providerConfigs: Record<string, { url: string; scopes: string }> = {
-      google: {
-        url: 'https://accounts.google.com/o/oauth2/v2/auth',
-        scopes: 'openid email profile'
-      },
-      github: {
-        url: 'https://github.com/login/oauth/authorize',
-        scopes: 'user:email'
-      },
-      spotify: {
-        url: 'https://accounts.spotify.com/authorize',
-        scopes: 'user-read-email user-read-private'
-      },
-      twitch: {
-        url: 'https://id.twitch.tv/oauth2/authorize',
-        scopes: 'user:read:email'
-      },
-      notion: {
-        url: 'https://api.notion.com/v1/oauth/authorize',
-        scopes: ''
-      },
-      linkedin: {
-        url: 'https://www.linkedin.com/oauth/v2/authorization',
-        scopes: 'openid profile email'
+    try {
+      const providerStrategy = OAuthFactory.getProvider(providerName);
+
+      const clientIdKey = `${providerName.toUpperCase()}_CLIENT_ID`;
+      const redirectUriKey = `${providerName.toUpperCase()}_REDIRECT_URI`;
+      const clientId = process.env[clientIdKey];
+      const redirectUri = process.env[redirectUriKey];
+
+      if (!clientId || !redirectUri) {
+        return reply.status(400).send({
+          error: `${providerName} OAuth not configured. Missing ${clientIdKey} or ${redirectUriKey}`
+        });
       }
-    };
 
-    const config = providerConfigs[provider.toLowerCase()];
-    if (!config) {
-      return reply.status(400).send({
-        error: `Provider "${provider}" not supported. Supported providers: ${Object.keys(providerConfigs).join(', ')}`
+      let finalScopeList: string[] = providerStrategy.defaultScopes;
+      if (requestedScope) {
+        finalScopeList.push(...requestedScope.split(' '));
+      }
+
+      const authHeader = request.headers.authorization;
+      if (authHeader) {
+        try {
+          const decoded = fastify.jwt.verify<{ id: string }>(authHeader.replace('Bearer ', ''));
+
+          const account = await prisma.account.findFirst({
+            where: { user_id: decoded.id, provider: providerName }
+          });
+          if (account && account.scope) {
+            finalScopeList.push(...account.scope.split(' '));
+          }
+        } catch (error) {
+          // Handle token verification error if needed
+        }
+      }
+
+      const uniqueScopes = Array.from(new Set(finalScopeList)).join(' ');
+      console.log('Unique Scopes:', uniqueScopes);
+
+      const statePayload = {
+        mode: mode || 'login',
+        provider: providerName,
+        // Optionnel (Niveau Expert) : Ajouter un 'nonce' aléatoire ici pour la sécurité CSRF
+        // nonce: crypto.randomBytes(16).toString('hex')
+      };
+
+      const state = Buffer.from(JSON.stringify(statePayload)).toString('base64url');
+
+      const params = new URLSearchParams({
+        client_id: clientId,
+        redirect_uri: redirectUri,
+        response_type: 'code',
+        scope: uniqueScopes,
+        state: state,
+        ...providerStrategy.getAuthUrlParameters()
+      });
+
+      const authUrl = `${providerStrategy.authorizationUrl}?${params.toString()}`;
+
+      return reply.send({
+        url: authUrl,
+        provider: providerName,
+        instructions: `1. Visit the URL above in your browser\n2. Authorize the application\n3. Copy the "code" parameter from the redirect URL\n4. Use that code in the /auth/oauth/login endpoint`
       });
     }
 
-    const clientIdKey = `${provider.toUpperCase()}_CLIENT_ID`;
-    const redirectUriKey = `${provider.toUpperCase()}_REDIRECT_URI`;
-    const clientId = process.env[clientIdKey];
-    const redirectUri = process.env[redirectUriKey];
-
-    if (!clientId || !redirectUri) {
-      return reply.status(400).send({
-        error: `${provider} OAuth not configured. Missing ${clientIdKey} or ${redirectUriKey}`
-      });
+    catch (error: any) {
+      request.log.error(error);
+      if (error.message.includes('not supported')) {
+        return reply.status(400).send({ error: error.message });
+      }
+      return reply.status(500).send({ error: 'Failed to generate OAuth authorization URL' });
     }
-
-    const params = new URLSearchParams({
-      client_id: clientId,
-      redirect_uri: redirectUri,
-      response_type: 'code',
-      ...(config.scopes && { scope: config.scopes })
-    });
-
-    const authUrl = `${config.url}?${params.toString()}`;
-
-    return reply.send({
-      url: authUrl,
-      provider,
-      instructions: `1. Visit the URL above in your browser\n2. Authorize the application\n3. Copy the "code" parameter from the redirect URL\n4. Use that code in the /auth/oauth/login endpoint`
-    });
   });
 
-  fastify.post<{ Body: OAuthLoginBody }>('/oauth/login', { schema: loginSchema }, async (request, reply) => {
+  fastify.post<{ Body: OAuthLoginBody }>('/oauth/login', {
+    schema: loginSchema
+  }, async (request, reply) => {
     const { provider, code } = request.body;
 
     try {

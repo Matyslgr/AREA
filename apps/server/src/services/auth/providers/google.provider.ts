@@ -1,6 +1,5 @@
 import { IOAuthProvider, OAuthTokens, OAuthUser } from '../../../interfaces/auth.interface';
-import { IHttpClient } from '../../../interfaces/http.interface';
-import { AxiosAdapter } from '../../../adapters/axios.adapter';
+import { IHttpClient, AxiosAdapter } from '@area/shared';
 
 interface GoogleTokenResponse {
   access_token: string;
@@ -24,6 +23,8 @@ interface GoogleUserInfoResponse {
 
 export class GoogleProvider implements IOAuthProvider {
   name = 'google';
+  authorizationUrl = 'https://accounts.google.com/o/oauth2/v2/auth';
+  defaultScopes = ['openid', 'email', 'profile'];
   private httpClient: IHttpClient;
 
   constructor(httpClient: IHttpClient = new AxiosAdapter()) {
@@ -52,6 +53,7 @@ export class GoogleProvider implements IOAuthProvider {
         access_token: data.access_token,
         refresh_token: data.refresh_token,
         expires_in: data.expires_in,
+        scope: data.scope,
       };
     } catch (error: any) {
       console.error('Google Token Error:', error.response?.data || error.message);
@@ -79,5 +81,13 @@ export class GoogleProvider implements IOAuthProvider {
       console.error('Google UserInfo Error:', error.response?.data || error.message);
       throw new Error('Failed to retrieve Google user info');
     }
+  }
+
+  getAuthUrlParameters(): Record<string, string> {
+    return {
+      access_type: 'offline',         // To get refresh token
+      prompt: 'consent',              // To force consent screen
+      include_granted_scopes: 'true'  // For security
+    };
   }
 }
