@@ -1,6 +1,15 @@
-import { createContext, useContext, useState, useEffect } from "react"
-import { authService } from "@/services/auth"
-import type { User } from "@/services/auth"
+/* eslint-disable react-refresh/only-export-components */
+import { createContext, useContext, useState } from "react"
+import { STORAGE_KEYS } from '@/lib/constants';
+interface User {
+  email: string
+  name: string
+}
+
+// Interface locale pour typer les données brutes du localStorage
+interface StoredUser extends User {
+  password?: string
+}
 
 interface AuthContextType {
   user: User | null
@@ -8,39 +17,38 @@ interface AuthContextType {
   signup: (name: string, email: string, password: string) => Promise<boolean>
   logout: () => void
   isAuthenticated: boolean
-  loading: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    // Check if user is logged in on mount
-    const initAuth = async () => {
-      try {
-        const token = authService.getStoredToken()
-        if (token) {
-          const currentUser = await authService.getCurrentUser()
-          setUser(currentUser)
-        }
-      } catch (error) {
-        console.error("Auth initialization error:", error)
-      } finally {
-        setLoading(false)
-      }
+  const [user, setUser] = useState<User | null>(() => {
+    // Check if we are in a browser environment first (for SSR safety)
+    if (typeof window !== "undefined") {
+      const storedUser = localStorage.getItem(STORAGE_KEYS.USER);
+      return storedUser ? JSON.parse(storedUser) : null;
     }
-
-    initAuth()
-  }, [])
+    return null;
+  });
 
   const login = async (email: string, password: string): Promise<boolean> => {
+    // Demo authentication - in production, this would call your API
     try {
-      const response = await authService.login({ email, password })
-      setUser(response.user)
-      return true
+      const storedUsers = localStorage.getItem("area-users")
+      const users: StoredUser[] = storedUsers ? JSON.parse(storedUsers) : []
+
+      const foundUser = users.find(
+        (u) => u.email === email && u.password === password
+      )
+
+      if (foundUser) {
+        const userData = { email: foundUser.email, name: foundUser.name }
+        setUser(userData)
+        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userData))
+        return true
+      }
+
+      return false
     } catch (error) {
       console.error("Login error:", error)
       return false
@@ -52,9 +60,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     email: string,
     password: string
   ): Promise<boolean> => {
+    // Demo registration - in production, this would call your API
     try {
-      const response = await authService.signup({ name, email, password })
-      setUser(response.user)
+      const storedUsers = localStorage.getItem("area-users")
+      const users: StoredUser[] = storedUsers ? JSON.parse(storedUsers) : []
+
+      // Check if user already exists
+      if (users.find((u) => u.email === email)) {
+        return false
+      }
+
+      // Add new user
+      const newUser = { email, name, password }
+      users.push(newUser)
+      localStorage.setItem("area-users", JSON.stringify(users))
+
+      // Auto-login after signup
+      const userData = { email, name }
+      setUser(userData)
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userData))
+
       return true
     } catch (error) {
       console.error("Signup error:", error)
@@ -63,8 +88,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const logout = () => {
-    authService.logout()
     setUser(null)
+    localStorage.removeItem(STORAGE_KEYS.USER);
+    localStorage.removeItem(STORAGE_KEYS.TOKEN);
   }
 
   return (
@@ -75,7 +101,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signup,
         logout,
         isAuthenticated: !!user,
-        loading,
       }}
     >
       {children}

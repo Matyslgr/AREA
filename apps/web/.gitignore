@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# To test localy
+apps/server/prisma/seed.local.ts

@@ -48,7 +48,7 @@ export function SignupForm({
         setError("Email already exists")
       }
     } catch (err) {
-      setError("An error occurred. Please try again.")
+      setError(`An error occurred during signup. Please try again. ${err}`)
     } finally {
       setLoading(false)
     }

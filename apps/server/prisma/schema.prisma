@@ -28,6 +28,7 @@ model Account {
   access_token        String
   refresh_token       String?
   expires_at          DateTime?
+  scope               String?
 
   // Relations
   user      User       @relation(fields: [user_id], references: [id], onDelete: Cascade)
@@ -47,18 +48,22 @@ model Area {
   user     User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
   action   Action?
   reactions Reaction[]
+
+  last_executed_at  DateTime?
+  error_log         String?
 }
 
 model Action {
-  id         String  @id @default(uuid())
-  area_id    String  @unique
-  account_id String?
-  name       String  // ex: "GITHUB_NEW_ISSUE"
-  parameters Json
+  id                String  @id @default(uuid())
+  area_id           String  @unique
+  account_id        String?
+  name              String  // ex: "GITHUB_NEW_ISSUE"
+  parameters        Json
+  state             Json?   // The memory of the Action
 
   // Relations
-  area    Area     @relation(fields: [area_id], references: [id], onDelete: Cascade)
-  account Account? @relation(fields: [account_id], references: [id])
+  area    Area      @relation(fields: [area_id], references: [id], onDelete: Cascade)
+  account Account?  @relation(fields: [account_id], references: [id])
 }
 
 model Reaction {

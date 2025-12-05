@@ -2,28 +2,54 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { api } from "@/lib/api";
+import { STORAGE_KEYS } from '@/lib/constants';
+
+interface User {
+  email: string;
+  name?: string;
+  username?: string;
+}
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [user, setUser] = useState<{ username: string; email: string } | null>(null);
+
+  const [user, setUser] = useState<User | null>(() => {
+    if (typeof window !== "undefined") {
+      const storedUser = localStorage.getItem(STORAGE_KEYS.USER);
+      return storedUser ? JSON.parse(storedUser) : null;
+    }
+    return null;
+  });
 
   useEffect(() => {
-    // 1. Vérification basique du token
-    const token = localStorage.getItem("token");
-    const storedUser = localStorage.getItem("user");
 
-    if (!token || !storedUser) {
-      navigate("/"); // Redirection vers login si pas connecté
-      return;
+    const storedUser = localStorage.getItem(STORAGE_KEYS.USER);
+
+    if (!storedUser) {
+      navigate("/");
     }
-
-    setUser(JSON.parse(storedUser));
   }, [navigate]);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    localStorage.removeItem(STORAGE_KEYS.USER);
+    localStorage.removeItem(STORAGE_KEYS.TOKEN);
+    setUser(null);
     navigate("/");
+  };
+
+  const handleConnectGmail = async () => {
+    try {
+      const scope = "https://www.googleapis.com/auth/gmail.send";
+      const encodedScope = encodeURIComponent(scope);
+      const { url } = await api.get<{ url: string }>(
+        `/auth/oauth/authorize/google?scope=${encodedScope}`
+      );
+
+      window.location.href = url;
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   if (!user) return null;
@@ -45,16 +71,19 @@ export default function Dashboard() {
         {/* Welcome Card */}
         <Card>
           <CardHeader>
-            <CardTitle>Welcome back, {user.username} 👋</CardTitle>
+            <CardTitle>Welcome back, {user.name || user.username} 👋</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground">
-              You are successfully authenticated via OAuth2 !
+              You are successfully authenticated!
             </p>
             <div className="mt-4 rounded-md bg-slate-100 p-4 font-mono text-sm dark:bg-slate-800">
               <p>Email: {user.email}</p>
               <p>Status: Connected</p>
             </div>
+            <Button onClick={handleConnectGmail} className="bg-blue-600 hover:bg-blue-700">
+              Connect your Gmail account
+            </Button>
           </CardContent>
         </Card>
 

@@ -1,7 +1,5 @@
 import { IOAuthProvider, OAuthTokens, OAuthUser } from '../../../interfaces/auth.interface';
-import { IHttpClient } from '../../../interfaces/http.interface';
-import { AxiosAdapter } from '../../../adapters/axios.adapter';
-
+import { IHttpClient, AxiosAdapter } from '@area/shared';
 interface NotionTokenResponse {
   access_token: string;
   bot_id: string;
@@ -25,6 +23,9 @@ interface NotionTokenResponse {
 
 export class NotionProvider implements IOAuthProvider {
   name = 'notion';
+  authorizationUrl = 'https://api.notion.com/v1/oauth/authorize';
+  defaultScopes = [];
+
   private httpClient: IHttpClient;
 
   constructor(httpClient: IHttpClient = new AxiosAdapter()) {
@@ -34,7 +35,6 @@ export class NotionProvider implements IOAuthProvider {
   async getTokens(code: string): Promise<OAuthTokens> {
     const url = 'https://api.notion.com/v1/oauth/token';
 
-    // 1. Basic Auth pour Notion (Base64 Encode)
     const clientId = process.env.NOTION_CLIENT_ID;
     const clientSecret = process.env.NOTION_CLIENT_SECRET;
     const encoded = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
@@ -56,7 +56,9 @@ export class NotionProvider implements IOAuthProvider {
       const userInfo = data.owner?.user;
       const fakeTokenPayload = JSON.stringify({
         real_token: data.access_token,
-        user_data: userInfo
+        user_data: userInfo,
+        bot_id: data.bot_id,
+        workspace_id: data.workspace_id,
       });
 
       const compositeToken = Buffer.from(fakeTokenPayload).toString('base64');
@@ -65,6 +67,7 @@ export class NotionProvider implements IOAuthProvider {
         access_token: compositeToken,
         refresh_token: undefined,
         expires_in: 0,
+        scope: '',
       };
     } catch (error: any) {
       console.error('Notion Token Error:', error.response?.data || error.message);
@@ -93,5 +96,12 @@ export class NotionProvider implements IOAuthProvider {
       console.error('Notion UserInfo Error:', error);
       throw new Error('Failed to parse Notion user info');
     }
+  }
+
+  getAuthUrlParameters(): Record<string, string> {
+    return {
+      owner: 'user',
+      response_type: 'code'
+    };
   }
 }
