@@ -1,5 +1,4 @@
-import { AxiosAdapter } from '@area/shared';
-import axios from 'axios';
+import axios, { type AxiosInstance } from 'axios';
 
 const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -16,33 +15,36 @@ axiosInstance.interceptors.request.use((config) => {
   return config;
 });
 
-export class FrontendHttpAdapter extends AxiosAdapter {
-  private instance: typeof axiosInstance;
+export class FrontendHttpAdapter {
+  private instance: AxiosInstance;
 
   constructor() {
-    super(axiosInstance);
     this.instance = axiosInstance;
   }
 
   async get<T>(url: string): Promise<T> {
-    return super.get<T>(url);
+    const response = await this.instance.get<T>(url);
+    return response.data;
   }
 
   async post<T>(url: string, data?: unknown): Promise<T> {
-    return super.post<T>(url, data);
+    const response = await this.instance.post<T>(url, data);
+    return response.data;
   }
 
   async put<T>(url: string, data?: unknown): Promise<T> {
-    return super.put<T>(url, data);
+    const response = await this.instance.put<T>(url, data);
+    return response.data;
   }
 
   async patch<T>(url: string, data?: unknown): Promise<T> {
-    const response = await this.instance.patch(url, data);
+    const response = await this.instance.patch<T>(url, data);
     return response.data;
   }
 
   async delete<T>(url: string): Promise<T> {
-    return super.delete<T>(url);
+    const response = await this.instance.delete<T>(url);
+    return response.data;
   }
 }
 
