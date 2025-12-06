@@ -43,8 +43,11 @@ export async function signinHandler(
     );
 
     return reply.status(200).send({
-      id: user.id,
-      email: user.email,
+      user: {
+        id: user.id,
+        email: user.email,
+        username: user.username
+      },
       token
     });
   } catch (error) {

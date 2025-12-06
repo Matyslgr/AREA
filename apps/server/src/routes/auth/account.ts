@@ -17,7 +17,7 @@ export async function accountRoutes(fastify: FastifyInstance) {
     schema: getAccountSchema,
     onRequest: [fastify.authenticate]
   }, async (request, reply) => {
-    const userId = request.user.id;
+    const userId = (request.user as any).userId;
 
     try {
       const accountDetails = await authManager.getAccountDetails(userId);
@@ -34,7 +34,7 @@ export async function accountRoutes(fastify: FastifyInstance) {
     schema: updateAccountSchema,
     onRequest: [fastify.authenticate]
   }, async (request, reply) => {
-    const userId = request.user.id;
+    const userId = (request.user as any).userId;
     const updates = request.body;
 
     try {

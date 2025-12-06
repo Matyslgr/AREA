@@ -143,7 +143,7 @@ export async function oauthRoutes(fastify: FastifyInstance) {
     onRequest: [fastify.authenticate]
   }, async (request, reply) => {
     const { provider, code } = request.body;
-    const userId = request.user.id;
+    const userId = (request.user as any).userId;
 
     try {
       const account = await authManager.linkOAuthAccount(userId, provider, code);
@@ -173,7 +173,7 @@ export async function oauthRoutes(fastify: FastifyInstance) {
     schema: getAccountsSchema,
     onRequest: [fastify.authenticate]
   }, async (request, reply) => {
-    const userId = request.user.id;
+    const userId = (request.user as any).userId;
 
     try {
       const accounts = await authManager.getLinkedAccounts(userId);
@@ -198,7 +198,7 @@ export async function oauthRoutes(fastify: FastifyInstance) {
     onRequest: [fastify.authenticate]
   }, async (request, reply) => {
     const { provider } = request.params;
-    const userId = request.user.id;
+    const userId = (request.user as any).userId;
 
     try {
       const result = await authManager.unlinkOAuthAccount(userId, provider);

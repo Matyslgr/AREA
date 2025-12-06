@@ -11,6 +11,9 @@ COPY packages ./packages
 
 RUN npm install
 
+# Build shared package first (required by server)
+RUN npm run build --workspace=@area/shared
+
 RUN npm run build --workspace=server
 
 FROM node:20-alpine AS runner
@@ -22,10 +25,13 @@ COPY --from=builder /app/apps/server/dist ./apps/server/dist
 COPY --from=builder /app/apps/server/package.json ./apps/server/package.json
 COPY --from=builder /app/apps/server/prisma ./apps/server/prisma
 
+# Copy shared package (required by server)
+COPY --from=builder /app/packages/shared ./packages/shared
+
 # Generate Prisma Client
 RUN npx prisma generate --schema=./apps/server/prisma/schema.prisma
 
 EXPOSE 8080
 
-# On lance le serveur
-CMD ["node", "apps/server/dist/index.js"]
+# Run migrations and start the server
+CMD ["sh", "-c", "npx prisma migrate deploy --schema=./apps/server/prisma/schema.prisma && node apps/server/dist/index.js"]

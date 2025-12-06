@@ -48,8 +48,11 @@ export async function signupHandler(
     );
 
     return reply.status(201).send({
-      id: user.id,
-      email: user.email,
+      user: {
+        id: user.id,
+        email: user.email,
+        username: user.username
+      },
       token
     });
   } catch (error) {
