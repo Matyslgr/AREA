@@ -11,6 +11,9 @@ interface AuthResponse {
     email: string;
   };
   message: string;
+  isNewUser?: boolean;
+  isNewAccount?: boolean;
+  hasPassword?: boolean;
 }
 
 const parseState = (state: string | null) => {
@@ -61,22 +64,48 @@ export const AuthCallback = () => {
         console.log(`🔄 Processing OAuth | Provider: ${provider} | Mode: ${mode}`);
 
         if (mode === 'connect') {
+          // Restore token from state if present (handles localhost <-> 127.0.0.1 issue)
+          const tokenFromState = stateData?.token;
+          if (tokenFromState) {
+            console.log("🔑 Restoring token from OAuth state:", tokenFromState.substring(0, 20) + "...");
+            localStorage.setItem('area-token', tokenFromState);
+          }
+
+          const token = localStorage.getItem('area-token');
+          console.log("🔗 CONNECT MODE - Token in localStorage:", token ? token.substring(0, 20) + "..." : "NULL");
+
           data = await api.post('/auth/oauth/link', {
             provider,
             code
           });
+          console.log("✅ Service linked successfully:", data);
+          navigate('/account-setup');
         } else {
-          data = await api.post('/auth/oauth/login', {
+          data = await api.post<AuthResponse>('/auth/oauth/login', {
             provider,
             code
           });
 
-          const { token, user } = data;
-          localStorage.setItem(STORAGE_KEYS.TOKEN, token);
+          const token = data.token;
+          const user = data.user;
+          const isNewUser = data.isNewUser;
+
+          if (!token) {
+            throw new Error("No token received from server");
+          }
+
+          console.log("Storing token:", token.substring(0, 20) + "...");
+          localStorage.setItem('area-token', token);
           localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+
+          if (isNewUser) {
+            console.log("🆕 New user, redirecting to account setup");
+            navigate('/account-setup');
+          } else {
+            console.log("👤 Existing user, redirecting to dashboard");
+            navigate('/dashboard');
+          }
         }
-        console.log("✅ Success:", data);
-        navigate('/dashboard');
 
       } catch (error) {
         console.error('Login failed', error);

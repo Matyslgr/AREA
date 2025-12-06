@@ -1,12 +1,13 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { ThemeProvider } from '@/components/theme-provider'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import SigninPage from './pages/SigninPage'
 import SignupPage from './pages/SignupPage'
 import HomePage from './pages/HomePage'
-import { AuthCallback } from '@/pages/AuthCallback';
-import Dashboard from '@/pages/Dashboard';
+import { AuthCallback } from '@/pages/AuthCallback'
+import Dashboard from '@/pages/Dashboard'
+import AccountSetup from '@/pages/AccountSetup'
 
 
 function App() {
@@ -15,7 +16,7 @@ function App() {
       <AuthProvider>
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Navigate to="/signin" replace />} />
+            <Route path="/" element={<HomePage />} />
             <Route path="/signin" element={<SigninPage />} />
             <Route path="/signup" element={<SignupPage />} />
             <Route
@@ -27,6 +28,7 @@ function App() {
               }
             />
             <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/account-setup" element={<AccountSetup />} />
             <Route path="/dashboard" element={<Dashboard />} />
           </Routes>
         </BrowserRouter>

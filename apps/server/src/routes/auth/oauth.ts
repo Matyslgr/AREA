@@ -50,10 +50,10 @@ export async function oauthRoutes(fastify: FastifyInstance) {
       const authHeader = request.headers.authorization;
       if (authHeader) {
         try {
-          const decoded = fastify.jwt.verify<{ id: string }>(authHeader.replace('Bearer ', ''));
+          const decoded = fastify.jwt.verify<{ userId: string }>(authHeader.replace('Bearer ', ''));
 
           const account = await prisma.account.findFirst({
-            where: { user_id: decoded.id, provider: providerName }
+            where: { user_id: decoded.userId, provider: providerName }
           });
           if (account && account.scope) {
             finalScopeList.push(...account.scope.split(' '));
@@ -66,12 +66,19 @@ export async function oauthRoutes(fastify: FastifyInstance) {
       const uniqueScopes = Array.from(new Set(finalScopeList)).join(' ');
       console.log('Unique Scopes:', uniqueScopes);
 
-      const statePayload = {
+      const statePayload: any = {
         mode: mode || 'login',
         provider: providerName,
-        // Optionnel (Niveau Expert) : Ajouter un 'nonce' aléatoire ici pour la sécurité CSRF
-        // nonce: crypto.randomBytes(16).toString('hex')
       };
+
+      if (mode === 'connect' && authHeader) {
+        try {
+          const token = authHeader.replace('Bearer ', '');
+          statePayload.token = token;
+        } catch (error) {
+          console.warn('Failed to include token in state:', error);
+        }
+      }
 
       const state = Buffer.from(JSON.stringify(statePayload)).toString('base64url');
 
@@ -111,7 +118,7 @@ export async function oauthRoutes(fastify: FastifyInstance) {
       const result = await authManager.loginWithOAuth(provider, code);
 
       const token = fastify.jwt.sign({
-        id: result.user.id,
+        userId: result.user.id,
         email: result.user.email,
         username: result.user.username
       });
@@ -143,7 +150,7 @@ export async function oauthRoutes(fastify: FastifyInstance) {
     onRequest: [fastify.authenticate]
   }, async (request, reply) => {
     const { provider, code } = request.body;
-    const userId = request.user.id;
+    const userId = (request.user as any).userId;
 
     try {
       const account = await authManager.linkOAuthAccount(userId, provider, code);
@@ -173,7 +180,7 @@ export async function oauthRoutes(fastify: FastifyInstance) {
     schema: getAccountsSchema,
     onRequest: [fastify.authenticate]
   }, async (request, reply) => {
-    const userId = request.user.id;
+    const userId = (request.user as any).userId;
 
     try {
       const accounts = await authManager.getLinkedAccounts(userId);
@@ -198,7 +205,7 @@ export async function oauthRoutes(fastify: FastifyInstance) {
     onRequest: [fastify.authenticate]
   }, async (request, reply) => {
     const { provider } = request.params;
-    const userId = request.user.id;
+    const userId = (request.user as any).userId;
 
     try {
       const result = await authManager.unlinkOAuthAccount(userId, provider);

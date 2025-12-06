@@ -22,8 +22,14 @@ export const signupSchema = {
       description: 'User created successfully',
       type: 'object',
       properties: {
-        id: { type: 'string' },
-        email: { type: 'string' },
+        user: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            email: { type: 'string' },
+            username: { type: 'string' }
+          }
+        },
         token: { type: 'string', description: 'JWT token for authentication' }
       }
     },
