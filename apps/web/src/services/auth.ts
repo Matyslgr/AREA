@@ -1,9 +1,10 @@
-import { apiClient } from "./api"
+import { api } from "@/lib/api"
 
 export interface User {
   id?: string
   email: string
-  name: string
+  username: string
+  name?: string // For backwards compatibility
 }
 
 export interface AuthResponse {
@@ -25,8 +26,8 @@ export interface LoginData {
 export const authService = {
   async signup(data: SignupData): Promise<AuthResponse> {
     try {
-      const response = await apiClient.post<AuthResponse>("/auth/signup", data)
-      apiClient.setToken(response.token)
+      const response = await api.post<AuthResponse>("/auth/signup", data)
+      localStorage.setItem("area-token", response.token)
       return response
     } catch (error: any) {
       throw new Error(error.message || "Signup failed")
@@ -35,8 +36,8 @@ export const authService = {
 
   async login(data: LoginData): Promise<AuthResponse> {
     try {
-      const response = await apiClient.post<AuthResponse>("/auth/signin", data)
-      apiClient.setToken(response.token)
+      const response = await api.post<AuthResponse>("/auth/signin", data)
+      localStorage.setItem("area-token", response.token)
       return response
     } catch (error: any) {
       throw new Error(error.message || "Login failed")
@@ -44,24 +45,24 @@ export const authService = {
   },
 
   async logout(): Promise<void> {
-    apiClient.setToken(null)
+    localStorage.removeItem("area-token")
   },
 
   async getCurrentUser(): Promise<User | null> {
     try {
-      const token = apiClient.getToken()
+      const token = localStorage.getItem("area-token")
       if (!token) return null
 
-      const user = await apiClient.get<User>("/auth/me")
+      const user = await api.get<User>("/auth/account")
       return user
     } catch (error) {
       // If token is invalid, clear it
-      apiClient.setToken(null)
+      localStorage.removeItem("area-token")
       return null
     }
   },
 
   getStoredToken(): string | null {
-    return apiClient.getToken()
+    return localStorage.getItem("area-token")
   },
 }

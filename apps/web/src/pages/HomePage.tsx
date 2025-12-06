@@ -1,6 +1,3 @@
-import { useAuth } from "@/contexts/AuthContext"
-import { useNavigate } from "react-router-dom"
-
 import { MyCarousel } from "@/components/MyCarousel"
 
 import Navbar from "@/components/Navbar"
@@ -9,13 +6,6 @@ import heroYoutube from "@/assets/yt_gmail_hero.png"
 import "./HomePage.css"
 
 export default function HomePage() {
-  const { user, logout } = useAuth()
-  const navigate = useNavigate()
-
-  const handleLogout = () => {
-    logout()
-    navigate("/signin")
-  }
 
   return (
     <div className="home-container">

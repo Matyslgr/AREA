@@ -65,6 +65,8 @@ export const AuthCallback = () => {
             provider,
             code
           });
+          console.log("✅ Success:", data);
+          navigate('/account-setup');
         } else {
           data = await api.post('/auth/oauth/login', {
             provider,
@@ -72,11 +74,11 @@ export const AuthCallback = () => {
           });
 
           const { token, user } = data;
-          localStorage.setItem(STORAGE_KEYS.TOKEN, token);
+          localStorage.setItem('area-token', token);
           localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+          console.log("✅ Success:", data);
+          navigate('/account-setup');
         }
-        console.log("✅ Success:", data);
-        navigate('/dashboard');
 
       } catch (error) {
         console.error('Login failed', error);

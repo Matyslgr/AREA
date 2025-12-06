@@ -1,5 +1,5 @@
 .signin-container {
-  min-height: 140vh;
+  min-height: 150vh;
   background-color: #91B7FF;
   display: flex;
   flex-direction: column;
@@ -11,9 +11,9 @@
   justify-content: center;
   align-items: flex-start;
   padding: 1rem;
-  padding-top: 15rem;
+  padding-top: 10rem;
   max-width: 95%;
-  width: 100%;
+  width: 80%;
   margin-left: auto;
   margin-right: auto;
 }
@@ -23,8 +23,140 @@
   border-radius: 0.75rem;
   padding: 2rem;
   box-shadow: 0 0.25rem 0.375rem rgba(0, 0, 0, 0.1);
+  display: flex;
+  gap: 0;
   width: 100%;
-  max-width: 28rem;
+}
+
+.signin-form-content {
+  flex: 1;
+  padding-right: 2rem;
+}
+
+.signin-separator {
+  width: 0.125rem;
+  background-color: #000;
+  min-height: 25rem;
+}
+
+.signin-services-section {
+  flex: 1;
+  display: flex;
+  padding-left: 2rem;
+}
+
+.signin-services-wrapper {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.signin-services-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  color: #1a1a1a;
+}
+
+.signin-services-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+}
+
+.service-button {
+  width: 75%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: white;
+}
+
+.service-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.service-button-google {
+  border: 2px solid #E8E8E8;
+  background-color: white;
+  color: #333;
+}
+
+.service-button-google:hover {
+  background-color: #d0d0d084;
+}
+
+.service-button-github {
+  border: 2px solid #000000;
+  background-color: white;
+  color: black;
+}
+
+.service-button-github:hover {
+  background-color: #1a1a1ad5;
+  color: white;
+}
+
+.service-button-spotify {
+  border: 2px solid #1DB954;
+  background-color: white;
+  color: #1DB954;
+}
+
+.service-button-spotify:hover {
+  background-color: #1DB954;
+  color: white;
+}
+
+.service-button-notion {
+  border: 2px solid #000000;
+  background-color: white;
+  color: black;
+}
+
+.service-button-notion:hover {
+  background-color: #000000;
+  color: white;
+}
+
+.service-button-linkedin {
+  border: 2px solid #0A66C2;
+  background-color: white;
+  color: #0A66C2;
+}
+
+.service-button-linkedin:hover {
+  background-color: #0A66C2;
+  color: white;
+}
+
+.service-button-twitch {
+  border: 2px solid #9146FF;
+  background-color: white;
+  color: #9146FF;
+}
+
+.service-button-twitch:hover {
+  background-color: #9146FF;
+  color: white;
 }
 
 
@@ -35,17 +167,29 @@
   }
 
   .signin-main-section {
+    max-width: 95%;
     padding: 1rem;
     padding-top: 5rem !important;
   }
 
   .signin-form-wrapper {
     padding: 1.5rem;
-    max-width: 30rem;
+  }
+
+  .signin-form-content {
+    padding-right: 1.5rem;
+  }
+
+  .signin-services-section {
+    padding-left: 1.5rem;
+  }
+
+  .service-button {
+    font-size: 0.9rem;
+    padding: 0.65rem 1.25rem;
   }
 
 }
-
 
 @media (width: 1024px) {
 
@@ -54,17 +198,29 @@
   }
 
   .signin-main-section {
+    max-width: 95%;
     padding: 1rem;
     padding-top: 20rem !important;
   }
 
   .signin-form-wrapper {
     padding: 1.5rem;
-    max-width: 30rem;
+  }
+
+  .signin-form-content {
+    padding-right: 1.5rem;
+  }
+
+  .signin-services-section {
+    padding-left: 1.5rem;
+  }
+
+  .service-button {
+    font-size: 0.9rem;
+    padding: 0.65rem 1.25rem;
   }
 
 }
-
 
 @media (max-width: 1023px) and (min-width: 810px) {
 
@@ -73,40 +229,75 @@
   }
 
   .signin-main-section {
+    max-width: 95%;
     padding: 1rem;
     padding-top: 15rem !important;
   }
 
   .signin-form-wrapper {
     padding: 1.5rem;
-    max-width: 28rem;
+  }
+
+  .signin-form-content {
+    padding-right: 1.5rem;
+  }
+
+  .signin-services-section {
+    padding-left: 1.5rem;
+  }
+
+  .service-button {
+    font-size: 0.9rem;
+    padding: 0.65rem 1.25rem;
   }
 
 }
 
-
-@media (max-width: 769px) {
+@media (max-width: 768px) {
 
   .signin-container {
-    min-height: 120vh;
+    min-height: 200vh;
   }
 
   .signin-form-wrapper {
+    flex-direction: column;
     padding: 2.5rem;
+  }
+
+  .signin-form-content {
+    padding-right: 0;
+    padding-bottom: 2rem;
+  }
+
+  .signin-separator {
+    width: 100%;
+    height: 0.125rem;
+    min-height: 0;
+    margin: 2rem 0;
+  }
+
+  .signin-services-section {
+    padding-left: 0;
+    padding-top: 1rem;
   }
 
   .signin-main-section {
     padding: 1.5rem;
     padding-top: 15rem;
+    width: 90%;
+  }
+
+  .service-button {
+    width: 100%;
+    max-width: 25rem;
   }
 
 }
 
-
 @media (max-width: 480px) {
 
   .signin-container {
-    min-height: 140vh;
+    min-height: 220vh;
   }
 
   .signin-form-wrapper {
@@ -117,6 +308,12 @@
   .signin-main-section {
     padding: 1rem;
     padding-top: 10rem;
+    width: 95%;
+  }
+
+  .service-button {
+    font-size: 0.9rem;
+    padding: 0.7rem 1.25rem;
   }
 
 }

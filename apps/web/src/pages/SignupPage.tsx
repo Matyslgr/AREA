@@ -10,8 +10,45 @@ import LinkedinIcon from "@/assets/signup-icons/linkedin.png"
 import NotionIcon from "@/assets/signup-icons/notion.png"
 import SpotifyIcon from "@/assets/signup-icons/spotify.png"
 import TwitchIcon from "@/assets/signup-icons/twitch.png"
+import { api } from "@/lib/api"
 
 export default function SignupPage() {
+  const handleOAuthSignup = async (provider: string) => {
+    try {
+      let scope = ""
+
+      switch (provider) {
+        case "google":
+          scope = "https://www.googleapis.com/auth/gmail.send"
+          break
+        case "github":
+          scope = "repo,user"
+          break
+        case "spotify":
+          scope = "user-read-email,user-read-private"
+          break
+        case "notion":
+          scope = ""
+          break
+        case "linkedin":
+          scope = "r_liteprofile,r_emailaddress"
+          break
+        case "twitch":
+          scope = "user:read:email"
+          break
+      }
+
+      const encodedScope = encodeURIComponent(scope)
+      const { url } = await api.get<{ url: string }>(
+        `/auth/oauth/authorize/${provider}?scope=${encodedScope}&mode=login`
+      )
+
+      window.location.href = url
+    } catch (err) {
+      console.error(`Failed to start OAuth with ${provider}:`, err)
+    }
+  }
+
   return (
     <div className="signup-container">
 

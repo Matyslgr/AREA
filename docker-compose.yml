@@ -20,12 +20,15 @@ services:
   # 2. SERVER (Fastify)
   # ---------------------------------------------------------------------------
   server:
+  
     container_name: area-server
     build:
       context: .
       dockerfile: apps/server/Dockerfile
     ports:
       - "8080:8080"
+    env_file:
+      - ./apps/server/.env
     environment:
       DATABASE_URL: postgres://user:password@db:5432/area
       PORT: 8080
@@ -45,7 +48,7 @@ services:
     ports:
       - "8081:8081"
     environment:
-      VITE_API_URL: http://127.0.0.1:8080
+      VITE_API_URL: http://localhost:8080
     depends_on:
       - server
     networks:

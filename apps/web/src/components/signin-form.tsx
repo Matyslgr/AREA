@@ -36,7 +36,7 @@ export function SigninForm({
     try {
       const success = await login(email, password)
       if (success) {
-        navigate("/home")
+        navigate("/dashboard")
       } else {
         setError("Invalid email or password")
       }
@@ -61,7 +61,7 @@ export function SigninForm({
           </p>
         </div>
         {error && (
-          <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+          <div className="rounded-md bg-red-50 p-3 text-sm text-red-600 border border-red-200">
             {error}
           </div>
         )}
@@ -92,7 +92,7 @@ export function SigninForm({
           </FieldDescription>
         </Field>
         <Field>
-          <Button type="submit" disabled={loading} className="w-full text-white shadow-md" style={{backgroundColor: '#6097FF'}}>
+            <Button type="submit" disabled={loading} className="w-3/4 text-white shadow-md mx-auto block" style={{ backgroundColor: '#6097FF' }}>
             {loading ? "Signing in..." : "Sign In"}
           </Button>
         </Field>

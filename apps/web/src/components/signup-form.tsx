@@ -7,7 +7,6 @@ import {
   FieldDescription,
   FieldGroup,
   FieldLabel,
-  FieldSeparator,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { useAuth } from "@/contexts/AuthContext"
@@ -41,9 +40,9 @@ export function SignupForm({
     setLoading(true)
 
     try {
-      const success = await signup("caca", email, password)
+      const success = await signup(email.split('@')[0], email, password)
       if (success) {
-        navigate("/home")
+        navigate("/account-setup")
       } else {
         setError("Email already exists")
       }
@@ -68,7 +67,7 @@ export function SignupForm({
           </p>
         </div>
         {error && (
-          <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+          <div className="rounded-md bg-red-50 p-3 text-sm text-red-600 border border-red-200">
             {error}
           </div>
         )}
@@ -113,9 +112,9 @@ export function SignupForm({
           </FieldDescription>
         </Field>
         <Field>
-          <Button type="submit" disabled={loading} className="w-full text-white shadow-md" style={{backgroundColor: '#6097FF'}}>
+            <Button type="submit" disabled={loading} className="w-3/4 text-white shadow-md mx-auto block" style={{backgroundColor: '#6097FF'}}>
             {loading ? "Creating Account..." : "Create Account"}
-          </Button>
+            </Button>
         </Field>
         <div className="text-center text-sm text-gray-600">
           Already have an account ?{" "}
