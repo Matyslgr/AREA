@@ -66,12 +66,19 @@ export async function oauthRoutes(fastify: FastifyInstance) {
       const uniqueScopes = Array.from(new Set(finalScopeList)).join(' ');
       console.log('Unique Scopes:', uniqueScopes);
 
-      const statePayload = {
+      const statePayload: any = {
         mode: mode || 'login',
         provider: providerName,
-        // Optionnel (Niveau Expert) : Ajouter un 'nonce' aléatoire ici pour la sécurité CSRF
-        // nonce: crypto.randomBytes(16).toString('hex')
       };
+
+      if (mode === 'connect' && authHeader) {
+        try {
+          const token = authHeader.replace('Bearer ', '');
+          statePayload.token = token;
+        } catch (error) {
+          console.warn('Failed to include token in state:', error);
+        }
+      }
 
       const state = Buffer.from(JSON.stringify(statePayload)).toString('base64url');
 

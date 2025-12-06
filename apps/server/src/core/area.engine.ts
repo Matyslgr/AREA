@@ -3,7 +3,6 @@ import { serviceManager } from '../services/service.manager';
 
 export class AreaEngine {
   async checkTriggers() {
-    console.log(`[Engine] 🕵️‍♂️ Checking active AREAs at ${new Date().toISOString()}...`);
 
     const areas = await prisma.area.findMany({
       where: { is_active: true },
