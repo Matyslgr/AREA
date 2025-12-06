@@ -75,8 +75,8 @@ export default function AccountSetup() {
       setAccountDetails(details)
       setPassword("")
       setConfirmPassword("")
-    } catch (err: any) {
-      setError(err.message || "Failed to set password")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to set password")
     }
   }
 
@@ -92,7 +92,7 @@ export default function AccountSetup() {
           scope = "repo,user"
           break
         case "spotify":
-          scope = "user-read-email,user-read-private"
+          scope = "user-read-email user-read-private"
           break
         case "notion":
           scope = ""

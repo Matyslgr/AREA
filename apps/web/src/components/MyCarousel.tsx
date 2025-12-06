@@ -31,11 +31,15 @@ export function MyCarousel() {
       return
     }
 
-    setCurrent(api.selectedScrollSnap())
-
-    api.on("select", () => {
+    const onSelect = () => {
       setCurrent(api.selectedScrollSnap())
-    })
+    }
+
+    api.on("select", onSelect)
+
+    return () => {
+      api.off("select", onSelect)
+    }
   }, [api])
 
   return (

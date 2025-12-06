@@ -25,7 +25,7 @@ export default function SignupPage() {
           scope = "repo,user"
           break
         case "spotify":
-          scope = "user-read-email,user-read-private"
+          scope = "user-read-email user-read-private"
           break
         case "notion":
           scope = ""

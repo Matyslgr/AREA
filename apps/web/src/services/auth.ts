@@ -29,8 +29,8 @@ export const authService = {
       const response = await api.post<AuthResponse>("/auth/signup", data)
       localStorage.setItem("area-token", response.token)
       return response
-    } catch (error: any) {
-      throw new Error(error.message || "Signup failed")
+    } catch (error) {
+      throw new Error(error instanceof Error ? error.message : "Signup failed")
     }
   },
 
@@ -39,8 +39,8 @@ export const authService = {
       const response = await api.post<AuthResponse>("/auth/signin", data)
       localStorage.setItem("area-token", response.token)
       return response
-    } catch (error: any) {
-      throw new Error(error.message || "Login failed")
+    } catch (error) {
+      throw new Error(error instanceof Error ? error.message : "Login failed")
     }
   },
 

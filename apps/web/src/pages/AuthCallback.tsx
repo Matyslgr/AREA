@@ -81,14 +81,14 @@ export const AuthCallback = () => {
           console.log("✅ Service linked successfully:", data);
           navigate('/account-setup');
         } else {
-          data = await api.post('/auth/oauth/login', {
+          data = await api.post<AuthResponse>('/auth/oauth/login', {
             provider,
             code
           });
 
-          const token = (data as any).token;
-          const user = (data as any).user;
-          const isNewUser = (data as any).isNewUser;
+          const token = data.token;
+          const user = data.user;
+          const isNewUser = data.isNewUser;
 
           if (!token) {
             throw new Error("No token received from server");
