@@ -69,7 +69,7 @@ export default function AccountSetup() {
     }
 
     try {
-      await api.patch("/auth/account", { password })
+      await api.post("/auth/account/password", { password })
       // Refresh account details
       const details = await api.get<AccountDetails>("/auth/account")
       setAccountDetails(details)
