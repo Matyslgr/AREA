@@ -10,6 +10,9 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  optimizeDeps: {
+    include: ['@area/shared']
+  },
   server: {
     port: 8081,
     strictPort: true,
