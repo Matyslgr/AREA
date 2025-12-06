@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import Navbar from "@/components/Navbar"
-import { useAuth } from "@/contexts/AuthContext"
 import { api } from "@/lib/api"
 import "./AccountSetup.css"
 
@@ -26,7 +25,6 @@ interface AccountDetails {
 
 export default function AccountSetup() {
   const navigate = useNavigate()
-  const { user } = useAuth()
   const [accountDetails, setAccountDetails] = useState<AccountDetails | null>(null)
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
@@ -34,7 +32,9 @@ export default function AccountSetup() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!user) {
+    // Check token instead of user to allow OAuth redirect
+    const token = localStorage.getItem('area-token')
+    if (!token) {
       navigate("/signin")
       return
     }
@@ -52,7 +52,7 @@ export default function AccountSetup() {
     }
 
     fetchAccountDetails()
-  }, [user, navigate])
+  }, [navigate])
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

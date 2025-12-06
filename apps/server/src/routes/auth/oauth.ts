@@ -50,10 +50,10 @@ export async function oauthRoutes(fastify: FastifyInstance) {
       const authHeader = request.headers.authorization;
       if (authHeader) {
         try {
-          const decoded = fastify.jwt.verify<{ id: string }>(authHeader.replace('Bearer ', ''));
+          const decoded = fastify.jwt.verify<{ userId: string }>(authHeader.replace('Bearer ', ''));
 
           const account = await prisma.account.findFirst({
-            where: { user_id: decoded.id, provider: providerName }
+            where: { user_id: decoded.userId, provider: providerName }
           });
           if (account && account.scope) {
             finalScopeList.push(...account.scope.split(' '));
@@ -111,7 +111,7 @@ export async function oauthRoutes(fastify: FastifyInstance) {
       const result = await authManager.loginWithOAuth(provider, code);
 
       const token = fastify.jwt.sign({
-        id: result.user.id,
+        userId: result.user.id,
         email: result.user.email,
         username: result.user.username
       });

@@ -66,27 +66,27 @@ export default function SignupPage() {
             <div className="signup-services-wrapper">
               <h3 className="signup-services-title">Or create an account with</h3>
               <div className="signup-services-content">
-                <button className="service-button service-button-google">
+                <button className="service-button service-button-google" onClick={() => handleOAuthSignup("google")}>
                   <img src={GoogleIcon} alt="Google" className="service-icon" />
                   Google
                 </button>
-                <button className="service-button service-button-github">
+                <button className="service-button service-button-github" onClick={() => handleOAuthSignup("github")}>
                   <img src={GithubIcon} alt="Github" className="service-icon" />
                   Github
                 </button>
-                <button className="service-button service-button-spotify">
+                <button className="service-button service-button-spotify" onClick={() => handleOAuthSignup("spotify")}>
                   <img src={SpotifyIcon} alt="Spotify" className="service-icon" />
                   Spotify
                 </button>
-                <button className="service-button service-button-notion">
+                <button className="service-button service-button-notion" onClick={() => handleOAuthSignup("notion")}>
                   <img src={NotionIcon} alt="Notion" className="service-icon" />
                   Notion
                 </button>
-                <button className="service-button service-button-linkedin">
+                <button className="service-button service-button-linkedin" onClick={() => handleOAuthSignup("linkedin")}>
                   <img src={LinkedinIcon} alt="LinkedIn" className="service-icon" />
                   LinkedIn
                 </button>
-                <button className="service-button service-button-twitch">
+                <button className="service-button service-button-twitch" onClick={() => handleOAuthSignup("twitch")}>
                   <img src={TwitchIcon} alt="Twitch" className="service-icon" />
                   Twitch
                 </button>

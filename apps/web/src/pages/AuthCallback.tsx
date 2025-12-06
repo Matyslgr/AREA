@@ -11,6 +11,9 @@ interface AuthResponse {
     email: string;
   };
   message: string;
+  isNewUser?: boolean;
+  isNewAccount?: boolean;
+  hasPassword?: boolean;
 }
 
 const parseState = (state: string | null) => {
@@ -65,7 +68,6 @@ export const AuthCallback = () => {
             provider,
             code
           });
-          console.log("✅ Success:", data);
           navigate('/account-setup');
         } else {
           data = await api.post('/auth/oauth/login', {
@@ -73,11 +75,25 @@ export const AuthCallback = () => {
             code
           });
 
-          const { token, user } = data;
+          const token = (data as any).token;
+          const user = (data as any).user;
+          const isNewUser = (data as any).isNewUser;
+
+          if (!token) {
+            throw new Error("No token received from server");
+          }
+
+          console.log("Storing token:", token.substring(0, 20) + "...");
           localStorage.setItem('area-token', token);
           localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
-          console.log("✅ Success:", data);
-          navigate('/account-setup');
+
+          if (isNewUser) {
+            console.log("🆕 New user, redirecting to account setup");
+            navigate('/account-setup');
+          } else {
+            console.log("👤 Existing user, redirecting to dashboard");
+            navigate('/dashboard');
+          }
         }
 
       } catch (error) {

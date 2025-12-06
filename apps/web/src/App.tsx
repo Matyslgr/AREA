@@ -28,14 +28,7 @@ function App() {
               }
             />
             <Route path="/auth/callback" element={<AuthCallback />} />
-            <Route
-              path="/account-setup"
-              element={
-                <ProtectedRoute>
-                  <AccountSetup />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/account-setup" element={<AccountSetup />} />
             <Route path="/dashboard" element={<Dashboard />} />
           </Routes>
         </BrowserRouter>
