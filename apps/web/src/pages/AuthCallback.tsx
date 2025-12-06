@@ -64,10 +64,21 @@ export const AuthCallback = () => {
         console.log(`🔄 Processing OAuth | Provider: ${provider} | Mode: ${mode}`);
 
         if (mode === 'connect') {
+          // Restore token from state if present (handles localhost <-> 127.0.0.1 issue)
+          const tokenFromState = stateData?.token;
+          if (tokenFromState) {
+            console.log("🔑 Restoring token from OAuth state:", tokenFromState.substring(0, 20) + "...");
+            localStorage.setItem('area-token', tokenFromState);
+          }
+
+          const token = localStorage.getItem('area-token');
+          console.log("🔗 CONNECT MODE - Token in localStorage:", token ? token.substring(0, 20) + "..." : "NULL");
+
           data = await api.post('/auth/oauth/link', {
             provider,
             code
           });
+          console.log("✅ Service linked successfully:", data);
           navigate('/account-setup');
         } else {
           data = await api.post('/auth/oauth/login', {

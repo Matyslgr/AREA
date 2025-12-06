@@ -29,7 +29,7 @@ export default function SigninPage() {
           scope = ""
           break
         case "linkedin":
-          scope = "r_liteprofile,r_emailaddress"
+          scope = "openid profile email"
           break
         case "twitch":
           scope = "user:read:email"

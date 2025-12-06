@@ -56,8 +56,9 @@ export const authService = {
       const user = await api.get<User>("/auth/account")
       return user
     } catch (error) {
-      // If token is invalid, clear it
-      localStorage.removeItem("area-token")
+      // Don't clear token automatically - let the user explicitly logout
+      // This prevents token from being cleared during OAuth callback flow
+      console.warn("Failed to get current user:", error)
       return null
     }
   },

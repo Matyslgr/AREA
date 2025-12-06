@@ -17,6 +17,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Don't initialize auth on OAuth callback page to prevent token interference
+    if (window.location.pathname === '/auth/callback') {
+      setLoading(false)
+      return
+    }
+
     // Check if user is logged in on mount
     const initAuth = async () => {
       try {
