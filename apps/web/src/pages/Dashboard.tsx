@@ -1,105 +1,173 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Search, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { api } from "@/lib/api";
-import { STORAGE_KEYS } from '@/lib/constants';
+import Navbar from "@/components/Navbar";
+import "@/styles/Dashboard.css";
 
-interface User {
-  email: string;
-  name?: string;
-  username?: string;
+interface Area {
+  id: string;
+  name: string;
+  is_active: boolean;
+  user_id: string;
+  last_executed_at?: string | null;
+  error_log?: string | null;
+  action: {
+    name: string;
+    parameters: Record<string, unknown>;
+  };
+  reactions: Array<{
+    name: string;
+    parameters: Record<string, unknown>;
+  }>;
 }
+
+const getServiceFromAction = (actionName: string): string => {
+  if (actionName.startsWith("GITHUB_")) return "github";
+  if (actionName.startsWith("GOOGLE_")) return "google";
+  if (actionName.startsWith("GMAIL_")) return "google";
+  if (actionName.startsWith("DISCORD_")) return "discord";
+  if (actionName.startsWith("SPOTIFY_")) return "spotify";
+  if (actionName.startsWith("TWITCH_")) return "twitch";
+  if (actionName.startsWith("NOTION_")) return "notion";
+  if (actionName.startsWith("LINKEDIN_")) return "linkedin";
+  return "unknown";
+};
+
+const serviceIcons: Record<string, string> = {
+  github: "/assets/github.png",
+  google: "/assets/google.png",
+  discord: "/assets/discord.png",
+  spotify: "/assets/spotify.png",
+  twitch: "/assets/twitch.png",
+  notion: "/assets/notion.png",
+  linkedin: "/assets/linkedin.png",
+};
 
 export default function Dashboard() {
   const navigate = useNavigate();
-
-  const [user, setUser] = useState<User | null>(() => {
-    if (typeof window !== "undefined") {
-      const storedUser = localStorage.getItem(STORAGE_KEYS.USER);
-      return storedUser ? JSON.parse(storedUser) : null;
-    }
-    return null;
-  });
+  const [areas, setAreas] = useState<Area[]>([]);
+  const [filteredAreas, setFilteredAreas] = useState<Area[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    fetchAreas();
+  }, []);
 
-    const storedUser = localStorage.getItem(STORAGE_KEYS.USER);
-
-    if (!storedUser) {
-      navigate("/");
-    }
-  }, [navigate]);
-
-  const handleLogout = () => {
-    localStorage.removeItem(STORAGE_KEYS.USER);
-    localStorage.removeItem(STORAGE_KEYS.TOKEN);
-    setUser(null);
-    navigate("/");
-  };
-
-  const handleConnectGmail = async () => {
-    try {
-      const scope = "https://www.googleapis.com/auth/gmail.send";
-      const encodedScope = encodeURIComponent(scope);
-      const { url } = await api.get<{ url: string }>(
-        `/auth/oauth/authorize/google?scope=${encodedScope}`
+  useEffect(() => {
+    if (searchQuery.trim() === "") {
+      setFilteredAreas(areas);
+    } else {
+      setFilteredAreas(
+        areas.filter((area) =>
+          area.name.toLowerCase().includes(searchQuery.toLowerCase())
+        )
       );
+    }
+  }, [searchQuery, areas]);
 
-      window.location.href = url;
-    } catch (err) {
-      console.error(err);
+  const fetchAreas = async () => {
+    try {
+      const data = await api.get<Area[]>("/areas");
+      setAreas(data);
+      setFilteredAreas(data);
+    } catch (error) {
+      console.error("Failed to fetch areas:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (!user) return null;
+  const handleCreateArea = () => {
+    navigate("/areas/create");
+  };
+
+  const getUniqueServices = (area: Area): string[] => {
+    const services = new Set<string>();
+    services.add(getServiceFromAction(area.action.name));
+    area.reactions.forEach((reaction) => {
+      services.add(getServiceFromAction(reaction.name));
+    });
+    return Array.from(services).filter((s) => s !== "unknown");
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8 dark:bg-zinc-900">
-      <div className="mx-auto max-w-4xl space-y-8">
+    <div className="dashboard-container">
+      <Navbar />
 
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
-            Dashboard
-          </h1>
-          <Button variant="destructive" onClick={handleLogout}>
-            Logout
+      <div className="dashboard-content">
+        <h1 className="dashboard-title">My AREAs</h1>
+
+        <div className="dashboard-actions">
+          <div className="search-bar">
+            <Search className="search-icon" />
+            <input
+              type="text"
+              placeholder="Search areas..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="search-input"
+            />
+          </div>
+
+          <Button
+            onClick={handleCreateArea}
+            className="create-button"
+          >
+            <Plus className="h-5 w-5" />
+            Create
           </Button>
         </div>
 
-        {/* Welcome Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Welcome back, {user.name || user.username} 👋</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">
-              You are successfully authenticated!
-            </p>
-            <div className="mt-4 rounded-md bg-slate-100 p-4 font-mono text-sm dark:bg-slate-800">
-              <p>Email: {user.email}</p>
-              <p>Status: Connected</p>
-            </div>
-            <Button onClick={handleConnectGmail} className="bg-blue-600 hover:bg-blue-700">
-              Connect your Gmail account
-            </Button>
-          </CardContent>
-        </Card>
+        {loading ? (
+          <div className="loading-state">Loading your areas...</div>
+        ) : filteredAreas.length === 0 ? (
+          <div className="empty-state">
+            <p>No areas found{searchQuery && ` matching "${searchQuery}"`}.</p>
+            {!searchQuery && (
+              <Button onClick={handleCreateArea} className="create-first-button">
+                Create your first AREA
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="areas-grid">
+            {filteredAreas.map((area) => (
+              <div key={area.id} className="area-card">
+                <div className="area-header">
+                  <h3 className="area-name">{area.name}</h3>
+                  <div className={`area-status ${area.is_active ? "active" : "inactive"}`}>
+                    <span className="status-dot"></span>
+                    {area.is_active ? "Active" : "Inactive"}
+                  </div>
+                </div>
 
-        {/* Placeholder for future AREAs */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <Card key={i} className="opacity-50">
-              <CardHeader>
-                <CardTitle className="text-lg">Service Integration {i}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                Coming soon...
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                <div className="area-services">
+                  {getUniqueServices(area).map((service) => (
+                    <div key={service} className="service-icon-wrapper">
+                      <img
+                        src={serviceIcons[service] || "/assets/default.png"}
+                        alt={service}
+                        className="service-icon"
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                <div className="area-footer">
+                  <span className="area-action-label">
+                    {area.action.name.replace(/_/g, " ")}
+                  </span>
+                  <span className="area-reactions-count">
+                    {area.reactions.length} reaction{area.reactions.length > 1 ? "s" : ""}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
