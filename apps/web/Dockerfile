@@ -1,6 +1,10 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
+# Build arguments for environment variables
+ARG VITE_API_URL
+ENV VITE_API_URL=${VITE_API_URL}
+
 # Copiez les fichiers nécessaires pour la construction
 COPY package.json turbo.json package-lock.json ./
 COPY apps/server ./apps/server
