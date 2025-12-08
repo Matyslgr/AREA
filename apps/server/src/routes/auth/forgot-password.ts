@@ -1,5 +1,5 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import prisma from '../../lib/prisma';
+import { prisma } from '../../lib/prisma';
 import crypto from 'crypto';
 import { forgotPasswordSchema } from './forgot-password.schema';
 import { NodemailerEmailAdapter } from '../../adapters/nodemailer-email.adapter';
