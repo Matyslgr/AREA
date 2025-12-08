@@ -33,11 +33,11 @@ export default function ForgotPasswordPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#91B7FF] to-[#7BA5FF] flex items-center justify-center p-4">
       <Navbar />
-      <Card className="w-full max-w-md shadow-xl border-0 bg-white pt-28">
-        <CardHeader className="text-center space-y-2">
-          <div className="mx-auto bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mb-2">
-            <Mail className="h-8 w-8 text-[#6097FF]" />
-          </div>
+      <Card className="w-full max-w-md shadow-xl border-0 bg-white pt-28 relative">
+        <div className="absolute top-12 left-1/2 transform -translate-x-1/2 bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center">
+          <Mail className="h-8 w-8 text-[#6097FF]" />
+        </div>
+        <CardHeader className="text-center space-y-2 mt-8">
           <CardTitle className="text-2xl font-bold text-gray-900">Forgot Password?</CardTitle>
           <CardDescription className="text-gray-600">
             No worries, we'll send you reset instructions
