@@ -1,14 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react"
 import { authService, type User } from "@/services/auth"
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080"
-
-interface User {
-  id: number
-  email: string
-  name?: string
-}
-
 interface AuthContextType {
   user: User | null
   login: (email: string, password: string) => Promise<boolean>
