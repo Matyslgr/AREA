@@ -61,9 +61,9 @@ export function ResetPasswordForm({
 
             if (response.ok) {
                 setSuccess(true)
-                // Redirect to login after 2 seconds
+                // Redirect to signin after 2 seconds
                 setTimeout(() => {
-                    navigate("/login")
+                    navigate("/signin")
                 }, 2000)
             } else {
                 setError(data.error || "An error occurred. Please try again.")
@@ -158,7 +158,7 @@ export function ResetPasswordForm({
 
                 <FieldDescription className="text-center mt-4">
                     Remember your password?{" "}
-                    <Link to="/login" className="underline underline-offset-4">
+                    <Link to="/signin" className="underline underline-offset-4">
                         Back to Login
                     </Link>
                 </FieldDescription>

@@ -1,10 +1,8 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../../lib/prisma';
 import crypto from 'crypto';
 import { forgotPasswordSchema } from './forgot-password.schema';
 import { NodemailerEmailAdapter } from '../../adapters/nodemailer-email.adapter';
-
-const prisma = new PrismaClient();
 const emailService = new NodemailerEmailAdapter();
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 const RESET_TOKEN_EXPIRATION_HOURS = parseInt(process.env.RESET_TOKEN_EXPIRATION || '1');
