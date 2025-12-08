@@ -1,7 +1,5 @@
 import { IOAuthProvider, OAuthTokens, OAuthUser } from '../../../interfaces/auth.interface';
-import { IHttpClient } from '../../../interfaces/http.interface';
-import { AxiosAdapter } from '../../../adapters/axios.adapter';
-
+import { IHttpClient, AxiosAdapter } from '@area/shared';
 interface GitHubTokenResponse {
   access_token: string;
   scope: string;
@@ -25,6 +23,9 @@ interface GitHubEmailResponse {
 
 export class GithubProvider implements IOAuthProvider {
   name = 'github';
+  authorizationUrl = 'https://github.com/login/oauth/authorize';
+  defaultScopes = ['user:email', 'read:user'];
+
   private httpClient: IHttpClient;
 
   constructor(httpClient: IHttpClient = new AxiosAdapter()) {
@@ -51,6 +52,7 @@ export class GithubProvider implements IOAuthProvider {
         access_token: data.access_token,
         refresh_token: undefined,
         expires_in: 0,
+        scope: data.scope,
       };
     } catch (error: any) {
       console.error('GitHub Token Error:', error.response?.data || error.message);
@@ -89,5 +91,9 @@ export class GithubProvider implements IOAuthProvider {
       console.error('GitHub UserInfo Error:', error.response?.data || error.message);
       throw new Error('Failed to retrieve GitHub user info');
     }
+  }
+
+  getAuthUrlParameters(): Record<string, string> {
+    return {};
   }
 }

@@ -1,7 +1,5 @@
 import { IOAuthProvider, OAuthTokens, OAuthUser } from '../../../interfaces/auth.interface';
-import { IHttpClient } from '../../../interfaces/http.interface';
-import { AxiosAdapter } from '../../../adapters/axios.adapter';
-
+import { IHttpClient, AxiosAdapter } from '@area/shared';
 // Spotify raw response types
 interface SpotifyTokenResponse {
   access_token: string;
@@ -21,6 +19,9 @@ interface SpotifyUserResponse {
 
 export class SpotifyProvider implements IOAuthProvider {
   name = 'spotify';
+  authorizationUrl = 'https://accounts.spotify.com/authorize';
+  defaultScopes = ['user-read-email', 'user-read-private'];
+
   private httpClient: IHttpClient;
 
   constructor(httpClient: IHttpClient = new AxiosAdapter()) {
@@ -51,6 +52,7 @@ export class SpotifyProvider implements IOAuthProvider {
         access_token: data.access_token,
         refresh_token: data.refresh_token,
         expires_in: data.expires_in,
+        scope: data.scope,
       };
     } catch (error: any) {
       console.error('Spotify Token Error:', error.response?.data || error.message);
@@ -62,12 +64,14 @@ export class SpotifyProvider implements IOAuthProvider {
     const url = 'https://api.spotify.com/v1/me';
 
     try {
+      console.log('🎵 Spotify: Fetching user info with token:', token.substring(0, 20) + '...');
       const data = await this.httpClient.get<SpotifyUserResponse>(url, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
+      console.log('🎵 Spotify: User info retrieved successfully:', data.id, data.email);
       return {
         id: data.id,
         email: data.email,
@@ -75,8 +79,14 @@ export class SpotifyProvider implements IOAuthProvider {
         avatarUrl: data.images.length > 0 ? data.images[0].url : undefined
       };
     } catch (error: any) {
-      console.error('Spotify UserInfo Error:', error.response?.data || error.message);
+      console.error('🎵 Spotify UserInfo Error - Status:', error.response?.status);
+      console.error('🎵 Spotify UserInfo Error - Data:', JSON.stringify(error.response?.data, null, 2));
+      console.error('🎵 Spotify UserInfo Error - Message:', error.message);
       throw new Error('Failed to retrieve Spotify user info');
     }
+  }
+
+  getAuthUrlParameters(): Record<string, string> {
+    return {};
   }
 }

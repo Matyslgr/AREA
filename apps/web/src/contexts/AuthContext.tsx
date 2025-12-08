@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react"
+import { authService, type User } from "@/services/auth"
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080"
 
@@ -14,61 +15,44 @@ interface AuthContextType {
   signup: (name: string, email: string, password: string) => Promise<boolean>
   logout: () => void
   isAuthenticated: boolean
+  loading: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Check if user has a valid token on mount
-    const token = localStorage.getItem("area-token")
-    if (token) {
-      // Decode JWT to get user info (simple base64 decode of payload)
+    // Don't initialize auth on OAuth callback page to prevent token interference
+    if (window.location.pathname === '/auth/callback') {
+      setLoading(false)
+      return
+    }
+
+    // Check if user is logged in on mount
+    const initAuth = async () => {
       try {
-        const payload = JSON.parse(atob(token.split('.')[1]))
-        setUser({
-          id: payload.userId,
-          email: payload.email,
-          name: payload.name
-        })
+        const token = authService.getStoredToken()
+        if (token) {
+          const currentUser = await authService.getCurrentUser()
+          setUser(currentUser)
+        }
       } catch (error) {
-        // Invalid token, clear it
-        localStorage.removeItem("area-token")
+        console.error("Auth initialization error:", error)
+      } finally {
+        setLoading(false)
       }
     }
+
+    initAuth()
   }, [])
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/signin`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      })
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          console.error('Invalid credentials')
-        }
-        return false
-      }
-
-      const data = await response.json()
-
-      // Store JWT token
-      localStorage.setItem("area-token", data.token)
-
-      // Set user state
-      setUser({
-        id: data.id,
-        email: data.email,
-        name: data.name
-      })
-
+      const response = await authService.login({ email, password })
+      setUser(response.user)
       return true
     } catch (error) {
       console.error("Login error:", error)
@@ -82,33 +66,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     password: string
   ): Promise<boolean> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/signup`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      })
-
-      if (!response.ok) {
-        if (response.status === 409) {
-          console.error('Email already exists')
-        }
-        return false
-      }
-
-      const data = await response.json()
-
-      // Store JWT token
-      localStorage.setItem("area-token", data.token)
-
-      // Set user state
-      setUser({
-        id: data.id,
-        email: data.email,
-        name: name // Use the name from the form since backend doesn't store it yet
-      })
-
+      const response = await authService.signup({ name, email, password })
+      setUser(response.user)
       return true
     } catch (error) {
       console.error("Signup error:", error)
@@ -117,8 +76,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const logout = () => {
+    authService.logout()
     setUser(null)
-    localStorage.removeItem("area-token")
   }
 
   return (
@@ -129,6 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signup,
         logout,
         isAuthenticated: !!user,
+        loading,
       }}
     >
       {children}
@@ -136,6 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   )
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext)
   if (context === undefined) {

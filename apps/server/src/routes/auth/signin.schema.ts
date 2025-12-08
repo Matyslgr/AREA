@@ -21,13 +21,26 @@ export const signinSchema = {
       description: 'Sign in successful',
       type: 'object',
       properties: {
-        id: { type: 'string' },
-        email: { type: 'string' },
-        token: { type: 'string' }
+        user: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            email: { type: 'string' },
+            username: { type: 'string' }
+          }
+        },
+        token: { type: 'string', description: 'JWT token for authentication' }
       }
     },
     401: {
       description: 'Unauthorized - Invalid credentials',
+      type: 'object',
+      properties: {
+        error: { type: 'string' }
+      }
+    },
+    500: {
+      description: 'Internal server error',
       type: 'object',
       properties: {
         error: { type: 'string' }
