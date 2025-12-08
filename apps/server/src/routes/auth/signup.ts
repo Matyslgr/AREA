@@ -62,7 +62,7 @@ export async function signupHandler(
     const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     return reply.status(500).send({ 
       error: 'Internal server error',
-      details: errorMessage,
+      ...(process.env.NODE_ENV === 'development' ? { details: errorMessage } : {}),
       stack: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.stack : undefined) : undefined
     });
   }
