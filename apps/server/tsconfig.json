@@ -12,8 +12,7 @@
     "typeRoots": ["./node_modules/@types", "./src/types"],
     "baseUrl": "./src",
     "paths": {
-      "@/*": ["./*"],
-      "@area/shared": ["../../packages/shared/src"]
+      "@/*": ["./*"]
     }
   },
   "include": ["src/**/*"],
