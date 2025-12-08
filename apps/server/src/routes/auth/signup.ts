@@ -16,20 +16,24 @@ export async function signupHandler(
 ) {
   const { email, password } = request.body;
 
+  request.log.info({ email, bodyKeys: Object.keys(request.body) }, 'Signup attempt');
+
   try {
-    // Check if user already exists
+    await prisma.$connect();
+    
     const existingUser = await prisma.user.findUnique({
       where: { email }
     });
 
     if (existingUser) {
+      request.log.info({ email }, 'User already exists');
       return reply.status(409).send({ error: 'Email already exists' });
     }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user
+    request.log.info({ email, username: email.split('@')[0] }, 'Creating user in database');
     const user = await prisma.user.create({
       data: {
         email,
@@ -37,6 +41,7 @@ export async function signupHandler(
         password: hashedPassword
       }
     });
+    request.log.info({ userId: user.id }, 'User created successfully');
 
     // Generate JWT token
     const token = jwt.sign(
