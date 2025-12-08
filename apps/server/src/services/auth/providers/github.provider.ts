@@ -71,7 +71,7 @@ export class GithubProvider implements IOAuthProvider {
       if (!email) {
         const emails = await this.httpClient.get<GitHubEmailResponse[]>('https://api.github.com/user/emails', { headers });
 
-        const primaryEmail = emails.find((e) => e.primary && e.verified);
+        const primaryEmail = emails.find((e: GitHubEmailResponse) => e.primary && e.verified);
 
         if (primaryEmail) {
           email = primaryEmail.email;
