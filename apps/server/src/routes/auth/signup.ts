@@ -25,7 +25,7 @@ export async function signupHandler(
     });
 
     if (existingUser) {
-      request.log.info({ email }, 'User already exists');
+      request.log.info('Signup failed: user already exists');
       return reply.status(409).send({ error: 'Email already exists' });
     }
 
