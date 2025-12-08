@@ -19,13 +19,14 @@ export async function signupHandler(
   request.log.info({ email, bodyKeys: Object.keys(request.body) }, 'Signup attempt');
 
   try {
+    await prisma.$connect();
     
     const existingUser = await prisma.user.findUnique({
       where: { email }
     });
 
     if (existingUser) {
-      request.log.info('Signup failed: user already exists');
+      request.log.info({ email }, 'User already exists');
       return reply.status(409).send({ error: 'Email already exists' });
     }
 
@@ -62,7 +63,7 @@ export async function signupHandler(
     const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     return reply.status(500).send({ 
       error: 'Internal server error',
-      ...(process.env.NODE_ENV === 'development' ? { details: errorMessage } : {}),
+      details: errorMessage,
       stack: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.stack : undefined) : undefined
     });
   }
