@@ -2,7 +2,7 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import { resetPasswordSchema } from './reset-password.schema';
-import prisma from '../../lib/prisma';
+import { prisma } from '../../lib/prisma';
 interface ResetPasswordBody {
     token: string;
     password: string;
