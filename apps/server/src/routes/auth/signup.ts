@@ -19,7 +19,6 @@ export async function signupHandler(
   request.log.info({ email, bodyKeys: Object.keys(request.body) }, 'Signup attempt');
 
   try {
-    await prisma.$connect();
     
     const existingUser = await prisma.user.findUnique({
       where: { email }
