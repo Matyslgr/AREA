@@ -1,13 +1,14 @@
 import { SigninForm } from "@/components/signin-form"
 import Navbar from "@/components/Navbar"
+import Footer from "@/components/Footer"
 import "./SigninPage.css"
 
-import GithubIcon from "@/assets/signup-icons/github.png"
-import GoogleIcon from "@/assets/signup-icons/google.png"
-import LinkedinIcon from "@/assets/signup-icons/linkedin.png"
-import NotionIcon from "@/assets/signup-icons/notion.png"
-import SpotifyIcon from "@/assets/signup-icons/spotify.png"
-import TwitchIcon from "@/assets/signup-icons/twitch.png"
+import GithubIcon from "@/assets/icons/github.png"
+import GoogleIcon from "@/assets/icons/google.png"
+import LinkedinIcon from "@/assets/icons/linkedin.png"
+import NotionIcon from "@/assets/icons/notion.png"
+import SpotifyIcon from "@/assets/icons/spotify.png"
+import TwitchIcon from "@/assets/icons/twitch.png"
 import { api } from "@/lib/api"
 
 export default function SigninPage() {

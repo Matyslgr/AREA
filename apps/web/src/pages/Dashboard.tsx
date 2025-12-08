@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Plus, Activity, Zap, Clock } from "lucide-react";
+import { Search, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 interface Area {
   id: string;
@@ -114,7 +115,6 @@ export default function Dashboard() {
           <Card className="bg-white border-0 shadow-lg hover:shadow-xl transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-gray-900">Total AREAs</CardTitle>
-              <Zap className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-gray-900">{areas.length}</div>
@@ -127,7 +127,6 @@ export default function Dashboard() {
           <Card className="bg-white border-0 shadow-lg hover:shadow-xl transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-gray-900">Active AREAs</CardTitle>
-              <Activity className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-gray-900">{activeAreas}</div>
@@ -140,7 +139,6 @@ export default function Dashboard() {
           <Card className="bg-white border-0 shadow-lg hover:shadow-xl transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-gray-900">Total Reactions</CardTitle>
-              <Clock className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-gray-900">{totalReactions}</div>
@@ -182,7 +180,6 @@ export default function Dashboard() {
         ) : filteredAreas.length === 0 ? (
           <Card className="py-12 bg-white border-0 shadow-lg">
             <CardContent className="flex flex-col items-center justify-center text-center">
-              <Zap className="h-12 w-12 text-[#6097FF] mb-4" />
               <h3 className="text-lg font-semibold mb-2 text-gray-900">
                 {searchQuery ? "No areas found" : "No areas yet"}
               </h3>
@@ -258,6 +255,8 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+
+      <Footer />
     </div>
   );
 }
