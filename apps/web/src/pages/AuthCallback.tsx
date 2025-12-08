@@ -42,7 +42,7 @@ export const AuthCallback = () => {
 
     if (!code) {
       console.error('No code found');
-      navigate('/login?error=missing_code');
+      navigate('/signin?error=missing_code');
       return;
     }
 
@@ -51,7 +51,7 @@ export const AuthCallback = () => {
 
     if (!provider) {
       console.error('No provider found in state');
-      navigate('/login?error=missing_provider');
+      navigate('/signin?error=missing_provider');
       return;
     }
 
@@ -109,7 +109,7 @@ export const AuthCallback = () => {
 
       } catch (error) {
         console.error('Login failed', error);
-        navigate('/login?error=auth_failed');
+        navigate('/signin?error=auth_failed');
       }
     };
 
