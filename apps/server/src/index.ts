@@ -13,6 +13,8 @@ import { registerServices } from './services';
 import { oauthRoutes } from './routes/auth/oauth';
 import { signupRoute } from './routes/auth/signup';
 import { signinRoute } from './routes/auth/signin';
+import { forgotPasswordRoute } from './routes/auth/forgot-password';
+import { resetPasswordRoute } from './routes/auth/reset-password';
 import { areaRoutes } from './routes/areas.route';
 import { accountRoutes } from './routes/auth/account';
 import { serviceManager } from './services/service.manager';
@@ -55,6 +57,8 @@ const main = async () => {
         await api.register(accountRoutes, { prefix: '/auth' });
         api.route(signupRoute);
         api.route(signinRoute);
+        api.route(forgotPasswordRoute);
+        api.route(resetPasswordRoute);
 
         // Grouping area routes
         await api.register(areaRoutes, { prefix: '/areas' });
