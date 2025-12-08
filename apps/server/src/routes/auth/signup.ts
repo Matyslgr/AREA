@@ -1,10 +1,8 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { signupSchema } from './signup.schema';
-
-const prisma = new PrismaClient();
+import { prisma } from '../../lib/prisma';
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
 
 interface SignupBody {
@@ -57,7 +55,12 @@ export async function signupHandler(
     });
   } catch (error) {
     request.log.error(error);
-    return reply.status(500).send({ error: 'Internal server error' });
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+    return reply.status(500).send({ 
+      error: 'Internal server error',
+      details: errorMessage,
+      stack: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.stack : undefined) : undefined
+    });
   }
 }
 
