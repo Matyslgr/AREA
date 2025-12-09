@@ -213,7 +213,7 @@ export default function CreateAreaPage() {
       }
       if (selectedAction.parameters && selectedAction.parameters.length > 0) {
         for (const param of selectedAction.parameters) {
-          if (param.required && (!actionParams[param.name] || actionParams[param.name].toString().trim() === '')) {
+          if (param.required && (!actionParams[param.name] || String(actionParams[param.name]).trim() === '')) {
             setError(`Please fill in the required parameter: ${param.description}`)
             return
           }
@@ -227,7 +227,7 @@ export default function CreateAreaPage() {
       }
       if (selectedReaction.parameters && selectedReaction.parameters.length > 0) {
         for (const param of selectedReaction.parameters) {
-          if (param.required && (!reactionParams[param.name] || reactionParams[param.name].toString().trim() === '')) {
+          if (param.required && (!reactionParams[param.name] || String(actionParams[param.name]).trim() === '')) {
             setError(`Please fill in the required parameter: ${param.description}`)
             return
           }
@@ -289,7 +289,7 @@ export default function CreateAreaPage() {
             id={`${prefix}-${param.name}`}
             type="number"
             placeholder={`Enter ${param.description}`}
-            value={value || ""}
+            value={String(value || "")}
             onChange={(e) => onChange(param.name, e.target.value)}
             required={param.required}
             className="text-black"
@@ -297,7 +297,7 @@ export default function CreateAreaPage() {
         ) : param.type === "boolean" ? (
           <select
             id={`${prefix}-${param.name}`}
-            value={value || ""}
+            value={String(value || "")}
             onChange={(e) => onChange(param.name, e.target.value === "true")}
             className="w-full rounded-md border border-input bg-background px-3 py-2"
             required={param.required}
@@ -311,7 +311,7 @@ export default function CreateAreaPage() {
             id={`${prefix}-${param.name}`}
             type="text"
             placeholder={`Enter ${param.description}`}
-            value={value || ""}
+            value={String(value || "")}
             onChange={(e) => onChange(param.name, e.target.value)}
             required={param.required}
             className="text-black"
@@ -595,7 +595,7 @@ export default function CreateAreaPage() {
                           <div className="mt-2 space-y-1">
                             {Object.entries(actionParams).map(([key, value]) => (
                               <p key={key} className="text-xs text-gray-600">
-                                <span className="font-medium">{key}:</span> {value}
+                                <span className="font-medium">{key}:</span> {String(value)}
                               </p>
                             ))}
                           </div>
@@ -612,7 +612,7 @@ export default function CreateAreaPage() {
                           <div className="mt-2 space-y-1">
                             {Object.entries(reactionParams).map(([key, value]) => (
                               <p key={key} className="text-xs text-gray-600">
-                                <span className="font-medium">{key}:</span> {value}
+                                <span className="font-medium">{key}:</span> {String(value)}
                               </p>
                             ))}
                           </div>
