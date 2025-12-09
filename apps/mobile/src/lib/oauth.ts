@@ -13,7 +13,8 @@ export interface OAuthResult {
   isNewUser?: boolean;
 }
 
-const WEB_CALLBACK_URL = process.env.EXPO_PUBLIC_WEB_CALLBACK_URL;
+// Mobile OAuth callback uses deep link scheme, not HTTP URL
+const MOBILE_REDIRECT_URI = 'area://auth/callback';
 
 export async function initiateOAuth(
   provider: string,
@@ -30,7 +31,7 @@ export async function initiateOAuth(
 
     const result = await WebBrowser.openAuthSessionAsync(
       urlData.url,
-      WEB_CALLBACK_URL
+      MOBILE_REDIRECT_URI
     );
 
     console.log('WebBrowser result:', result);

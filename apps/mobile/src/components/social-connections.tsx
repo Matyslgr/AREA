@@ -58,9 +58,10 @@ export function SocialConnections({ mode = 'login' }: SocialConnectionsProps) {
     const result = await startOAuth(provider, mode);
 
     if (result.success) {
-      if (mode === 'login' && result.token) {
-        // Save token and navigate to dashboard
+      if (mode === 'login' && result.token && result.user) {
+        // Save token and user, then navigate to dashboard
         await setToken(result.token);
+        await setStoredUser(result.user);
         router.replace('/(app)/dashboard');
       } else if (mode === 'connect') {
         // OAuth account linked successfully
