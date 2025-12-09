@@ -45,7 +45,7 @@ export async function signupRoute(fastify: FastifyInstance) {
 
       // 4. Generate JWT using Fastify plugin
       const token = fastify.jwt.sign({
-        userId: user.id,
+        id: user.id,
         email: user.email,
         username: user.username
       });

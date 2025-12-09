@@ -13,6 +13,7 @@ export interface ActionInstanceDto {
   name: string;
   parameters: Record<string, any>;
   accountId?: string;
+  scopes?: string[];
 }
 
 export interface ReactionInstanceDto {
@@ -20,6 +21,7 @@ export interface ReactionInstanceDto {
   name: string;
   parameters: Record<string, any>;
   accountId?: string;
+  scopes?: string[];
 }
 
 export interface CreateAreaDto {

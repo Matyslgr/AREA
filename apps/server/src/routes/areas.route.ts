@@ -7,29 +7,12 @@ import { serviceManager } from '../services/service.manager';
 import {
   createAreaSchema,
   listAreasSchema,
+  getAreaSchema,
   deleteAreaSchema,
   updateAreaSchema
 } from './areas.schema';
 
-const mapToDto = (area: any): AreaDto => ({
-  id: area.id,
-  name: area.name,
-  is_active: area.is_active,
-  user_id: area.user_id,
-  last_executed_at: area.last_executed_at?.toISOString() ?? null,
-  error_log: area.error_log,
-  action: {
-    name: area.action?.name ?? "UNKNOWN",
-    accountId: area.action?.account_id,
-    parameters: area.action?.parameters as Record<string, any> ?? {}
-  },
-  reactions: area.reactions.map((r: any) => ({
-    name: r.name,
-    accountId: r.account_id,
-    parameters: r.parameters as Record<string, any>
-  }))
-});
-
+// --- Helpers ---
 const resolveAccountId = (userAccounts: any[], elementId: string, type: 'action' | 'reaction'): string | undefined => {
   const services = serviceManager.getAllServices();
 
@@ -46,6 +29,48 @@ const resolveAccountId = (userAccounts: any[], elementId: string, type: 'action'
   return account?.id; // May be undefined if no account linked
 };
 
+const getScopesForElement = (elementId: string, type: 'action' | 'reaction'): string[] => {
+  const services = serviceManager.getAllServices();
+
+  const service = services.find(s => {
+    if (type === 'action') return s.actions.some(a => a.id === elementId);
+    return s.reactions.some(r => r.id === elementId);
+  });
+
+  if (!service) return [];
+
+  if (type === 'action') {
+    return service.actions.find(a => a.id === elementId)?.scopes || [];
+  } else {
+    return service.reactions.find(r => r.id === elementId)?.scopes || [];
+  }
+};
+
+const mapToDto = (area: any): AreaDto => ({
+  id: area.id,
+  name: area.name,
+  is_active: area.is_active,
+  user_id: area.user_id,
+  last_executed_at: area.last_executed_at?.toISOString() ?? null,
+  error_log: area.error_log,
+  action: {
+    name: area.action?.name ?? "UNKNOWN",
+    accountId: area.action?.account_id,
+    parameters: area.action?.parameters as Record<string, any> ?? {},
+    scopes: area.action?.name ? getScopesForElement(area.action.name, 'action') : []
+  },
+  reactions: area.reactions.map((r: any) => ({
+    name: r.name,
+    accountId: r.account_id,
+    parameters: r.parameters as Record<string, any>,
+    scopes: getScopesForElement(r.name, 'reaction')
+  }))
+});
+
+interface ErrorReply {
+  error: string;
+}
+
 export async function areaRoutes(fastify: FastifyInstance) {
   fastify.get<{ Reply: AreaDto[] }>('/', {
     schema: listAreasSchema,
@@ -60,6 +85,25 @@ export async function areaRoutes(fastify: FastifyInstance) {
     });
 
     return areas.map(mapToDto);
+  });
+
+  fastify.get<{ Params: { id: string }, Reply: AreaDto | ErrorReply }>('/:id', {
+    schema: getAreaSchema,
+    onRequest: [fastify.authenticate]
+  }, async (request, reply) => {
+    const { id } = request.params;
+    const userId = request.user.id;
+
+    const area = await prisma.area.findFirst({
+      where: { id, user_id: userId },
+      include: { action: true, reactions: true }
+    });
+
+    if (!area) {
+      return reply.status(404).send({ error: 'AREA not found' });
+    }
+
+    return mapToDto(area);
   });
 
   fastify.post<{ Body: CreateAreaDto }>('/', {
