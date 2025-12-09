@@ -13,6 +13,8 @@ import { registerServices } from './services';
 import { oauthRoutes } from './routes/auth/oauth';
 import { signupRoute } from './routes/auth/signup';
 import { signinRoute } from './routes/auth/signin';
+import { forgotPasswordRoute } from './routes/auth/forgot-password';
+import { resetPasswordRoute } from './routes/auth/reset-password';
 import { areaRoutes } from './routes/areas.route';
 import { accountRoutes } from './routes/auth/account';
 import { serviceManager } from './services/service.manager';
@@ -55,6 +57,8 @@ const main = async () => {
         await api.register(accountRoutes, { prefix: '/auth' });
         await api.register(signupRoute, { prefix: '/auth' });
         await api.register(signinRoute, { prefix: '/auth' });
+        api.route(forgotPasswordRoute);
+        api.route(resetPasswordRoute);
 
         // Grouping area routes
         await api.register(areaRoutes, { prefix: '/areas' });
@@ -65,8 +69,8 @@ const main = async () => {
     await server.listen({ port: 8080, host: '0.0.0.0' });
     const address = server.server.address();
     const port = typeof address === 'string' ? address : address?.port;
-    console.log(`Server running at http://127.0.0.1:${port}`);
-    console.log(`Swagger docs available at http://127.0.0.1:${port}/docs`);
+    console.log(`Server running at ${address}:${port}`);
+    console.log(`Swagger docs available at ${address}:${port}/docs`);
 
     // 5. Start Engine
     areaEngine.start(1000 * 10); // Check every 10 seconds

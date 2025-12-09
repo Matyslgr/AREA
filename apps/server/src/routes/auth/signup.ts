@@ -16,6 +16,8 @@ export async function signupRoute(fastify: FastifyInstance) {
   fastify.post<{ Body: SignupBody }>('/signup', { schema: signupSchema }, async (request, reply) => {
     const { email, password } = request.body;
 
+    request.log.info({ email, bodyKeys: Object.keys(request.body) }, 'Signup attempt');
+
     try {
       // 1. Check if user already exists
       const existingUser = await prisma.user.findUnique({
@@ -23,6 +25,7 @@ export async function signupRoute(fastify: FastifyInstance) {
       });
 
       if (existingUser) {
+        request.log.info({ email }, 'User already exists');
         return reply.status(409).send({ error: 'Email already exists' });
       }
 
@@ -37,6 +40,8 @@ export async function signupRoute(fastify: FastifyInstance) {
           password: hashedPassword
         }
       });
+
+      request.log.info({ userId: user.id }, 'User created successfully');
 
       // 4. Generate JWT using Fastify plugin
       const token = fastify.jwt.sign({
@@ -58,7 +63,12 @@ export async function signupRoute(fastify: FastifyInstance) {
 
     } catch (error) {
       request.log.error(error);
-      return reply.status(500).send({ error: 'Internal server error' });
+      const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+      return reply.status(500).send({
+        error: 'Internal server error',
+        details: errorMessage,
+        stack: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.stack : undefined) : undefined
+      });
     }
   });
 }

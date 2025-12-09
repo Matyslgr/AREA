@@ -8,6 +8,8 @@ import HomePage from './pages/HomePage'
 import { AuthCallback } from '@/pages/AuthCallback'
 import Dashboard from '@/pages/Dashboard'
 import AccountSetup from '@/pages/AccountSetup'
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 
 function App() {
@@ -19,6 +21,8 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/signin" element={<SigninPage />} />
             <Route path="/signup" element={<SignupPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route
               path="/home"
               element={
