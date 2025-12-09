@@ -48,6 +48,7 @@ export class SpotifyProvider implements IOAuthProvider {
     try {
       const data = await this.httpClient.post<SpotifyTokenResponse>(url, params, config);
 
+      console.log('Spotify Token Response:', data);
       return {
         access_token: data.access_token,
         refresh_token: data.refresh_token,

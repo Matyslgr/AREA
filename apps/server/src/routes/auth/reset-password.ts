@@ -1,12 +1,14 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcrypt';
+import { IPasswordHasher } from '../../interfaces/hasher.interface';
+import { Argon2Adapter } from '../../adapters/argon2.adapter';
 import { resetPasswordSchema } from './reset-password.schema';
 import { prisma } from '../../lib/prisma';
 interface ResetPasswordBody {
     token: string;
     password: string;
 }
+
+const hasher: IPasswordHasher = new Argon2Adapter();
 
 export async function resetPasswordHandler(
     request: FastifyRequest<{ Body: ResetPasswordBody }>,
@@ -43,7 +45,7 @@ export async function resetPasswordHandler(
         }
 
         // Hash the new password
-        const hashedPassword = await bcrypt.hash(password, 10);
+        const hashedPassword = await hasher.hash(password);
 
         // Update user password and mark token as used
         await prisma.$transaction([
