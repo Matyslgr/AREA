@@ -44,6 +44,7 @@ export class TwitchProvider implements IOAuthProvider {
     try {
       const data = await this.httpClient.post<TwitchTokenResponse>(url, payload);
 
+      console.log('Twitch Token Response:', data);
       return {
         access_token: data.access_token,
         refresh_token: data.refresh_token,

@@ -56,8 +56,8 @@ const main = async () => {
         // Grouping auth routes
         await api.register(oauthRoutes, { prefix: '/auth' });
         await api.register(accountRoutes, { prefix: '/auth' });
-        api.route(signupRoute);
-        api.route(signinRoute);
+        await api.register(signupRoute, { prefix: '/auth' });
+        await api.register(signinRoute, { prefix: '/auth' });
         api.route(forgotPasswordRoute);
         api.route(resetPasswordRoute);
 
@@ -70,8 +70,8 @@ const main = async () => {
     await server.listen({ port: 8080, host: '0.0.0.0' });
     const address = server.server.address();
     const port = typeof address === 'string' ? address : address?.port;
-    console.log(`Server running at http://127.0.0.1:${port}`);
-    console.log(`Swagger docs available at http://127.0.0.1:${port}/docs`);
+    console.log(`Server running at ${address}:${port}`);
+    console.log(`Swagger docs available at ${address}:${port}/docs`);
 
     // 5. Start Engine
     areaEngine.start(1000 * 10); // Check every 10 seconds

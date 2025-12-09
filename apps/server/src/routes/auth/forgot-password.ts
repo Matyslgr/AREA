@@ -1,9 +1,11 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { prisma } from '../../lib/prisma';
-import crypto from 'crypto';
+import { IRandomGenerator } from '../../interfaces/random.interface';
+import { CryptoRandomAdapter } from '../../adapters/crypto-random.adapter';
 import { forgotPasswordSchema } from './forgot-password.schema';
 import { NodemailerEmailAdapter } from '../../adapters/nodemailer-email.adapter';
 const emailService = new NodemailerEmailAdapter();
+const randomService: IRandomGenerator = new CryptoRandomAdapter();
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 const RESET_TOKEN_EXPIRATION_HOURS = parseInt(process.env.RESET_TOKEN_EXPIRATION || '1');
 
@@ -36,7 +38,7 @@ export async function forgotPasswordHandler(
         }
 
         // Generate secure random token
-        const token = crypto.randomBytes(32).toString('hex');
+        const token = randomService.generate(32);
 
         // Calculate expiration time
         const expiresAt = new Date();

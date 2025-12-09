@@ -1,62 +1,57 @@
-import { FastifyRequest, FastifyReply } from 'fastify';
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import { signinSchema } from './signin.schema';
+import { FastifyInstance } from 'fastify';
 import { prisma } from '../../lib/prisma';
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
+import { Argon2Adapter } from '../../adapters/argon2.adapter';
+import { IPasswordHasher } from '../../interfaces/hasher.interface';
+import { signinSchema } from './signin.schema';
 
 interface SigninBody {
   email: string;
   password: string;
 }
+export async function signinRoute(fastify: FastifyInstance) {
+  const hasher: IPasswordHasher = new Argon2Adapter();
 
-export async function signinHandler(
-  request: FastifyRequest<{ Body: SigninBody }>,
-  reply: FastifyReply
-) {
-  const { email, password } = request.body;
+  fastify.post<{ Body: SigninBody }>('/signin', { schema: signinSchema }, async (request, reply) => {
+    const { email, password } = request.body;
 
-  try {
-    // Find user by email
-    const user = await prisma.user.findUnique({
-      where: { email }
-    });
+    try {
+      // 1. Find user by email
+      const user = await prisma.user.findUnique({
+        where: { email }
+      });
 
-    if (!user) {
-      return reply.status(401).send({ error: 'Invalid credentials' });
-    }
+      if (!user || !user.password) {
+        // "Or !user.password" handles OAuth users who try to login with empty password
+        return reply.status(401).send({ error: 'Invalid credentials' });
+      }
 
-    // Verify password
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+      // 2. Verify password using Argon2
+      const isPasswordValid = await hasher.verify(user.password, password);
 
-    if (!isPasswordValid) {
-      return reply.status(401).send({ error: 'Invalid credentials' });
-    }
+      if (!isPasswordValid) {
+        return reply.status(401).send({ error: 'Invalid credentials' });
+      }
 
-    // Generate JWT token
-    const token = jwt.sign(
-      { userId: user.id, email: user.email },
-      JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-
-    return reply.status(200).send({
-      user: {
-        id: user.id,
+      // 3. Generate JWT
+      const token = fastify.jwt.sign({
+        userId: user.id,
         email: user.email,
         username: user.username
-      },
-      token
-    });
-  } catch (error) {
-    request.log.error(error);
-    return reply.status(500).send({ error: 'Internal server error' });
-  }
-}
+      });
 
-export const signinRoute = {
-  method: 'POST' as const,
-  url: '/auth/signin',
-  schema: signinSchema,
-  handler: signinHandler
-};
+      return reply.status(200).send({
+        user: {
+          id: user.id,
+          email: user.email,
+          username: user.username
+        },
+        token,
+        message: 'Login successful'
+      });
+
+    } catch (error) {
+      request.log.error(error);
+      return reply.status(500).send({ error: 'Internal server error' });
+    }
+  });
+}
