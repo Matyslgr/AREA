@@ -18,6 +18,7 @@ import { resetPasswordRoute } from './routes/auth/reset-password';
 import { areaRoutes } from './routes/areas.route';
 import { accountRoutes } from './routes/auth/account';
 import { serviceManager } from './services/service.manager';
+import { serviceRoutes } from './routes/services.route';
 
 // Core
 import { areaEngine } from './core/area.engine';
@@ -60,8 +61,8 @@ const main = async () => {
         api.route(forgotPasswordRoute);
         api.route(resetPasswordRoute);
 
-        // Grouping area routes
         await api.register(areaRoutes, { prefix: '/areas' });
+        await api.register(serviceRoutes, { prefix: '/services' });
     });
 
 

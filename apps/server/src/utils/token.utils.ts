@@ -10,11 +10,16 @@ export const getAccessToken = (
   const account = user.accounts.find((a) => a.provider === provider);
 
   if (!account) {
-    throw new Error(`No account found for provider: ${provider}`);
-  }
-  if (!account.access_token) {
-    throw new Error(`Account for provider '${provider}' exists but has no access token`);
+    throw new Error(`Service connection missing: User ${user.email} has no ${provider} account linked.`);
   }
 
-  return encryptionService.decrypt(account.access_token);
+  if (!account.access_token) {
+    throw new Error(`Corrupted account: ${provider} account exists but has no access token.`);
+  }
+
+  try {
+    return encryptionService.decrypt(account.access_token);
+  } catch (error) {
+    throw new Error(`Token decryption failed for ${provider}. The encryption key might have changed.`);
+  }
 };
