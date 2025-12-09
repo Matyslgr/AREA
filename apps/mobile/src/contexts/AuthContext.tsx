@@ -17,10 +17,12 @@ interface AuthContextType {
   isAuthenticated: boolean;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
-  signUp: (name: string, email: string, password: string) => Promise<{ error?: string }>;
+  signUp: (email: string, password: string) => Promise<{ error?: string }>; // Backend only needs email & password
   signOut: () => Promise<void>;
   forgotPassword: (email: string) => Promise<{ error?: string }>;
   resetPassword: (token: string, password: string) => Promise<{ error?: string }>;
+  updateAccount: (data: { email?: string; username?: string; password?: string; currentPassword?: string }) => Promise<{ error?: string }>;
+  updatePassword: (password: string, currentPassword?: string) => Promise<{ error?: string }>;
 }
 
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
@@ -34,19 +36,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loadUser();
   }, []);
 
-  // DEV: Auth protection disabled for testing
-  // React.useEffect(() => {
-  //   if (loading) return;
+  // Auth protection: redirect based on auth state
+  React.useEffect(() => {
+    if (loading) return;
 
-  //   const inAuthGroup = segments[0] === '(auth)';
-  //   const inAppGroup = segments[0] === '(app)';
+    const inAppGroup = segments[0] === '(app)';
 
-  //   if (!user && inAppGroup) {
-  //     router.replace('/(auth)/sign-in');
-  //   } else if (user && inAuthGroup) {
-  //     router.replace('/(app)/dashboard');
-  //   }
-  // }, [user, segments, loading]);
+    // If user is not logged in and tries to access protected (app) routes, redirect to sign-in
+    if (!user && inAppGroup) {
+      router.replace('/(auth)/sign-in');
+    }
+    // Note: We don't auto-redirect logged-in users from (auth) pages
+    // This allows them to view sign-in/sign-up pages if they want
+    // The redirect to dashboard happens after successful sign-in/sign-up
+  }, [user, segments, loading]);
 
   async function loadUser() {
     try {
@@ -85,8 +88,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return {};
   }
 
-  async function signUp(name: string, email: string, password: string) {
-    const { data, error } = await authApi.signUp(name, email, password);
+  async function signUp(email: string, password: string) {
+    const { data, error } = await authApi.signUp(email, password);
     if (error) {
       return { error };
     }
@@ -96,6 +99,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(data.user);
     }
     return {};
+  }
+
+  async function updateAccount(data: { email?: string; username?: string; password?: string; currentPassword?: string }) {
+    const { data: response, error } = await authApi.updateAccount(data);
+    if (error) {
+      return { error };
+    }
+    if (response?.user) {
+      await setStoredUser(response.user);
+      setUser(response.user);
+    }
+    return {};
+  }
+
+  async function updatePassword(password: string, currentPassword?: string) {
+    const { error } = await authApi.updatePassword(password, currentPassword);
+    return { error: error || undefined };
   }
 
   async function signOut() {
@@ -126,6 +146,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signOut,
         forgotPassword,
         resetPassword,
+        updateAccount,
+        updatePassword,
       }}
     >
       {children}

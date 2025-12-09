@@ -1,28 +1,75 @@
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { useOAuth } from '@/lib/oauth';
+import { setToken, setStoredUser } from '@/lib/api';
+import { router } from 'expo-router';
 import { useColorScheme } from 'nativewind';
-import { Image, Platform, View } from 'react-native';
+import * as React from 'react';
+import { Alert, Image, Platform, View } from 'react-native';
 
 const SOCIAL_CONNECTION_STRATEGIES = [
   {
-    type: 'oauth_apple',
-    source: { uri: 'https://img.clerk.com/static/apple.png?width=160' },
-    useTint: true,
-  },
-  {
+    id: 'google',
     type: 'oauth_google',
-    source: { uri: 'https://img.clerk.com/static/google.png?width=160' },
+    source: require('../../assets/google.png'),
     useTint: false,
   },
   {
+    id: 'github',
     type: 'oauth_github',
-    source: { uri: 'https://img.clerk.com/static/github.png?width=160' },
+    source: require('../../assets/github.png'),
     useTint: true,
+  },
+  {
+    id: 'spotify',
+    type: 'oauth_spotify',
+    source: require('../../assets/spotify.png'),
+    useTint: false,
+  },
+  {
+    id: 'notion',
+    type: 'oauth_notion',
+    source: require('../../assets/notion.png'),
+    useTint: true,
+  },
+  {
+    id: 'linkedin',
+    type: 'oauth_linkedin',
+    source: require('../../assets/linkedin.png'),
+    useTint: false,
+  },
+  {
+    id: 'twitch',
+    type: 'oauth_twitch',
+    source: require('../../assets/twitch.png'),
+    useTint: false,
   },
 ];
 
-export function SocialConnections() {
+interface SocialConnectionsProps {
+  mode?: 'login' | 'connect';
+}
+
+export function SocialConnections({ mode = 'login' }: SocialConnectionsProps) {
   const { colorScheme } = useColorScheme();
+  const { startOAuth, loading } = useOAuth();
+
+  async function handleOAuthPress(provider: string) {
+    const result = await startOAuth(provider, mode);
+
+    if (result.success) {
+      if (mode === 'login' && result.token) {
+        // Save token and navigate to dashboard
+        await setToken(result.token);
+        router.replace('/(app)/dashboard');
+      } else if (mode === 'connect') {
+        // OAuth account linked successfully
+        Alert.alert('Success', `${provider} account connected successfully!`);
+      }
+    } else {
+      Alert.alert('Authentication Failed', result.error || 'An error occurred');
+    }
+  }
 
   return (
     <View className="gap-2 sm:flex-row sm:gap-3">
@@ -33,9 +80,8 @@ export function SocialConnections() {
             variant="outline"
             size="sm"
             className="sm:flex-1"
-            onPress={() => {
-              // TODO: Authenticate with social provider and navigate to protected screen if successful
-            }}>
+            disabled={loading}
+            onPress={() => handleOAuthPress(strategy.id)}>
             <Image
               className={cn('size-4', strategy.useTint && Platform.select({ web: 'dark:invert' }))}
               tintColor={Platform.select({

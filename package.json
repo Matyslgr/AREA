@@ -19,7 +19,8 @@
   "packageManager": "npm@10.8.2",
   "workspaces": [
     "apps/web",
-    "apps/backend",
+    "apps/server",
+    "apps/mobile",
     "packages/*"
   ]
 }

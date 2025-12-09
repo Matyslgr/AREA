@@ -57,7 +57,7 @@ export async function removeStoredUser(): Promise<void> {
 export interface User {
   id: string;
   email: string;
-  name: string;
+  username: string; // Backend uses 'username' not 'name'
 }
 
 interface ApiResponse<T> {
@@ -108,12 +108,27 @@ export interface AuthResponse {
   user: User;
 }
 
+export interface OAuthAccount {
+  id: string;
+  provider: string;
+  provider_account_id: string;
+  email?: string;
+  scope?: string;
+  created_at: string;
+}
+
+export interface AccountDetails extends User {
+  accounts: OAuthAccount[];
+  hasPassword: boolean;
+}
+
 export const authApi = {
   signIn: (email: string, password: string) =>
     api.post<AuthResponse>('/auth/signin', { email, password }),
 
-  signUp: (name: string, email: string, password: string) =>
-    api.post<AuthResponse>('/auth/signup', { name, email, password }),
+  // Backend only accepts email and password, generates username automatically
+  signUp: (email: string, password: string) =>
+    api.post<AuthResponse>('/auth/signup', { email, password }),
 
   forgotPassword: (email: string) =>
     api.post<{ message: string }>('/auth/forgot-password', { email }),
@@ -121,14 +136,27 @@ export const authApi = {
   resetPassword: (token: string, password: string) =>
     api.post<{ message: string }>('/auth/reset-password', { token, password }),
 
-  getAccount: () => api.get<User>('/auth/account'),
+  getAccount: () => api.get<AccountDetails>('/auth/account'),
+
+  updateAccount: (data: { email?: string; username?: string; password?: string; currentPassword?: string }) =>
+    api.put<{ message: string; user: User }>('/auth/account', data),
+
+  updatePassword: (password: string, currentPassword?: string) =>
+    api.post<{ message: string; user: User }>('/auth/account/password', { password, currentPassword }),
 
   getOAuthUrl: (provider: string, mode: 'login' | 'connect' | 'signup') =>
     api.get<{ url: string }>(`/auth/oauth/authorize/${provider}?mode=${mode}`),
 
-  oauthLogin: (provider: string, code: string, state: string) =>
-    api.post<AuthResponse>('/auth/oauth/login', { provider, code, state }),
+  // Backend doesn't use 'state' in body, it's in the OAuth callback URL
+  oauthLogin: (provider: string, code: string) =>
+    api.post<AuthResponse>('/auth/oauth/login', { provider, code }),
 
   oauthLink: (provider: string, code: string) =>
     api.post<{ message: string }>('/auth/oauth/link', { provider, code }),
+
+  getOAuthAccounts: () =>
+    api.get<{ accounts: OAuthAccount[] }>('/auth/oauth/accounts'),
+
+  unlinkOAuthAccount: (provider: string) =>
+    api.delete<{ message: string }>(`/auth/oauth/accounts/${provider}`),
 };

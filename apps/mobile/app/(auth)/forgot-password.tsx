@@ -9,24 +9,32 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Text } from '@/components/ui/text';
+import { useAuth } from '@/contexts/AuthContext';
 import { Link, router } from 'expo-router';
 import * as React from 'react';
 import { Pressable, View, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ForgotPasswordScreen() {
+  const { forgotPassword } = useAuth();
   const [email, setEmail] = React.useState('');
   const [loading, setLoading] = React.useState(false);
   const [sent, setSent] = React.useState(false);
+  const [error, setError] = React.useState('');
 
   async function onSubmit() {
     if (!email) return;
+    setError('');
     setLoading(true);
-    // TODO: Implement forgot password logic with API
-    setTimeout(() => {
-      setLoading(false);
+
+    const result = await forgotPassword(email);
+    setLoading(false);
+
+    if (result.error) {
+      setError(result.error);
+    } else {
       setSent(true);
-    }, 1000);
+    }
   }
 
   if (sent) {
@@ -102,6 +110,9 @@ export default function ForgotPasswordScreen() {
                       onSubmitEditing={onSubmit}
                     />
                   </View>
+                  {error ? (
+                    <Text className="text-destructive text-center text-sm">{error}</Text>
+                  ) : null}
                   <Button
                     className="w-full"
                     onPress={onSubmit}

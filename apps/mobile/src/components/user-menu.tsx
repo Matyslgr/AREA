@@ -4,54 +4,56 @@ import { Icon } from '@/components/ui/icon';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Text } from '@/components/ui/text';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 import * as PopoverPrimitive from '@rn-primitives/popover';
 import { LogOutIcon, PlusIcon, SettingsIcon } from 'lucide-react-native';
 import * as React from 'react';
 import { View } from 'react-native';
-
-const USER = {
-  fullName: 'Zach Nugent',
-  initials: 'ZN',
-  imgSrc: { uri: 'https://github.com/mrzachnugent.png' },
-  username: 'mrzachnugent',
-};
+import { router } from 'expo-router';
 
 export function UserMenu() {
-  const popoverTriggerRef = React.useRef<PopoverPrimitive.TriggerRef>(null);
+  const popoverTriggerRef = React.useRef<React.ElementRef<typeof PopoverPrimitive.Trigger>>(null);
+  const { user, signOut } = useAuth();
+
+  if (!user) return null;
+
+  const initials = user.username
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
 
   async function onSignOut() {
     popoverTriggerRef.current?.close();
-    // TODO: Sign out and navigate to sign in screen
+    await signOut();
+  }
+
+  function navigateToAccountSetup() {
+    popoverTriggerRef.current?.close();
+    router.push('/(app)/account-setup');
   }
 
   return (
     <Popover>
       <PopoverTrigger asChild ref={popoverTriggerRef}>
         <Button variant="ghost" size="icon" className="size-8 rounded-full">
-          <UserAvatar />
+          <UserAvatar user={user} initials={initials} />
         </Button>
       </PopoverTrigger>
       <PopoverContent align="center" side="bottom" className="w-80 p-0">
         <View className="border-border gap-3 border-b p-3">
           <View className="flex-row items-center gap-3">
-            <UserAvatar className="size-10" />
+            <UserAvatar user={user} initials={initials} className="size-10" />
             <View className="flex-1">
-              <Text className="font-medium leading-5">{USER.fullName}</Text>
-              {USER.fullName?.length ? (
-                <Text className="text-muted-foreground text-sm font-normal leading-4">
-                  {USER.username}
-                </Text>
-              ) : null}
+              <Text className="font-medium leading-5">{user.username}</Text>
+              <Text className="text-muted-foreground text-sm font-normal leading-4">
+                {user.email}
+              </Text>
             </View>
           </View>
           <View className="flex-row flex-wrap gap-3 py-0.5">
-            <Button
-              variant="outline"
-              size="sm"
-              onPress={() => {
-                // TODO: Navigate to account settings screen
-              }}
-            >
+            <Button variant="outline" size="sm" onPress={navigateToAccountSetup}>
               <Icon as={SettingsIcon} className="size-4" />
               <Text>Manage Account</Text>
             </Button>
@@ -65,28 +67,31 @@ export function UserMenu() {
           variant="ghost"
           size="lg"
           className="h-16 justify-start gap-3 rounded-none rounded-b-md px-3 sm:h-14"
-          onPress={() => {
-            // TODO: Navigate to add account screen
-          }}
+          onPress={navigateToAccountSetup}
         >
           <View className="size-10 items-center justify-center">
             <View className="border-border bg-muted/50 size-7 items-center justify-center rounded-full border border-dashed">
               <Icon as={PlusIcon} className="size-5" />
             </View>
           </View>
-          <Text>Add account</Text>
+          <Text>Connect Services</Text>
         </Button>
       </PopoverContent>
     </Popover>
   );
 }
 
-function UserAvatar({ className, ...props }: Omit<React.ComponentProps<typeof Avatar>, 'alt'>) {
+interface UserAvatarProps extends Omit<React.ComponentProps<typeof Avatar>, 'alt'> {
+  user: { username: string };
+  initials: string;
+}
+
+function UserAvatar({ user, initials, className, ...props }: UserAvatarProps) {
   return (
-    <Avatar alt={`${USER.fullName}'s avatar`} className={cn('size-8', className)} {...props}>
-      <AvatarImage source={USER.imgSrc} />
+    <Avatar alt={`${user.username}'s avatar`} className={cn('size-8', className)} {...props}>
+      <AvatarImage source={{ uri: `https://api.dicebear.com/7.x/initials/png?seed=${user.username}` }} />
       <AvatarFallback>
-        <Text>{USER.initials}</Text>
+        <Text>{initials}</Text>
       </AvatarFallback>
     </Avatar>
   );

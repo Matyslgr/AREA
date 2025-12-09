@@ -26,24 +26,18 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function SignUpScreen() {
   const { signUp } = useAuth();
-  const emailInputRef = React.useRef<TextInput>(null);
   const passwordInputRef = React.useRef<TextInput>(null);
-  const [name, setName] = React.useState('');
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState('');
-
-  function onNameSubmitEditing() {
-    emailInputRef.current?.focus();
-  }
 
   function onEmailSubmitEditing() {
     passwordInputRef.current?.focus();
   }
 
   async function onSubmit() {
-    if (!name || !email || !password) return;
+    if (!email || !password) return;
 
     if (password.length < 8) {
       setError('Password must be at least 8 characters');
@@ -53,7 +47,7 @@ export default function SignUpScreen() {
     setError('');
     setLoading(true);
 
-    const result = await signUp(name, email, password);
+    const result = await signUp(email, password);
     if (result.error) {
       setError(result.error);
       setLoading(false);
@@ -86,22 +80,8 @@ export default function SignUpScreen() {
               <CardContent className="gap-6">
                 <View className="gap-4">
                   <View className="gap-1.5">
-                    <Label htmlFor="name">Name</Label>
-                    <Input
-                      id="name"
-                      placeholder="John Doe"
-                      autoComplete="name"
-                      autoCapitalize="words"
-                      value={name}
-                      onChangeText={setName}
-                      onSubmitEditing={onNameSubmitEditing}
-                      returnKeyType="next"
-                    />
-                  </View>
-                  <View className="gap-1.5">
                     <Label htmlFor="email">Email</Label>
                     <Input
-                      ref={emailInputRef}
                       id="email"
                       placeholder="m@example.com"
                       keyboardType="email-address"
@@ -134,7 +114,7 @@ export default function SignUpScreen() {
                   <Button
                     className="w-full"
                     onPress={onSubmit}
-                    disabled={loading || !name || !email || !password}
+                    disabled={loading || !email || !password}
                   >
                     <Text className="text-primary-foreground font-semibold">
                       {loading ? 'Creating account...' : 'Create Account'}

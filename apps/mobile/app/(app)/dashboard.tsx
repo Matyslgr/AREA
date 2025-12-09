@@ -62,7 +62,7 @@ export default function DashboardScreen() {
             <View>
               <Text className="text-muted-foreground text-sm">Welcome back,</Text>
               <Text className="text-foreground text-xl font-bold">
-                {user?.name || 'User'}
+                {user?.username || 'User'}
               </Text>
             </View>
             <View className="flex-row gap-2">

@@ -12,7 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { Text } from '@/components/ui/text';
 import { SocialConnections } from '@/components/social-connections';
 import { useAuth } from '@/contexts/AuthContext';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import * as React from 'react';
 import {
   Pressable,
@@ -44,8 +44,11 @@ export default function SignInScreen() {
     const result = await signIn(email, password);
     if (result.error) {
       setError(result.error);
+      setLoading(false);
+    } else {
+      // Redirect to dashboard on success
+      router.replace('/(app)/dashboard');
     }
-    setLoading(false);
   }
 
   return (

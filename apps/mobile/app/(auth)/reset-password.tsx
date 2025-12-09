@@ -9,21 +9,23 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Text } from '@/components/ui/text';
+import { useAuth } from '@/contexts/AuthContext';
 import { router } from 'expo-router';
 import * as React from 'react';
-import { TextInput, View, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { TextInput, View, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ResetPasswordScreen() {
+  const { resetPassword } = useAuth();
   const passwordInputRef = React.useRef<TextInput>(null);
   const confirmPasswordInputRef = React.useRef<TextInput>(null);
-  const [code, setCode] = React.useState('');
+  const [token, setToken] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [confirmPassword, setConfirmPassword] = React.useState('');
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState('');
 
-  function onCodeSubmitEditing() {
+  function onTokenSubmitEditing() {
     passwordInputRef.current?.focus();
   }
 
@@ -32,7 +34,7 @@ export default function ResetPasswordScreen() {
   }
 
   async function onSubmit() {
-    if (!code || !password || !confirmPassword) return;
+    if (!token || !password || !confirmPassword) return;
 
     if (password !== confirmPassword) {
       setError('Passwords do not match');
@@ -46,11 +48,17 @@ export default function ResetPasswordScreen() {
 
     setError('');
     setLoading(true);
-    // TODO: Implement reset password logic with API
-    setTimeout(() => {
-      setLoading(false);
-      router.replace('/(auth)/sign-in');
-    }, 1000);
+
+    const result = await resetPassword(token, password);
+    setLoading(false);
+
+    if (result.error) {
+      setError(result.error);
+    } else {
+      Alert.alert('Success', 'Your password has been reset successfully', [
+        { text: 'OK', onPress: () => router.replace('/(auth)/sign-in') }
+      ]);
+    }
   }
 
   return (
@@ -80,14 +88,15 @@ export default function ResetPasswordScreen() {
               <CardContent className="gap-6">
                 <View className="gap-4">
                   <View className="gap-1.5">
-                    <Label htmlFor="code">Reset Code</Label>
+                    <Label htmlFor="token">Reset Token</Label>
                     <Input
-                      id="code"
-                      placeholder="Enter code"
-                      keyboardType="number-pad"
-                      value={code}
-                      onChangeText={setCode}
-                      onSubmitEditing={onCodeSubmitEditing}
+                      id="token"
+                      placeholder="Paste token from email"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      value={token}
+                      onChangeText={setToken}
+                      onSubmitEditing={onTokenSubmitEditing}
                       returnKeyType="next"
                     />
                   </View>
@@ -121,7 +130,7 @@ export default function ResetPasswordScreen() {
                   <Button
                     className="w-full"
                     onPress={onSubmit}
-                    disabled={loading || !code || !password || !confirmPassword}
+                    disabled={loading || !token || !password || !confirmPassword}
                   >
                     <Text className="text-primary-foreground font-semibold">
                       {loading ? 'Resetting...' : 'Reset Password'}
