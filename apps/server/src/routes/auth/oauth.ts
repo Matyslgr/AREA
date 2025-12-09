@@ -26,7 +26,7 @@ export async function oauthRoutes(fastify: FastifyInstance) {
     schema: getAuthUrlSchema
   }, async (request, reply) => {
     const { provider: providerName } = request.params;
-    const {scope: requestedScope, mode } = request.query;
+    const { scope: requestedScope, mode } = request.query;
 
     try {
       const providerStrategy = OAuthFactory.getProvider(providerName);

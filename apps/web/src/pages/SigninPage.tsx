@@ -14,32 +14,8 @@ import { api } from "@/lib/api"
 export default function SigninPage() {
   const handleOAuthSignin = async (provider: string) => {
     try {
-      let scope = ""
-
-      switch (provider) {
-        case "google":
-          scope = "https://www.googleapis.com/auth/gmail.send"
-          break
-        case "github":
-          scope = "repo,user"
-          break
-        case "spotify":
-          scope = "user-read-email user-read-private"
-          break
-        case "notion":
-          scope = ""
-          break
-        case "linkedin":
-          scope = "openid profile email"
-          break
-        case "twitch":
-          scope = "user:read:email"
-          break
-      }
-
-      const encodedScope = encodeURIComponent(scope)
       const { url } = await api.get<{ url: string }>(
-        `/auth/oauth/authorize/${provider}?scope=${encodedScope}&mode=login`
+        `/auth/oauth/authorize/${provider}?mode=login`
       )
 
       window.location.href = url

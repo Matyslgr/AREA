@@ -2,16 +2,48 @@ import { prisma } from '../../lib/prisma';
 import { OAuthFactory } from './oauth.factory';
 import { IEncryptionService } from '../../interfaces/encryption.interface';
 import { NodeCryptoAdapter } from '../../adapters/node-crypto.adapter';
+import { IPasswordHasher } from '../../interfaces/hasher.interface';
+import { Argon2Adapter } from '../../adapters/argon2.adapter';
+import { IOAuthProvider, OAuthTokens, OAuthUser } from '../../interfaces/auth.interface';
 
 export class AuthManager {
-  constructor(private encryptionService: IEncryptionService = new NodeCryptoAdapter()) {}
+  constructor(
+    private encryptionService: IEncryptionService = new NodeCryptoAdapter(),
+    private passwordHasher: IPasswordHasher = new Argon2Adapter()
+  ) {}
+
+  /**
+   * Helper to upsert an OAuth account for a user
+   */
+  private async upsertAccount(userId: string, provider: string, oauthUser: any, tokens: any) {
+    const data = {
+      provider_account_id: oauthUser.id,
+      access_token: this.encryptionService.encrypt(tokens.access_token),
+      refresh_token: tokens.refresh_token ? this.encryptionService.encrypt(tokens.refresh_token) : undefined,
+      expires_at: new Date(Date.now() + (tokens.expires_in || 3600) * 1000),
+      scope: tokens.scope
+    };
+
+    const existing = await prisma.account.findFirst({
+        where: { user_id: userId, provider }
+    });
+
+    if (existing) {
+        return prisma.account.update({ where: { id: existing.id }, data });
+    } else {
+        return prisma.account.create({ data: { ...data, user_id: userId, provider } });
+    }
+  }
 
   async loginWithOAuth(providerName: string, code: string) {
-    const provider = OAuthFactory.getProvider(providerName);
+    const provider: IOAuthProvider = OAuthFactory.getProvider(providerName);
+    const tokens: OAuthTokens = await provider.getTokens(code);
+    const oauthUser: OAuthUser = await provider.getUserInfo(tokens.access_token);
 
-    const tokens = await provider.getTokens(code);
 
-    const oauthUser = await provider.getUserInfo(tokens.access_token);
+    let userId: string;
+    let isNewUser = false;
+    let isNewAccount = false;
 
     const existingAccount = await prisma.account.findFirst({
       where: {
@@ -20,22 +52,9 @@ export class AuthManager {
       }
     });
 
-    let userId = existingAccount?.user_id;
-    let isNewUser = false;
-    let isNewAccount = false;
-
     if (existingAccount) {
-      await prisma.account.update({
-        where: { id: existingAccount.id },
-        data: {
-          access_token: this.encryptionService.encrypt(tokens.access_token),
-          refresh_token: tokens.refresh_token
-            ? this.encryptionService.encrypt(tokens.refresh_token)
-            : existingAccount.refresh_token,
-          expires_at: new Date(Date.now() + tokens.expires_in * 1000),
-          scope: tokens.scope
-        }
-      });
+      userId = existingAccount.user_id;
+      await this.upsertAccount(userId, providerName, oauthUser, tokens);
     } else {
       isNewAccount = true;
       let user = await prisma.user.findUnique({
@@ -47,27 +66,14 @@ export class AuthManager {
         user = await prisma.user.create({
           data: {
             email: oauthUser.email,
-            username: oauthUser.name,
+            username: oauthUser.name || oauthUser.email.split('@')[0],
             password: '',
           }
         });
       }
 
-      await prisma.account.create({
-        data: {
-          user_id: user.id,
-          provider: providerName,
-          provider_account_id: oauthUser.id,
-          access_token: this.encryptionService.encrypt(tokens.access_token),
-          refresh_token: tokens.refresh_token
-            ? this.encryptionService.encrypt(tokens.refresh_token)
-            : null,
-          expires_at: new Date(Date.now() + tokens.expires_in * 1000),
-          scope: tokens.scope
-        }
-      });
-
       userId = user.id;
+      await this.upsertAccount(userId, providerName, oauthUser, tokens);
     }
 
     const user = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
@@ -81,59 +87,19 @@ export class AuthManager {
   }
 
   async linkOAuthAccount(userId: string, providerName: string, code: string) {
-    const provider = OAuthFactory.getProvider(providerName);
+    const provider: IOAuthProvider = OAuthFactory.getProvider(providerName);
+    const tokens: OAuthTokens = await provider.getTokens(code);
+    const oauthUser: OAuthUser = await provider.getUserInfo(tokens.access_token);
 
-    const tokens = await provider.getTokens(code);
-    const oauthUser = await provider.getUserInfo(tokens.access_token);
-
-    // Check if this OAuth account is already linked to another user
-    const existingAccount = await prisma.account.findFirst({
-      where: {
-        provider: providerName,
-        provider_account_id: oauthUser.id
-      }
+    const conflictAccount = await prisma.account.findFirst({
+      where: { provider: providerName, provider_account_id: oauthUser.id }
     });
 
-    if (existingAccount && existingAccount.user_id !== userId) {
+    if (conflictAccount && conflictAccount.user_id !== userId) {
       throw new Error('This account is already linked to another user');
     }
 
-    // Check if user already has this provider linked
-    const userExistingAccount = await prisma.account.findFirst({
-      where: {
-        user_id: userId,
-        provider: providerName
-      }
-    });
-
-    if (userExistingAccount) {
-      // Update existing account
-      return prisma.account.update({
-        where: { id: userExistingAccount.id },
-        data: {
-          provider_account_id: oauthUser.id,
-          access_token: this.encryptionService.encrypt(tokens.access_token),
-          refresh_token: tokens.refresh_token
-            ? this.encryptionService.encrypt(tokens.refresh_token)
-            : null,
-          expires_at: new Date(Date.now() + tokens.expires_in * 1000),
-        }
-      });
-    }
-
-    // Create new account link
-    return prisma.account.create({
-      data: {
-        user_id: userId,
-        provider: providerName,
-        provider_account_id: oauthUser.id,
-        access_token: this.encryptionService.encrypt(tokens.access_token),
-        refresh_token: tokens.refresh_token
-          ? this.encryptionService.encrypt(tokens.refresh_token)
-          : null,
-        expires_at: new Date(Date.now() + tokens.expires_in * 1000),
-      }
-    });
+    return this.upsertAccount(userId, providerName, oauthUser, tokens);
   }
 
   async unlinkOAuthAccount(userId: string, providerName: string) {
@@ -213,13 +179,9 @@ export class AuthManager {
   }
 
   async updateAccount(userId: string, updates: { email?: string; username?: string; password?: string; currentPassword?: string }) {
-    const user = await prisma.user.findUnique({
+    const user = await prisma.user.findUniqueOrThrow({
       where: { id: userId }
     });
-
-    if (!user) {
-      throw new Error('User not found');
-    }
 
     // If updating password
     if (updates.password) {
@@ -229,31 +191,21 @@ export class AuthManager {
           throw new Error('Current password required to set new password');
         }
 
-        const bcrypt = require('bcrypt');
-        const isValid = await bcrypt.compare(updates.currentPassword, user.password);
-        if (!isValid) {
-          throw new Error('Current password is incorrect');
-        }
+        const isValid = await this.passwordHasher.verify(user.password, updates.currentPassword);
+        if (!isValid) throw new Error('Current password is incorrect');
       }
 
-      // Hash new password
-      const bcrypt = require('bcrypt');
-      const hashedPassword = await bcrypt.hash(updates.password, 10);
-      updates.password = hashedPassword;
+      updates.password = await this.passwordHasher.hash(updates.password);
+    } else {
+      // If not updating password, remove it from updates to avoid overwriting
+      delete updates.password;
     }
 
-    // Build update data
-    const updateData: any = {};
-    if (updates.email) updateData.email = updates.email;
-    if (updates.username) updateData.username = updates.username;
-    if (updates.password) updateData.password = updates.password;
-
-    // Remove currentPassword from updates as it's not a user field
-    delete updateData.currentPassword;
+    const { currentPassword, ...dataToUpdate } = updates;
 
     const updatedUser = await prisma.user.update({
       where: { id: userId },
-      data: updateData,
+      data: dataToUpdate,
       select: {
         id: true,
         email: true,
@@ -263,7 +215,7 @@ export class AuthManager {
 
     return {
       ...updatedUser,
-      hasPassword: !!updateData.password || (!!user.password && user.password.length > 0)
+      hasPassword: !!updates.password || (!!user.password && user.password.length > 0)
     };
   }
 }

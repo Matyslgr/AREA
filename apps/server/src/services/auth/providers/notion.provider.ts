@@ -52,7 +52,7 @@ export class NotionProvider implements IOAuthProvider {
 
     try {
       const data = await this.httpClient.post<NotionTokenResponse>(url, payload, { headers });
-
+      console.log('Notion Token Response:', data);
       const userInfo = data.owner?.user;
       const fakeTokenPayload = JSON.stringify({
         real_token: data.access_token,
