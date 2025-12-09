@@ -13,7 +13,8 @@ const areaObject = {
       properties: {
         name: { type: 'string', description: 'Action ID (ex: GITHUB_NEW_ISSUE)' },
         accountId: { type: 'string', nullable: true },
-        parameters: { type: 'object', additionalProperties: true }
+        parameters: { type: 'object', additionalProperties: true },
+        scopes: { type: 'array', items: { type: 'string' } }
       }
     },
     reactions: {
@@ -23,7 +24,8 @@ const areaObject = {
         properties: {
           name: { type: 'string', description: 'Reaction ID (ex: DISCORD_SEND_MSG)' },
           accountId: { type: 'string', nullable: true },
-          parameters: { type: 'object', additionalProperties: true }
+          parameters: { type: 'object', additionalProperties: true },
+          scopes: { type: 'array', items: { type: 'string' } }
         }
       }
     }
@@ -82,6 +84,28 @@ export const listAreasSchema = {
       description: 'List of AREAs',
       type: 'array',
       items: areaObject
+    }
+  }
+};
+
+export const getAreaSchema = {
+  description: 'Get details of a specific AREA',
+  tags: ['areas'],
+  security: [{ bearerAuth: [] }],
+  params: {
+    type: 'object',
+    properties: {
+      id: { type: 'string', format: 'uuid' }
+    }
+  },
+  response: {
+    200: areaObject,
+    404: {
+      description: 'AREA not found',
+      type: 'object',
+      properties: {
+        error: { type: 'string' }
+      }
     }
   }
 };
