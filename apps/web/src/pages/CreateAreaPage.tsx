@@ -49,7 +49,6 @@ const serviceIcons: Record<string, string> = {
   twitch: TwitchIcon
 }
 
-// Fonction pour récupérer l'icône du service
 const getServiceIcon = (serviceId: string) => {
   return serviceIcons[serviceId] || "https://img.icons8.com/fluency/96/services.png"
 }
@@ -60,20 +59,17 @@ export default function CreateAreaPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
-  // Services & Accounts
   const [services, setServices] = useState<ServiceDto[]>([])
   const [linkedAccounts, setLinkedAccounts] = useState<LinkedAccount[]>([])
 
-  // Form state
   const [areaName, setAreaName] = useState("")
   const [selectedActionService, setSelectedActionService] = useState<ServiceDto | null>(null)
   const [selectedReactionService, setSelectedReactionService] = useState<ServiceDto | null>(null)
   const [selectedAction, setSelectedAction] = useState<ServiceDto["actions"][0] | null>(null)
   const [selectedReaction, setSelectedReaction] = useState<ServiceDto["reactions"][0] | null>(null)
-  const [actionParams, setActionParams] = useState<Record<string, any>>({})
-  const [reactionParams, setReactionParams] = useState<Record<string, any>>({})
+  const [actionParams, setActionParams] = useState<Record<string, unknown>>({})
+  const [reactionParams, setReactionParams] = useState<Record<string, unknown>>({})
 
-  // Modal state
   const [showAccountModal, setShowAccountModal] = useState(false)
   const [showPermissionModal, setShowPermissionModal] = useState(false)
   const [modalService, setModalService] = useState<string>("")
@@ -96,9 +92,9 @@ export default function CreateAreaPage() {
 
   const fetchLinkedAccounts = async () => {
     try {
-      const data = await api.get<any>("/auth/account")
+      const data = await api.get<{ linkedAccounts: Array<{ id: string; provider: string; scopes: string[] }> }>("/auth/account")
       const accounts = data.linkedAccounts || []
-      setLinkedAccounts(accounts.map((acc: any) => ({
+      setLinkedAccounts(accounts.map((acc) => ({
         id: acc.id,
         service: acc.provider,
         scopes: acc.scopes || []
@@ -123,7 +119,6 @@ export default function CreateAreaPage() {
   const handleServiceSelect = (service: ServiceDto, type: "action" | "reaction") => {
     const account = getServiceAccount(service.id)
 
-    // Check if account is linked (skip for timer service)
     if (service.id !== "timer" && !account) {
       setModalService(service.name)
       setModalType(type)
@@ -141,7 +136,6 @@ export default function CreateAreaPage() {
   const handleActionSelect = (action: ServiceDto["actions"][0]) => {
     const account = getServiceAccount(selectedActionService!.id)
 
-    // Check permissions for action
     if (selectedActionService!.id !== "timer" && action.scopes && action.scopes.length > 0) {
       if (!account || !hasRequiredScopes(selectedActionService!.id, action.scopes)) {
         setModalService(selectedActionService!.name)
@@ -159,7 +153,6 @@ export default function CreateAreaPage() {
   const handleReactionSelect = (reaction: ServiceDto["reactions"][0]) => {
     const account = getServiceAccount(selectedReactionService!.id)
 
-    // Check permissions for reaction
     if (selectedReactionService!.id !== "timer" && reaction.scopes && reaction.scopes.length > 0) {
       if (!account || !hasRequiredScopes(selectedReactionService!.id, reaction.scopes)) {
         setModalService(selectedReactionService!.name)
@@ -179,7 +172,6 @@ export default function CreateAreaPage() {
       const serviceId = services.find(s => s.name === modalService)?.id
       if (!serviceId) return
 
-      // Store current page to redirect back after OAuth
       localStorage.setItem('oauth-redirect', '/areas/create')
 
       const { url } = await api.get<{ url: string }>(
@@ -197,7 +189,6 @@ export default function CreateAreaPage() {
       const serviceId = services.find(s => s.name === modalService)?.id
       if (!serviceId) return
 
-      // Store current page to redirect back after OAuth
       localStorage.setItem('oauth-redirect', '/areas/create')
 
       const { url } = await api.get<{ url: string }>(
@@ -220,7 +211,6 @@ export default function CreateAreaPage() {
         setError("Please select an action")
         return
       }
-      // Validate action parameters
       if (selectedAction.parameters && selectedAction.parameters.length > 0) {
         for (const param of selectedAction.parameters) {
           if (param.required && (!actionParams[param.name] || actionParams[param.name].toString().trim() === '')) {
@@ -235,7 +225,6 @@ export default function CreateAreaPage() {
         setError("Please select a reaction")
         return
       }
-      // Validate reaction parameters
       if (selectedReaction.parameters && selectedReaction.parameters.length > 0) {
         for (const param of selectedReaction.parameters) {
           if (param.required && (!reactionParams[param.name] || reactionParams[param.name].toString().trim() === '')) {
@@ -288,7 +277,7 @@ export default function CreateAreaPage() {
     }
   }
 
-  const renderParameterInput = (param: any, value: any, onChange: (key: string, val: any) => void, prefix: string) => {
+  const renderParameterInput = (param: ServiceDto["actions"][0]["parameters"][0], value: unknown, onChange: (key: string, val: string | number | boolean) => void, prefix: string) => {
     return (
       <div key={param.name} className="space-y-2">
         <Label htmlFor={`${prefix}-${param.name}`} className="text-gray-900 text-sm font-medium">
