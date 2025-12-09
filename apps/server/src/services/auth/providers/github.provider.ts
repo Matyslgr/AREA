@@ -48,6 +48,8 @@ export class GithubProvider implements IOAuthProvider {
     try {
       const data = await this.httpClient.post<GitHubTokenResponse>(url, payload, config);
 
+      console.log('GitHub Token Response:', data);
+      
       return {
         access_token: data.access_token,
         refresh_token: undefined,

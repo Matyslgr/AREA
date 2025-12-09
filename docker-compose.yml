@@ -20,7 +20,6 @@ services:
   # 2. SERVER (Fastify)
   # ---------------------------------------------------------------------------
   server:
-  
     container_name: area-server
     build:
       context: .
@@ -47,8 +46,8 @@ services:
       dockerfile: apps/web/Dockerfile
     ports:
       - "8081:8081"
-    environment:
-      VITE_API_URL: http://localhost:8080
+    env_file:
+      - ./apps/web/.env
     depends_on:
       - server
     networks:

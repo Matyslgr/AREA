@@ -53,8 +53,8 @@ const main = async () => {
         // Grouping auth routes
         await api.register(oauthRoutes, { prefix: '/auth' });
         await api.register(accountRoutes, { prefix: '/auth' });
-        api.route(signupRoute);
-        api.route(signinRoute);
+        await api.register(signupRoute, { prefix: '/auth' });
+        await api.register(signinRoute, { prefix: '/auth' });
 
         // Grouping area routes
         await api.register(areaRoutes, { prefix: '/areas' });

@@ -46,6 +46,7 @@ export class LinkedinProvider implements IOAuthProvider {
     try {
       const data = await this.httpClient.post<LinkedInTokenResponse>(url, params, config);
 
+      console.log('LinkedIn Token Response:', data);
       return {
         access_token: data.access_token,
         refresh_token: undefined,
