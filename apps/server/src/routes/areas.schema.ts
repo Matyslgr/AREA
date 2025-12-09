@@ -131,6 +131,7 @@ export const updateAreaSchema = {
         type: 'array',
         items: {
           type: 'object',
+          required: ['id'],
           properties: {
             id: { type: 'string' },
             parameters: { type: 'object' }
