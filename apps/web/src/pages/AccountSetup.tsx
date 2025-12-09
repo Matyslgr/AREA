@@ -118,7 +118,7 @@ export default function AccountSetup() {
   }
 
   const isServiceLinked = (provider: string) => {
-    if (!accountDetails) return false
+    if (!accountDetails || !accountDetails.linkedAccounts) return false
     return accountDetails.linkedAccounts.some(
       (account) => account.provider.toLowerCase() === provider.toLowerCase()
     )

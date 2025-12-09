@@ -1,10 +1,8 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { signinSchema } from './signin.schema';
-
-const prisma = new PrismaClient();
+import { prisma } from '../../lib/prisma';
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
 
 interface SigninBody {
