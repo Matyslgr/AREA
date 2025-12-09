@@ -1,6 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 const TOKEN_KEY = 'area-token';
 const USER_KEY = 'area-user';
@@ -57,7 +57,7 @@ export async function removeStoredUser(): Promise<void> {
 export interface User {
   id: string;
   email: string;
-  username: string; // Backend uses 'username' not 'name'
+  username: string;
 }
 
 interface ApiResponse<T> {
@@ -126,7 +126,6 @@ export const authApi = {
   signIn: (email: string, password: string) =>
     api.post<AuthResponse>('/auth/signin', { email, password }),
 
-  // Backend only accepts email and password, generates username automatically
   signUp: (email: string, password: string) =>
     api.post<AuthResponse>('/auth/signup', { email, password }),
 
@@ -147,7 +146,6 @@ export const authApi = {
   getOAuthUrl: (provider: string, mode: 'login' | 'connect' | 'signup') =>
     api.get<{ url: string }>(`/auth/oauth/authorize/${provider}?mode=${mode}`),
 
-  // Backend doesn't use 'state' in body, it's in the OAuth callback URL
   oauthLogin: (provider: string, code: string) =>
     api.post<AuthResponse>('/auth/oauth/login', { provider, code }),
 

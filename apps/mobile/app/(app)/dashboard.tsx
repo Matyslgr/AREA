@@ -24,6 +24,34 @@ const CONNECTED_SERVICES = [
     useTint: true,
     connected: false,
   },
+  {
+    id: 'notion',
+    name: 'Notion',
+    icon: { uri: 'https://img.clerk.com/static/notion.png?width=160' },
+    useTint: true,
+    connected: true,
+  },
+  {
+    id: 'spotify',
+    name: 'Spotify',
+    icon: { uri: 'https://img.clerk.com/static/spotify.png?width=160' },
+    useTint: false,
+    connected: false,
+  },
+  {
+    id: 'linkedin',
+    name: 'LinkedIn',
+    icon: { uri: 'https://img.clerk.com/static/linkedin.png?width=160' },
+    useTint: false,
+    connected: true,
+  },
+  {
+    id: 'twitch',
+    name: 'Twitch',
+    icon: { uri: 'https://img.clerk.com/static/twitch.png?width=160' },
+    useTint: false,
+    connected: false,
+  },
 ];
 
 const RECENT_AUTOMATIONS = [
