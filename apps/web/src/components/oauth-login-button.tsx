@@ -6,13 +6,17 @@ import { cn } from "@/lib/utils";
 interface OAuthLoginButtonProps extends React.ComponentProps<typeof Button> {
   provider: string;
   icon: React.ReactNode;
-  bgColor?: string;
-  children?: React.ReactNode;
+  mode?: 'login' | 'connect';
+  scopes?: string[];
+  linked?: boolean;
 }
 
 export const OAuthLoginButton = ({
   provider,
   icon,
+  mode = 'login',
+  scopes = [],
+  linked = false,
   className,
   children,
   ...props
@@ -20,10 +24,18 @@ export const OAuthLoginButton = ({
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async () => {
+    if (linked) return;
+
     try {
       setIsLoading(true);
 
-      const response = await api.get<{ url: string }>(`/auth/oauth/authorize/${provider}`);
+      const queryParams = new URLSearchParams();
+      queryParams.append('mode', mode);
+      if (scopes.length > 0) {
+        queryParams.append('scope', scopes.join(' '));
+      }
+
+      const response = await api.get<{ url: string }>(`/auth/oauth/authorize/${provider}?${queryParams.toString()}`);
 
       window.location.href = response.url;
 
