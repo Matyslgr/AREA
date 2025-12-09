@@ -5,6 +5,7 @@ import { NodeCryptoAdapter } from '../../adapters/node-crypto.adapter';
 import { IPasswordHasher } from '../../interfaces/hasher.interface';
 import { Argon2Adapter } from '../../adapters/argon2.adapter';
 import { IOAuthProvider, OAuthTokens, OAuthUser } from '../../interfaces/auth.interface';
+import { AccountDetailsDto } from '@area/shared';
 
 export class AuthManager {
   constructor(
@@ -143,14 +144,30 @@ export class AuthManager {
         id: true,
         provider: true,
         provider_account_id: true,
-        expires_at: true,
+        expires_at: true
       }
     });
 
     return accounts;
   }
 
-  async getAccountDetails(userId: string) {
+  async getLinkedAccount(userId: string, provider: string) {
+    const account = await prisma.account.findFirst({
+      where: { user_id: userId, provider: provider }
+    });
+
+    if (!account) return null;
+
+    return {
+      id: account.id,
+      provider: account.provider,
+      provider_account_id: account.provider_account_id,
+      expires_at: account.expires_at,
+      scopes: account.scope ? account.scope.split(' ') : []
+    };
+  }
+
+  async getAccountDetails(userId: string): Promise<AccountDetailsDto> {
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: {
@@ -160,6 +177,7 @@ export class AuthManager {
             provider: true,
             provider_account_id: true,
             expires_at: true,
+            scope: true
           }
         }
       }
@@ -174,7 +192,13 @@ export class AuthManager {
       email: user.email,
       username: user.username,
       hasPassword: !!user.password && user.password.length > 0,
-      linkedAccounts: user.accounts
+      linkedAccounts: user.accounts.map(acc => ({
+        id: acc.id,
+        provider: acc.provider,
+        provider_account_id: acc.provider_account_id,
+        expires_at: acc.expires_at,
+        scopes: acc.scope ? acc.scope.split(' ') : []
+      }))
     };
   }
 
