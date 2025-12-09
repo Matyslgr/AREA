@@ -12,6 +12,7 @@ const areaObject = {
       type: 'object',
       properties: {
         name: { type: 'string', description: 'Action ID (ex: GITHUB_NEW_ISSUE)' },
+        accountId: { type: 'string', nullable: true },
         parameters: { type: 'object', additionalProperties: true }
       }
     },
@@ -21,6 +22,7 @@ const areaObject = {
         type: 'object',
         properties: {
           name: { type: 'string', description: 'Reaction ID (ex: DISCORD_SEND_MSG)' },
+          accountId: { type: 'string', nullable: true },
           parameters: { type: 'object', additionalProperties: true }
         }
       }
@@ -124,6 +126,7 @@ export const updateAreaSchema = {
       action: {
         type: 'object',
         properties: {
+          name: { type: 'string' },
           parameters: { type: 'object' }
         }
       },
@@ -131,9 +134,8 @@ export const updateAreaSchema = {
         type: 'array',
         items: {
           type: 'object',
-          required: ['id'],
           properties: {
-            id: { type: 'string' },
+            name: { type: 'string' },
             parameters: { type: 'object' }
           }
         }

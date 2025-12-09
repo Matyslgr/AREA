@@ -167,8 +167,8 @@ export async function areaRoutes(fastify: FastifyInstance) {
     });
 
     if (!existingArea) {
-      request.log.error({ areaId: id, userId }, 'AREA not found during update');
-      return reply.status(404).send({ error: 'AREA not found' });
+        request.log.error({ areaId: id, userId }, 'AREA not found during update');
+        return reply.status(404).send({ error: 'AREA not found' });
     }
 
     const user = await prisma.user.findUniqueOrThrow({
@@ -176,48 +176,72 @@ export async function areaRoutes(fastify: FastifyInstance) {
         include: { accounts: true }
     });
 
-    await prisma.area.update({
-      where: { id },
-      data: {
-        is_active: is_active ?? undefined,
-        name: name ?? undefined
-      }
-    });
+    try {
+      await prisma.$transaction(async (tx) => {
 
-    if (action && existingArea.action) {
-      await prisma.action.update({
-        where: { id: existingArea.action.id },
-        data: {
-          parameters: action.parameters,
-          state: {}
+        await tx.area.update({
+          where: { id },
+          data: {
+            is_active: is_active ?? undefined,
+            name: name ?? undefined
+          }
+        });
+
+        if (action && existingArea.action) {
+          const targetActionName = action.name || existingArea.action.name;
+
+          if (action.name && action.name !== existingArea.action.name) {
+            const actionExists = serviceManager.getAllServices().some(s => s.actions.some(a => a.id === action.name));
+            if (!actionExists) throw new Error(`Action ${action.name} not found`);
+          }
+
+          const newAccountId = resolveAccountId(user.accounts, targetActionName, 'action');
+
+          await tx.action.update({
+            where: { id: existingArea.action.id },
+            data: {
+              name: action.name ?? undefined,
+              parameters: action.parameters ?? undefined,
+              account_id: newAccountId,
+              state: (action.name && action.name !== existingArea.action.name) ? {} : undefined,
+            }
+          });
+        }
+
+        if (reactions) {
+          await tx.reaction.deleteMany({
+            where: { area_id: id }
+          });
+
+          if (reactions.length > 0) {
+            await tx.reaction.createMany({
+              data: reactions.map(r => ({
+                area_id: id,
+                name: r.name,
+                parameters: r.parameters || {},
+                account_id: resolveAccountId(user.accounts, r.name, 'reaction')
+              }))
+            });
+          }
         }
       });
 
-      // Re-init AREA after action update
-      areaEngine.processArea({ ...existingArea, is_active: is_active ?? existingArea.is_active }).catch(err => {
-        request.log.error(`Failed to re-initialize area ${existingArea.id}: ${err.message}`);
+      const updatedArea = await prisma.area.findUnique({
+          where: { id },
+          include: { action: true, reactions: true, user: { include: { accounts: true } } }
       });
-    }
 
-    if (reactions && reactions.length > 0) {
-      for (const reactionUpdate of reactions) {
-
-        const reactionExists = await prisma.reaction.findFirst({
-            where: { id: reactionUpdate.id, area_id: id }
-        });
-
-        if (!reactionExists) {
-          request.log.error({ reactionId: reactionUpdate.id, areaId: id }, 'Reaction not found during AREA update');
-          continue; // Skip invalid reaction updates
-        }
-        
-        await prisma.reaction.updateMany({
-          where: { id: reactionUpdate.id, area_id: id },
-          data: { parameters: reactionUpdate.parameters }
-        });
+      if (updatedArea) {
+          areaEngine.processArea(updatedArea).catch(err => {
+            request.log.error(`Failed to re-initialize area ${id}: ${err.message}`);
+          });
       }
-    }
 
-    return { success: true };
+      return { success: true };
+
+    } catch (error) {
+      request.log.error(error);
+      return reply.status(500).send({ error: 'Failed to update AREA' });
+    }
   });
 }

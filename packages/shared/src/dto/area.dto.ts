@@ -40,11 +40,12 @@ export interface UpdateAreaDto {
   name?: string;
   is_active?: boolean;
   action?: {
+    name?: string;
     parameters: Record<string, any>;
     accountId?: string;
   };
   reactions?: {
-    id: string; // To identify which reaction to update
+    name: string;
     parameters?: Record<string, any>;
     accountId?: string;
   }[];
