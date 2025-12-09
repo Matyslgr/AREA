@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../lib/prisma';
-import { AreaDto } from '@area/shared';
+import { AreaDto, CreateAreaDto, UpdateAreaDto } from '@area/shared';
 import { areaEngine } from '../core/area.engine';
 import { serviceManager } from '../services/service.manager';
 
@@ -20,26 +20,31 @@ const mapToDto = (area: any): AreaDto => ({
   error_log: area.error_log,
   action: {
     name: area.action?.name ?? "UNKNOWN",
+    accountId: area.action?.account_id,
     parameters: area.action?.parameters as Record<string, any> ?? {}
   },
   reactions: area.reactions.map((r: any) => ({
     name: r.name,
+    accountId: r.account_id,
     parameters: r.parameters as Record<string, any>
   }))
 });
 
-interface CreateAreaBody {
-  name: string;
-  action: { name: string; parameters: Record<string, any> };
-  reactions: { name: string; parameters: Record<string, any> }[];
-}
+const resolveAccountId = (userAccounts: any[], elementId: string, type: 'action' | 'reaction'): string | undefined => {
+  const services = serviceManager.getAllServices();
 
-interface UpdateAreaBody {
-  is_active?: boolean;
-  name?: string;
-  action?: { parameters: Record<string, any> };
-  reactions?: { id: string; parameters: Record<string, any> }[];
-}
+  const service = services.find(s => {
+    if (type === 'action') return s.actions.some(a => a.id === elementId);
+    return s.reactions.some(r => r.id === elementId);
+  });
+
+  if (!service) return undefined;
+
+  // Find the account linked to the service
+  const account = userAccounts.find(acc => acc.provider === service.id);
+
+  return account?.id; // May be undefined if no account linked
+};
 
 export async function areaRoutes(fastify: FastifyInstance) {
   fastify.get<{ Reply: AreaDto[] }>('/', {
@@ -57,18 +62,33 @@ export async function areaRoutes(fastify: FastifyInstance) {
     return areas.map(mapToDto);
   });
 
-  fastify.post<{ Body: CreateAreaBody }>('/', {
+  fastify.post<{ Body: CreateAreaDto }>('/', {
     schema: createAreaSchema,
     onRequest: [fastify.authenticate]
   }, async (request, reply) => {
     const { name, action, reactions } = request.body;
     const userId = request.user.id;
 
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { accounts: true }
+    });
+
+    if (!user) {
+      request.log.error({ userId }, 'User not found during AREA creation');
+      return reply.status(404).send({ error: "User not found" });
+    }
+
     // A. Validation Action & Reactions
     const actionExists = serviceManager.getAllServices().some(s => s.actions.some(a => a.id === action.name));
-    if (!actionExists) return reply.status(400).send({ error: `Action ${action.name} not found` });
+
+    if (!actionExists) {
+      request.log.error({ actionName: action.name }, 'Validation failed: Action not found in registry');
+      return reply.status(400).send({ error: `Action ${action.name} not found` });
+    }
 
     try {
+      const actionAccountId = resolveAccountId(user.accounts, action.name, 'action');
       const newArea = await prisma.area.create({
         data: {
           name,
@@ -78,13 +98,15 @@ export async function areaRoutes(fastify: FastifyInstance) {
             create: {
               name: action.name,
               parameters: action.parameters,
-              state: {}
+              state: {},
+              account_id: actionAccountId
             }
           },
           reactions: {
             create: reactions.map(r => ({
               name: r.name,
-              parameters: r.parameters
+              parameters: r.parameters,
+              account_id: resolveAccountId(user.accounts, r.name, 'reaction')
             }))
           }
         },
@@ -131,7 +153,7 @@ export async function areaRoutes(fastify: FastifyInstance) {
     return { success: true };
   });
 
-  fastify.put<{ Params: { id: string }, Body: UpdateAreaBody }>('/:id', {
+  fastify.put<{ Params: { id: string }, Body: UpdateAreaDto }>('/:id', {
     schema: updateAreaSchema,
     onRequest: [fastify.authenticate]
   }, async (request, reply) => {
@@ -144,40 +166,82 @@ export async function areaRoutes(fastify: FastifyInstance) {
       include: { action: true }
     });
 
-    if (!existingArea) return reply.status(404).send({ error: 'AREA not found' });
+    if (!existingArea) {
+        request.log.error({ areaId: id, userId }, 'AREA not found during update');
+        return reply.status(404).send({ error: 'AREA not found' });
+    }
 
-    await prisma.area.update({
-      where: { id },
-      data: {
-        is_active: is_active ?? undefined,
-        name: name ?? undefined
-      }
+    const user = await prisma.user.findUniqueOrThrow({
+        where: { id: userId },
+        include: { accounts: true }
     });
 
-    if (action && existingArea.action) {
-      await prisma.action.update({
-        where: { id: existingArea.action.id },
-        data: {
-          parameters: action.parameters,
-          state: {}
+    try {
+      await prisma.$transaction(async (tx) => {
+
+        await tx.area.update({
+          where: { id },
+          data: {
+            is_active: is_active ?? undefined,
+            name: name ?? undefined
+          }
+        });
+
+        if (action && existingArea.action) {
+          const targetActionName = action.name || existingArea.action.name;
+
+          if (action.name && action.name !== existingArea.action.name) {
+            const actionExists = serviceManager.getAllServices().some(s => s.actions.some(a => a.id === action.name));
+            if (!actionExists) throw new Error(`Action ${action.name} not found`);
+          }
+
+          const newAccountId = resolveAccountId(user.accounts, targetActionName, 'action');
+
+          await tx.action.update({
+            where: { id: existingArea.action.id },
+            data: {
+              name: action.name ?? undefined,
+              parameters: action.parameters ?? undefined,
+              account_id: newAccountId,
+              state: (action.name && action.name !== existingArea.action.name) ? {} : undefined,
+            }
+          });
+        }
+
+        if (reactions) {
+          await tx.reaction.deleteMany({
+            where: { area_id: id }
+          });
+
+          if (reactions.length > 0) {
+            await tx.reaction.createMany({
+              data: reactions.map(r => ({
+                area_id: id,
+                name: r.name,
+                parameters: r.parameters || {},
+                account_id: resolveAccountId(user.accounts, r.name, 'reaction')
+              }))
+            });
+          }
         }
       });
 
-      // Re-init AREA after action update
-      areaEngine.processArea({ ...existingArea, is_active: is_active ?? existingArea.is_active }).catch(err => {
-        request.log.error(`Failed to re-initialize area ${existingArea.id}: ${err.message}`);
+      const updatedArea = await prisma.area.findUnique({
+          where: { id },
+          include: { action: true, reactions: true, user: { include: { accounts: true } } }
       });
-    }
 
-    if (reactions && reactions.length > 0) {
-      for (const reactionUpdate of reactions) {
-        await prisma.reaction.updateMany({
-          where: { id: reactionUpdate.id, area_id: id },
-          data: { parameters: reactionUpdate.parameters }
-        });
+      if (updatedArea) {
+          areaEngine.processArea(updatedArea).catch(err => {
+            request.log.error(`Failed to re-initialize area ${id}: ${err.message}`);
+          });
       }
-    }
 
-    return { success: true };
+      return { success: true };
+
+    } catch (error) {
+      request.log.error(error);
+      return reply.status(500).send({ error: 'Failed to update AREA' });
+    }
   });
 }
