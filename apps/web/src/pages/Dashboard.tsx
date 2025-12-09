@@ -100,10 +100,10 @@ export default function Dashboard() {
   const totalReactions = areas.reduce((sum, area) => sum + area.reactions.length, 0);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#91B7FF] to-[#7BA5FF]">
+    <div className="min-h-screen bg-gradient-to-br from-[#91B7FF] to-[#7BA5FF] flex flex-col">
       <Navbar />
 
-      <div className="container mx-auto px-4 pt-28 md:pt-32 pb-8 space-y-8">
+      <div className="flex-1 container mx-auto px-4 pt-28 md:pt-32 pb-16 space-y-8">
         <div className="flex flex-col gap-4">
           <h1 className="text-4xl font-bold tracking-tight text-white">My AREAs</h1>
           <p className="text-white/90">

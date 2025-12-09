@@ -79,7 +79,15 @@ export const AuthCallback = () => {
             code
           });
           console.log("✅ Service linked successfully:", data);
-          navigate('/account-setup');
+          
+          // Check if we should redirect to a specific page
+          const redirectTo = localStorage.getItem('oauth-redirect');
+          if (redirectTo) {
+            localStorage.removeItem('oauth-redirect');
+            navigate(redirectTo);
+          } else {
+            navigate('/account-setup');
+          }
         } else {
           data = await api.post<AuthResponse>('/auth/oauth/login', {
             provider,

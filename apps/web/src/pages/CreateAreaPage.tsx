@@ -1,114 +1,36 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, ArrowRight, Check } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { ArrowLeft, ArrowRight, Check, AlertCircle, Link as LinkIcon } from "lucide-react"
 import { api } from "@/lib/api"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
+import type { ServiceDto, CreateAreaDto } from "@area/shared"
 
-interface Parameter {
-  [key: string]: string
-}
-
-interface Action {
-  name: string
-  description: string
-  parameters: Parameter
-  scopes?: string[]
-}
-
-interface Reaction {
-  name: string
-  description: string
-  parameters: Parameter
-}
-
-interface ServiceData {
-  name: string
-  icon: string
-  actions: Action[]
-  reactions: Reaction[]
-}
-
-import GithubIcon from "@/assets/icons/github.png"
 import GoogleIcon from "@/assets/icons/google.png"
 import SpotifyIcon from "@/assets/icons/spotify.png"
+import GithubIcon from "@/assets/icons/github.png"
+import NotionIcon from "@/assets/icons/notion.png"
+import LinkedinIcon from "@/assets/icons/linkedin.png"
+import TwitchIcon from "@/assets/icons/twitch.png"
 
-const MOCK_SERVICES: ServiceData[] = [
-  {
-    name: "Gmail",
-    icon: GoogleIcon,
-    actions: [
-      {
-        name: "GMAIL_NEW_EMAIL",
-        description: "Triggered when a new email is received",
-        parameters: {},
-      },
-    ],
-    reactions: [
-      {
-        name: "GMAIL_SEND_EMAIL",
-        description: "Sends an email using your Gmail account",
-        parameters: {
-          to: "string",
-          subject: "string",
-          body: "string",
-        },
-      },
-    ],
-  },
-  {
-    name: "GitHub",
-    icon: GithubIcon,
-    actions: [
-      {
-        name: "GITHUB_NEW_ISSUE",
-        description: "Triggered when a new issue is created",
-        parameters: {
-          repository: "string",
-        },
-      },
-    ],
-    reactions: [
-      {
-        name: "GITHUB_CREATE_ISSUE",
-        description: "Creates a new issue in a repository",
-        parameters: {
-          repository: "string",
-          title: "string",
-          body: "string",
-        },
-      },
-    ],
-  },
-  {
-    name: "Spotify",
-    icon: SpotifyIcon,
-    actions: [
-      {
-        name: "SPOTIFY_NEW_PLAYLIST_TRACK",
-        description: "Triggered when a new track is added to a playlist",
-        parameters: {
-          playlist_id: "string",
-        },
-      },
-    ],
-    reactions: [
-      {
-        name: "SPOTIFY_ADD_PLAYLIST_TRACK",
-        description: "Adds a track to a playlist",
-        parameters: {
-          playlist_id: "string",
-          track_uri: "string",
-        },
-      },
-    ],
-  },
-]
+interface LinkedAccount {
+  id: string
+  service: string
+  scopes: string[]
+}
 
 const STEPS = [
   { number: 1, title: "Name & Services", description: "Choose your AREA name and services" },
@@ -117,38 +39,218 @@ const STEPS = [
   { number: 4, title: "Review", description: "Confirm your automation" },
 ]
 
+const serviceIcons: Record<string, string> = {
+  timer: "https://img.icons8.com/fluency/96/clock.png",
+  google: GoogleIcon,
+  spotify: SpotifyIcon,
+  github: GithubIcon,
+  notion: NotionIcon,
+  linkedin: LinkedinIcon,
+  twitch: TwitchIcon
+}
+
+// Fonction pour récupérer l'icône du service
+const getServiceIcon = (serviceId: string) => {
+  return serviceIcons[serviceId] || "https://img.icons8.com/fluency/96/services.png"
+}
+
 export default function CreateAreaPage() {
   const navigate = useNavigate()
   const [currentStep, setCurrentStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
+  // Services & Accounts
+  const [services, setServices] = useState<ServiceDto[]>([])
+  const [linkedAccounts, setLinkedAccounts] = useState<LinkedAccount[]>([])
+
+  // Form state
   const [areaName, setAreaName] = useState("")
-  const [actionService, setActionService] = useState<ServiceData | null>(null)
-  const [reactionService, setReactionService] = useState<ServiceData | null>(null)
-  const [selectedAction, setSelectedAction] = useState<Action | null>(null)
-  const [selectedReaction, setSelectedReaction] = useState<Reaction | null>(null)
-  const [actionParams, setActionParams] = useState<Parameter>({})
-  const [reactionParams, setReactionParams] = useState<Parameter>({})
+  const [selectedActionService, setSelectedActionService] = useState<ServiceDto | null>(null)
+  const [selectedReactionService, setSelectedReactionService] = useState<ServiceDto | null>(null)
+  const [selectedAction, setSelectedAction] = useState<ServiceDto["actions"][0] | null>(null)
+  const [selectedReaction, setSelectedReaction] = useState<ServiceDto["reactions"][0] | null>(null)
+  const [actionParams, setActionParams] = useState<Record<string, any>>({})
+  const [reactionParams, setReactionParams] = useState<Record<string, any>>({})
+
+  // Modal state
+  const [showAccountModal, setShowAccountModal] = useState(false)
+  const [showPermissionModal, setShowPermissionModal] = useState(false)
+  const [modalService, setModalService] = useState<string>("")
+  const [modalScopes, setModalScopes] = useState<string[]>([])
+  const [modalType, setModalType] = useState<"action" | "reaction">("action")
+
+  useEffect(() => {
+    fetchServices()
+    fetchLinkedAccounts()
+  }, [])
+
+  const fetchServices = async () => {
+    try {
+      const data = await api.get<ServiceDto[]>("/services")
+      setServices(data)
+    } catch (err) {
+      console.error("Failed to fetch services:", err)
+    }
+  }
+
+  const fetchLinkedAccounts = async () => {
+    try {
+      const data = await api.get<any>("/auth/account")
+      const accounts = data.linkedAccounts || []
+      setLinkedAccounts(accounts.map((acc: any) => ({
+        id: acc.id,
+        service: acc.provider,
+        scopes: acc.scopes || []
+      })))
+    } catch (err) {
+      console.error("Failed to fetch linked accounts:", err)
+      setLinkedAccounts([])
+    }
+  }
+
+  const getServiceAccount = (serviceId: string) => {
+    return linkedAccounts.find(acc => acc.service.toLowerCase() === serviceId.toLowerCase())
+  }
+
+  const hasRequiredScopes = (serviceId: string, requiredScopes: string[]) => {
+    if (!requiredScopes || requiredScopes.length === 0) return true
+    const account = getServiceAccount(serviceId)
+    if (!account) return false
+    return requiredScopes.every(scope => account.scopes.includes(scope))
+  }
+
+  const handleServiceSelect = (service: ServiceDto, type: "action" | "reaction") => {
+    const account = getServiceAccount(service.id)
+
+    // Check if account is linked (skip for timer service)
+    if (service.id !== "timer" && !account) {
+      setModalService(service.name)
+      setModalType(type)
+      setShowAccountModal(true)
+      return
+    }
+
+    if (type === "action") {
+      setSelectedActionService(service)
+    } else {
+      setSelectedReactionService(service)
+    }
+  }
+
+  const handleActionSelect = (action: ServiceDto["actions"][0]) => {
+    const account = getServiceAccount(selectedActionService!.id)
+
+    // Check permissions for action
+    if (selectedActionService!.id !== "timer" && action.scopes && action.scopes.length > 0) {
+      if (!account || !hasRequiredScopes(selectedActionService!.id, action.scopes)) {
+        setModalService(selectedActionService!.name)
+        setModalScopes(action.scopes)
+        setModalType("action")
+        setShowPermissionModal(true)
+        return
+      }
+    }
+
+    setSelectedAction(action)
+    setActionParams({})
+  }
+
+  const handleReactionSelect = (reaction: ServiceDto["reactions"][0]) => {
+    const account = getServiceAccount(selectedReactionService!.id)
+
+    // Check permissions for reaction
+    if (selectedReactionService!.id !== "timer" && reaction.scopes && reaction.scopes.length > 0) {
+      if (!account || !hasRequiredScopes(selectedReactionService!.id, reaction.scopes)) {
+        setModalService(selectedReactionService!.name)
+        setModalScopes(reaction.scopes)
+        setModalType("reaction")
+        setShowPermissionModal(true)
+        return
+      }
+    }
+
+    setSelectedReaction(reaction)
+    setReactionParams({})
+  }
+
+  const handleLinkAccount = async () => {
+    try {
+      const serviceId = services.find(s => s.name === modalService)?.id
+      if (!serviceId) return
+
+      // Store current page to redirect back after OAuth
+      localStorage.setItem('oauth-redirect', '/areas/create')
+
+      const { url } = await api.get<{ url: string }>(
+        `/auth/oauth/authorize/${serviceId}?mode=connect`
+      )
+      
+      window.location.href = url
+    } catch (err) {
+      console.error(`Failed to link ${modalService}:`, err)
+    }
+  }
+
+  const handleRequestPermissions = async () => {
+    try {
+      const serviceId = services.find(s => s.name === modalService)?.id
+      if (!serviceId) return
+
+      // Store current page to redirect back after OAuth
+      localStorage.setItem('oauth-redirect', '/areas/create')
+
+      const { url } = await api.get<{ url: string }>(
+        `/auth/oauth/authorize/${serviceId}?mode=connect`
+      )
+      
+      window.location.href = url
+    } catch (err) {
+      console.error(`Failed to request permissions for ${modalService}:`, err)
+    }
+  }
 
   const handleNext = () => {
-    if (currentStep === 1 && (!areaName || !actionService || !reactionService)) {
+    if (currentStep === 1 && (!areaName || !selectedActionService || !selectedReactionService)) {
       setError("Please fill in all fields")
       return
     }
-    if (currentStep === 2 && !selectedAction) {
-      setError("Please select an action")
-      return
+    if (currentStep === 2) {
+      if (!selectedAction) {
+        setError("Please select an action")
+        return
+      }
+      // Validate action parameters
+      if (selectedAction.parameters && selectedAction.parameters.length > 0) {
+        for (const param of selectedAction.parameters) {
+          if (param.required && (!actionParams[param.name] || actionParams[param.name].toString().trim() === '')) {
+            setError(`Please fill in the required parameter: ${param.description}`)
+            return
+          }
+        }
+      }
     }
-    if (currentStep === 3 && !selectedReaction) {
-      setError("Please select a reaction")
-      return
+    if (currentStep === 3) {
+      if (!selectedReaction) {
+        setError("Please select a reaction")
+        return
+      }
+      // Validate reaction parameters
+      if (selectedReaction.parameters && selectedReaction.parameters.length > 0) {
+        for (const param of selectedReaction.parameters) {
+          if (param.required && (!reactionParams[param.name] || reactionParams[param.name].toString().trim() === '')) {
+            setError(`Please fill in the required parameter: ${param.description}`)
+            return
+          }
+        }
+      }
     }
     setError("")
     setCurrentStep((prev) => Math.min(prev + 1, 4))
   }
 
   const handleBack = () => {
+    console.log("Back button clicked! Current step:", currentStep)
     setError("")
     setCurrentStep((prev) => Math.max(prev - 1, 1))
   }
@@ -158,16 +260,21 @@ export default function CreateAreaPage() {
     setError("")
 
     try {
-      const payload = {
+      const actionAccount = getServiceAccount(selectedActionService!.id)
+      const reactionAccount = getServiceAccount(selectedReactionService!.id)
+
+      const payload: CreateAreaDto = {
         name: areaName,
         action: {
-          name: selectedAction!.name,
+          name: selectedAction!.id,
           parameters: actionParams,
+          ...(actionAccount && { accountId: actionAccount.id }),
         },
         reactions: [
           {
-            name: selectedReaction!.name,
+            name: selectedReaction!.id,
             parameters: reactionParams,
+            ...(reactionAccount && { accountId: reactionAccount.id }),
           },
         ],
       }
@@ -181,43 +288,90 @@ export default function CreateAreaPage() {
     }
   }
 
+  const renderParameterInput = (param: any, value: any, onChange: (key: string, val: any) => void, prefix: string) => {
+    return (
+      <div key={param.name} className="space-y-2">
+        <Label htmlFor={`${prefix}-${param.name}`} className="text-gray-900 text-sm font-medium">
+          {param.description}
+          {param.required && <span className="text-red-500 ml-1">*</span>}
+        </Label>
+        {param.type === "number" ? (
+          <Input
+            id={`${prefix}-${param.name}`}
+            type="number"
+            placeholder={`Enter ${param.description}`}
+            value={value || ""}
+            onChange={(e) => onChange(param.name, e.target.value)}
+            required={param.required}
+            className="text-black"
+          />
+        ) : param.type === "boolean" ? (
+          <select
+            id={`${prefix}-${param.name}`}
+            value={value || ""}
+            onChange={(e) => onChange(param.name, e.target.value === "true")}
+            className="w-full rounded-md border border-input bg-background px-3 py-2"
+            required={param.required}
+          >
+            <option value="">Select...</option>
+            <option value="true">True</option>
+            <option value="false">False</option>
+          </select>
+        ) : (
+          <Input
+            id={`${prefix}-${param.name}`}
+            type="text"
+            placeholder={`Enter ${param.description}`}
+            value={value || ""}
+            onChange={(e) => onChange(param.name, e.target.value)}
+            required={param.required}
+            className="text-black"
+          />
+        )}
+        <p className="text-xs text-gray-500">Type: {param.type}</p>
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#91B7FF] to-[#7BA5FF]">
+    <div className="min-h-screen bg-gradient-to-br from-[#91B7FF] to-[#7BA5FF] flex flex-col">
       <Navbar />
 
-      <div className="container mx-auto px-4 pt-32 pb-8">
+      <div className="flex-1 container mx-auto px-4 pt-28 md:pt-32 pb-16">
         {/* Stepper */}
-        <Card className="mb-8 max-w-4xl mx-auto bg-white shadow-lg border-0 p-6">
-          <div className="flex items-center justify-between">
-            {STEPS.map((step, index) => (
-              <div key={step.number} className="flex items-center flex-1">
-                <div className="flex flex-col items-center flex-1">
-                  <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-colors ${
-                      currentStep > step.number
-                        ? "bg-green-500 text-white"
-                        : currentStep === step.number
-                        ? "bg-[#6097FF] text-white"
-                        : "bg-gray-200 text-gray-400"
-                    }`}
-                  >
-                    {currentStep > step.number ? <Check className="h-5 w-5" /> : step.number}
+        <Card className="mb-8 max-w-4xl mx-auto bg-white border-0 shadow-lg">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              {STEPS.map((step, index) => (
+                <div key={step.number} className="flex items-center flex-1">
+                  <div className="flex flex-col items-center flex-1">
+                    <div
+                      className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-colors ${
+                        currentStep > step.number
+                          ? "bg-green-500 text-white"
+                          : currentStep === step.number
+                          ? "bg-[#6097FF] text-white"
+                          : "bg-gray-200 text-gray-500"
+                      }`}
+                    >
+                      {currentStep > step.number ? <Check className="h-5 w-5" /> : step.number}
+                    </div>
+                    <div className="mt-2 text-center hidden md:block">
+                      <p className="text-sm font-semibold text-gray-900">{step.title}</p>
+                      <p className="text-xs text-gray-600">{step.description}</p>
+                    </div>
                   </div>
-                  <div className="mt-2 text-center hidden md:block">
-                    <p className="text-sm font-semibold text-gray-900">{step.title}</p>
-                    <p className="text-xs text-gray-600">{step.description}</p>
-                  </div>
+                  {index < STEPS.length - 1 && (
+                    <div
+                      className={`h-1 flex-1 mx-2 transition-colors ${
+                        currentStep > step.number ? "bg-green-500" : "bg-gray-200"
+                      }`}
+                    />
+                  )}
                 </div>
-                {index < STEPS.length - 1 && (
-                  <div
-                    className={`h-1 flex-1 mx-2 transition-colors ${
-                      currentStep > step.number ? "bg-green-500" : "bg-gray-200"
-                    }`}
-                  />
-                )}
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </CardContent>
         </Card>
 
         <Card className="max-w-4xl mx-auto bg-white shadow-xl border-0">
@@ -232,102 +386,122 @@ export default function CreateAreaPage() {
 
           <CardContent className="space-y-6">
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg text-sm">
-                {error}
+              <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
+                <AlertCircle className="h-5 w-5 text-red-600" />
+                <p className="text-sm font-medium">{error}</p>
               </div>
             )}
 
+            {/* Step 1: Name & Services */}
             {currentStep === 1 && (
               <div className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="areaName" className="text-gray-900 text-base">AREA Name</Label>
+                  <Label htmlFor="areaName" className="text-black">AREA Name</Label>
                   <Input
                     id="areaName"
-                    placeholder="e.g., Notify me on Discord when I get a GitHub issue"
+                    placeholder="e.g., Send me an email every day"
                     value={areaName}
                     onChange={(e) => setAreaName(e.target.value)}
-                    className="text-gray-900"
+                    className="text-black"
                   />
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-3">
-                    <Label className="text-gray-900 text-base flex items-center gap-2">
-                      Action Service (Trigger)
-                    </Label>
+                    <Label className="text-gray-900 text-base font-semibold flex items-center gap-2">Action Service (Trigger)</Label>
                     <div className="grid grid-cols-2 gap-3">
-                      {MOCK_SERVICES.filter(s => s.actions.length > 0).map((service) => (
-                        <button
-                          key={service.name}
-                          onClick={() => setActionService(service)}
-                          className={`p-4 rounded-lg border-2 transition-all hover:scale-105 ${
-                            actionService?.name === service.name
-                              ? "border-[#6097FF] bg-blue-50"
-                              : "border-gray-200 hover:border-gray-300"
-                          }`}
-                        >
-                          <img
-                            src={service.icon}
-                            alt={service.name}
-                            className="h-12 w-12 mx-auto mb-2"
-                          />
-                          <p className="text-sm font-medium text-gray-900">{service.name}</p>
-                        </button>
-                      ))}
+                      {services.filter(s => s.actions.length > 0).map((service) => {
+                        const isLinked = getServiceAccount(service.id) || service.id === "timer"
+                        return (
+                          <button
+                            key={service.id}
+                            onClick={() => handleServiceSelect(service, "action")}
+                            className={`relative p-4 rounded-lg border-2 transition-all hover:scale-105 ${
+                              selectedActionService?.id === service.id
+                                ? "border-[#6097FF] bg-[#6097FF]/10"
+                                : "border-gray-200 hover:border-[#6097FF]/50 bg-white"
+                            }`}
+                          >
+                            <img
+                              src={getServiceIcon(service.id) || "/assets/default.png"}
+                              alt={service.name}
+                              className="h-12 w-12 mx-auto mb-2"
+                            />
+                            <p className="text-sm font-medium text-gray-900">{service.name}</p>
+                            {!isLinked && (
+                              <Badge variant="outline" className="absolute top-2 right-2 text-xs text-gray-700">
+                                <LinkIcon className="h-3 w-3 mr-1" />
+                                Link
+                              </Badge>
+                            )}
+                          </button>
+                        )
+                      })}
                     </div>
                   </div>
 
                   <div className="space-y-3">
-                    <Label className="text-gray-900 text-base flex items-center gap-2">
+                    <Label className="text-gray-900 text-base font-semibold flex items-center gap-2">
                       Reaction Service (Response)
                     </Label>
                     <div className="grid grid-cols-2 gap-3">
-                      {MOCK_SERVICES.filter(s => s.reactions.length > 0).map((service) => (
-                        <button
-                          key={service.name}
-                          onClick={() => setReactionService(service)}
-                          className={`p-4 rounded-lg border-2 transition-all hover:scale-105 ${
-                            reactionService?.name === service.name
-                              ? "border-[#6097FF] bg-blue-50"
-                              : "border-gray-200 hover:border-gray-300"
-                          }`}
-                        >
-                          <img
-                            src={service.icon}
-                            alt={service.name}
-                            className="h-12 w-12 mx-auto mb-2"
-                          />
-                          <p className="text-sm font-medium text-gray-900">{service.name}</p>
-                        </button>
-                      ))}
+                      {services.filter(s => s.reactions.length > 0).map((service) => {
+                        const isLinked = getServiceAccount(service.id) || service.id === "timer"
+                        return (
+                          <button
+                            key={service.id}
+                            onClick={() => handleServiceSelect(service, "reaction")}
+                            className={`relative p-4 rounded-lg border-2 transition-all hover:scale-105 ${
+                              selectedReactionService?.id === service.id
+                                ? "border-[#6097FF] bg-[#6097FF]/10"
+                                : "border-gray-200 hover:border-[#6097FF]/50 bg-white"
+                            }`}
+                          >
+                            <img
+                              src={getServiceIcon(service.id) || "/assets/default.png"}
+                              alt={service.name}
+                              className="h-12 w-12 mx-auto mb-2"
+                            />
+                            <p className="text-sm font-medium text-gray-900">{service.name}</p>
+                            {!isLinked && (
+                              <Badge variant="outline" className="absolute top-2 right-2 text-xs text-gray-700">
+                                <LinkIcon className="h-3 w-3 mr-1" />
+                                Link
+                              </Badge>
+                            )}
+                          </button>
+                        )
+                      })}
                     </div>
                   </div>
                 </div>
               </div>
             )}
 
-            {currentStep === 2 && actionService && (
+            {/* Step 2: Select Action */}
+            {currentStep === 2 && selectedActionService && (
               <div className="space-y-4">
-                <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg">
-                  <img src={actionService.icon} alt={actionService.name} className="h-10 w-10" />
+                <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <img
+                    src={getServiceIcon(selectedActionService.id) || "/assets/default.png"}
+                    alt={selectedActionService.name}
+                    className="h-10 w-10"
+                  />
                   <div>
-                    <p className="font-semibold text-gray-900">{actionService.name} Actions</p>
+                    <p className="font-semibold text-gray-900">{selectedActionService.name} Actions</p>
                     <p className="text-sm text-gray-600">Choose what triggers this automation</p>
                   </div>
                 </div>
 
                 <div className="space-y-3">
-                  {actionService.actions.map((action) => (
+                  {selectedActionService.actions.map((action) => (
                     <button
-                      key={action.name}
-                      onClick={() => {
-                        setSelectedAction(action)
-                        setActionParams({})
-                      }}
+                      key={action.id}
+                      onClick={() => handleActionSelect(action)}
                       className={`w-full p-4 rounded-lg border-2 text-left transition-all ${
-                        selectedAction?.name === action.name
-                          ? "border-[#6097FF] bg-blue-50"
-                          : "border-gray-200 hover:border-gray-300"
+                        selectedAction?.id === action.id
+                          ? "border-[#6097FF] bg-[#6097FF]/10"
+                          : "border-gray-200 hover:border-[#6097FF]/50 bg-white"
                       }`}
                     >
                       <div className="flex items-start justify-between">
@@ -335,62 +509,54 @@ export default function CreateAreaPage() {
                           <p className="font-semibold text-gray-900">{action.name}</p>
                           <p className="text-sm text-gray-600 mt-1">{action.description}</p>
                         </div>
-                        {selectedAction?.name === action.name && (
-                          <Badge className="bg-green-500">Selected</Badge>
+                        {selectedAction?.id === action.id && (
+                          <Badge variant="success">Selected</Badge>
                         )}
                       </div>
                     </button>
                   ))}
                 </div>
 
-                {selectedAction && Object.keys(selectedAction.parameters).length > 0 && (
-                  <div className="mt-6 space-y-4 p-4 bg-gray-50 rounded-lg">
+                {selectedAction && selectedAction.parameters.length > 0 && (
+                  <div className="mt-6 space-y-4 p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border border-blue-200 shadow-sm">
                     <h4 className="font-semibold text-gray-900">Configure Parameters</h4>
-                    {Object.entries(selectedAction.parameters).map(([key, type]) => (
-                      <div key={key} className="space-y-2">
-                        <Label htmlFor={`action-${key}`} className="text-gray-900 capitalize">
-                          {key.replace(/_/g, " ")}
-                        </Label>
-                        <Input
-                          id={`action-${key}`}
-                          type="text"
-                          placeholder={`Enter ${key}`}
-                          value={actionParams[key] || ""}
-                          onChange={(e) =>
-                            setActionParams({ ...actionParams, [key]: e.target.value })
-                          }
-                          className="text-gray-900"
-                        />
-                        <p className="text-xs text-gray-500">Type: {type as string}</p>
-                      </div>
-                    ))}
+                    {selectedAction.parameters.map((param) =>
+                      renderParameterInput(
+                        param,
+                        actionParams[param.name],
+                        (key, val) => setActionParams({ ...actionParams, [key]: val }),
+                        "action"
+                      )
+                    )}
                   </div>
                 )}
               </div>
             )}
 
-            {currentStep === 3 && reactionService && (
+            {/* Step 3: Select Reaction */}
+            {currentStep === 3 && selectedReactionService && (
               <div className="space-y-4">
-                <div className="flex items-center gap-3 p-4 bg-orange-50 rounded-lg">
-                  <img src={reactionService.icon} alt={reactionService.name} className="h-10 w-10" />
+                <div className="flex items-center gap-3 p-4 bg-orange-50 rounded-lg border border-orange-200">
+                  <img
+                    src={getServiceIcon(selectedReactionService.id) || "/assets/default.png"}
+                    alt={selectedReactionService.name}
+                    className="h-10 w-10"
+                  />
                   <div>
-                    <p className="font-semibold text-gray-900">{reactionService.name} Reactions</p>
+                    <p className="font-semibold text-gray-900">{selectedReactionService.name} Reactions</p>
                     <p className="text-sm text-gray-600">Choose what happens when triggered</p>
                   </div>
                 </div>
 
                 <div className="space-y-3">
-                  {reactionService.reactions.map((reaction) => (
+                  {selectedReactionService.reactions.map((reaction) => (
                     <button
-                      key={reaction.name}
-                      onClick={() => {
-                        setSelectedReaction(reaction)
-                        setReactionParams({})
-                      }}
+                      key={reaction.id}
+                      onClick={() => handleReactionSelect(reaction)}
                       className={`w-full p-4 rounded-lg border-2 text-left transition-all ${
-                        selectedReaction?.name === reaction.name
-                          ? "border-[#6097FF] bg-blue-50"
-                          : "border-gray-200 hover:border-gray-300"
+                        selectedReaction?.id === reaction.id
+                          ? "border-[#6097FF] bg-[#6097FF]/10"
+                          : "border-gray-200 hover:border-[#6097FF]/50 bg-white"
                       }`}
                     >
                       <div className="flex items-start justify-between">
@@ -398,40 +564,31 @@ export default function CreateAreaPage() {
                           <p className="font-semibold text-gray-900">{reaction.name}</p>
                           <p className="text-sm text-gray-600 mt-1">{reaction.description}</p>
                         </div>
-                        {selectedReaction?.name === reaction.name && (
-                          <Badge className="bg-green-500">Selected</Badge>
+                        {selectedReaction?.id === reaction.id && (
+                          <Badge variant="success">Selected</Badge>
                         )}
                       </div>
                     </button>
                   ))}
                 </div>
 
-                {selectedReaction && Object.keys(selectedReaction.parameters).length > 0 && (
-                  <div className="mt-6 space-y-4 p-4 bg-gray-50 rounded-lg">
+                {selectedReaction && selectedReaction.parameters.length > 0 && (
+                  <div className="mt-6 space-y-4 p-4 bg-gradient-to-br from-orange-50 to-red-50 rounded-lg border border-orange-200 shadow-sm">
                     <h4 className="font-semibold text-gray-900">Configure Parameters</h4>
-                    {Object.entries(selectedReaction.parameters).map(([key, type]) => (
-                      <div key={key} className="space-y-2">
-                        <Label htmlFor={`reaction-${key}`} className="text-gray-900 capitalize">
-                          {key.replace(/_/g, " ")}
-                        </Label>
-                        <Input
-                          id={`reaction-${key}`}
-                          type="text"
-                          placeholder={`Enter ${key}`}
-                          value={reactionParams[key] || ""}
-                          onChange={(e) =>
-                            setReactionParams({ ...reactionParams, [key]: e.target.value })
-                          }
-                          className="text-gray-900"
-                        />
-                        <p className="text-xs text-gray-500">Type: {type as string}</p>
-                      </div>
-                    ))}
+                    {selectedReaction.parameters.map((param) =>
+                      renderParameterInput(
+                        param,
+                        reactionParams[param.name],
+                        (key, val) => setReactionParams({ ...reactionParams, [key]: val }),
+                        "reaction"
+                      )
+                    )}
                   </div>
                 )}
               </div>
             )}
 
+            {/* Step 4: Review */}
             {currentStep === 4 && (
               <div className="space-y-6">
                 <div className="p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg space-y-4">
@@ -441,8 +598,6 @@ export default function CreateAreaPage() {
 
                   <div className="space-y-3">
                     <div className="flex items-start gap-3 p-3 bg-white rounded-lg">
-                      <div className="bg-green-100 p-2 rounded-full">
-                      </div>
                       <div className="flex-1">
                         <p className="text-sm font-semibold text-gray-500">WHEN</p>
                         <p className="font-semibold text-gray-900">{selectedAction?.name}</p>
@@ -460,8 +615,6 @@ export default function CreateAreaPage() {
                     </div>
 
                     <div className="flex items-start gap-3 p-3 bg-white rounded-lg">
-                      <div className="bg-orange-100 p-2 rounded-full">
-                      </div>
                       <div className="flex-1">
                         <p className="text-sm font-semibold text-gray-500">THEN</p>
                         <p className="font-semibold text-gray-900">{selectedReaction?.name}</p>
@@ -481,6 +634,7 @@ export default function CreateAreaPage() {
                 </div>
 
                 <div className="flex items-center gap-2 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <Check className="h-5 w-5 text-yellow-600 flex-shrink-0" />
                   <p className="text-sm text-yellow-800">
                     Your AREA will be created as <strong>active</strong> and will start working immediately.
                   </p>
@@ -488,31 +642,29 @@ export default function CreateAreaPage() {
               </div>
             )}
 
+            {/* Navigation */}
             <div className="flex items-center justify-between pt-6 border-t">
               <div className="flex gap-2">
-                <Button
-                  variant="outline"
+                <button
+                  type="button"
                   onClick={handleBack}
                   disabled={currentStep === 1}
-                  className="text-gray-700"
+                  className="inline-flex items-center justify-center gap-2 h-9 px-4 py-2 rounded-md text-sm font-medium border border-gray-300 bg-white text-gray-900 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  <ArrowLeft className="h-4 w-4" />
                   Back
-                </Button>
-                <Button
-                  variant="outline"
+                </button>
+                <button
+                  type="button"
                   onClick={() => navigate("/dashboard")}
-                  className="text-red-600 border-red-200 hover:bg-red-50"
+                  className="inline-flex items-center justify-center gap-2 h-9 px-4 py-2 rounded-md text-sm font-medium border border-red-300 bg-white text-red-600 hover:bg-red-50 transition-colors"
                 >
                   Cancel
-                </Button>
+                </button>
               </div>
 
               {currentStep < 4 ? (
-                <Button
-                  onClick={handleNext}
-                  className="bg-[#6097FF] hover:bg-[#5087EF] text-white"
-                >
+                <Button onClick={handleNext} className="bg-[#6097FF] text-white hover:bg-[#5087EF]">
                   Next
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
@@ -520,7 +672,7 @@ export default function CreateAreaPage() {
                 <Button
                   onClick={handleSubmit}
                   disabled={loading}
-                  className="bg-green-600 hover:bg-green-700 text-white"
+                  className="bg-green-600 text-white hover:bg-green-700"
                 >
                   {loading ? "Creating..." : "Create"}
                   <Check className="h-4 w-4 ml-2" />
@@ -530,6 +682,71 @@ export default function CreateAreaPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Account Not Linked Modal */}
+      <Dialog open={showAccountModal} onOpenChange={setShowAccountModal}>
+        <DialogContent className="bg-white">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-gray-900">
+              <LinkIcon className="h-5 w-5 text-[#6097FF]" />
+              Link Your {modalService} Account
+            </DialogTitle>
+            <DialogDescription className="text-gray-600">
+              You need to link your {modalService} account to use this service in your AREAs.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-gray-600">
+              Linking your account allows AREA to perform actions on your behalf using {modalService}.
+              You'll be redirected to {modalService} to authorize the connection.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAccountModal(false)} className="text-gray-900">
+              Cancel
+            </Button>
+            <Button onClick={handleLinkAccount} className="bg-[#6097FF] text-white hover:bg-[#5087EF]">
+              <LinkIcon className="h-4 w-4 mr-2" />
+              Link Account
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Missing Permissions Modal */}
+      <Dialog open={showPermissionModal} onOpenChange={setShowPermissionModal}>
+        <DialogContent className="bg-white">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-gray-900">
+              <AlertCircle className="h-5 w-5 text-orange-500" />
+              Additional Permissions Required
+            </DialogTitle>
+            <DialogDescription className="text-gray-600">
+              This {modalType} requires additional permissions from your {modalService} account.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-gray-600 mb-3">
+              The following permissions are needed:
+            </p>
+            <ul className="space-y-2">
+              {modalScopes.map((scope) => (
+                <li key={scope} className="text-xs bg-gray-50 border border-gray-200 p-2 rounded font-mono text-gray-700">
+                  {scope}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPermissionModal(false)} className="text-gray-900">
+              Cancel
+            </Button>
+            <Button onClick={handleRequestPermissions} className="bg-[#6097FF] text-white hover:bg-[#5087EF]">
+              Grant Permissions
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Footer />
     </div>
