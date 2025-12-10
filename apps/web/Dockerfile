@@ -10,6 +10,7 @@ COPY apps/web ./apps/web
 COPY apps/mobile ./apps/mobile
 COPY packages ./packages
 
+RUN rm -f package-lock.json
 RUN npm install
 RUN npm run build --workspace=@area/shared
 RUN npm run build --workspace=web

@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { IReaction } from '../../../../interfaces/service.interface';
-import { getAccessToken } from '../../../../utils/token.utils';
+import { getAccessTokenWithRefresh } from '../../../../utils/token.utils';
 import { UserWithAccounts } from '../../../../types/user.types';
 
 interface GoogleSendEmailParams {
@@ -21,7 +21,7 @@ export const GoogleSendEmailReaction: IReaction<GoogleSendEmailParams> = {
   scopes: ['https://www.googleapis.com/auth/gmail.send'],
   execute: async (user: UserWithAccounts, params: GoogleSendEmailParams, _actionData: any) => {
     try {
-      const token = getAccessToken(user, 'google');
+      const token = await getAccessTokenWithRefresh(user, 'google');
 
       const emailContent = [
         `To: ${params.to}`,
