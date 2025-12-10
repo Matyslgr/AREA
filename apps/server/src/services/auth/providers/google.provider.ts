@@ -92,4 +92,33 @@ export class GoogleProvider implements IOAuthProvider {
       include_granted_scopes: 'true'  // For security
     };
   }
+
+  async refreshAccessToken(refreshToken: string): Promise<OAuthTokens> {
+    const url = 'https://oauth2.googleapis.com/token';
+
+    if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+      throw new Error('Google env vars missing');
+    }
+
+    const payload = {
+      refresh_token: refreshToken,
+      client_id: process.env.GOOGLE_CLIENT_ID,
+      client_secret: process.env.GOOGLE_CLIENT_SECRET,
+      grant_type: 'refresh_token',
+    };
+
+    try {
+      const data = await this.httpClient.post<GoogleTokenResponse>(url, payload);
+
+      return {
+        access_token: data.access_token,
+        refresh_token: data.refresh_token,
+        expires_in: data.expires_in,
+        scope: data.scope,
+      };
+    } catch (error: any) {
+      console.error('Google Token Refresh Error:', error.response?.data || error.message);
+      throw new Error('Failed to refresh Google token');
+    }
+  }
 }
