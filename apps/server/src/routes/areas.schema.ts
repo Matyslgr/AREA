@@ -12,7 +12,9 @@ const areaObject = {
       type: 'object',
       properties: {
         name: { type: 'string', description: 'Action ID (ex: GITHUB_NEW_ISSUE)' },
-        parameters: { type: 'object', additionalProperties: true }
+        accountId: { type: 'string', nullable: true },
+        parameters: { type: 'object', additionalProperties: true },
+        scopes: { type: 'array', items: { type: 'string' } }
       }
     },
     reactions: {
@@ -21,7 +23,9 @@ const areaObject = {
         type: 'object',
         properties: {
           name: { type: 'string', description: 'Reaction ID (ex: DISCORD_SEND_MSG)' },
-          parameters: { type: 'object', additionalProperties: true }
+          accountId: { type: 'string', nullable: true },
+          parameters: { type: 'object', additionalProperties: true },
+          scopes: { type: 'array', items: { type: 'string' } }
         }
       }
     }
@@ -84,6 +88,28 @@ export const listAreasSchema = {
   }
 };
 
+export const getAreaSchema = {
+  description: 'Get details of a specific AREA',
+  tags: ['areas'],
+  security: [{ bearerAuth: [] }],
+  params: {
+    type: 'object',
+    properties: {
+      id: { type: 'string', format: 'uuid' }
+    }
+  },
+  response: {
+    200: areaObject,
+    404: {
+      description: 'AREA not found',
+      type: 'object',
+      properties: {
+        error: { type: 'string' }
+      }
+    }
+  }
+};
+
 export const deleteAreaSchema = {
   description: 'Delete an AREA by ID',
   tags: ['areas'],
@@ -124,6 +150,7 @@ export const updateAreaSchema = {
       action: {
         type: 'object',
         properties: {
+          name: { type: 'string' },
           parameters: { type: 'object' }
         }
       },
@@ -132,7 +159,7 @@ export const updateAreaSchema = {
         items: {
           type: 'object',
           properties: {
-            id: { type: 'string' },
+            name: { type: 'string' },
             parameters: { type: 'object' }
           }
         }

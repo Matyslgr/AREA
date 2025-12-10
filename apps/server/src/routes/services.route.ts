@@ -1,28 +1,39 @@
 import { FastifyInstance } from 'fastify';
 import { serviceManager } from '../services/service.manager';
+import { ServiceDto } from '@area/shared';
+import { listServicesSchema } from './services.schema';
 
 export async function serviceRoutes(fastify: FastifyInstance) {
 
-  fastify.get('/', {
-    schema: {
-      tags: ['services'],
-      description: 'Get list of all available services, actions, and reactions with their parameters definitions.',
-      response: {
-        200: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              id: { type: 'string' },
-              name: { type: 'string' },
-              actions: { type: 'array', items: { /* ... structure ActionDto ... */ } },
-              reactions: { type: 'array', items: { /* ... structure ReactionDto ... */ } }
-            }
-          }
-        }
-      }
-    }
+  fastify.get<{ Reply: ServiceDto[] }>('/', {
+    schema: listServicesSchema
   }, async (request, reply) => {
-    return serviceManager.getAllServices();
+
+    const services = serviceManager.getAllServices();
+
+    const response: ServiceDto[] = services.map(s => ({
+      id: s.id,
+      name: s.name,
+      version: s.version || '1.0.0',
+      description: s.description,
+
+      actions: s.actions.map(a => ({
+        id: a.id,
+        name: a.name,
+        description: a.description,
+        parameters: a.parameters,
+        scopes: a.scopes || []
+      })),
+
+      reactions: s.reactions.map(r => ({
+        id: r.id,
+        name: r.name,
+        description: r.description,
+        parameters: r.parameters,
+        scopes: r.scopes || []
+      }))
+    }));
+
+    return response;
   });
 }

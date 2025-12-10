@@ -88,7 +88,7 @@ export function SigninForm({
             onChange={(e) => setPassword(e.target.value)}
           />
           <FieldDescription className="text-gray-500">
-            <a href="" className="underline-offset-4 text-blue-600">Forgot password?</a>
+            <a href="/forgot-password" className="underline-offset-4 text-blue-600">Forgot password?</a>
           </FieldDescription>
         </Field>
         <Field>
