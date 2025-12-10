@@ -20,11 +20,8 @@ jobs:
         with:
           node-version: 20
 
-      - name: 🧹 Clean npm cache
-        run: npm cache clean --force
-
       - name: 📦 Install Dependencies
-        run: rm -rf node_modules && npm install
+        run: npm ci
 
       - name: 🏗️ Build Project
         run: npm run build
