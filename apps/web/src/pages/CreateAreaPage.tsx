@@ -105,8 +105,7 @@ export default function CreateAreaPage() {
     try {
       const saved: SavedState = JSON.parse(savedJson)
 
-      // Restore simple fields
-      setAreaName(saved.areaName)
+      // Restore simple fields setAreaName(saved.areaName)
       setCurrentStep(saved.step)
       setActionParams(saved.actionParams || {})
       setReactionParams(saved.reactionParams || {})

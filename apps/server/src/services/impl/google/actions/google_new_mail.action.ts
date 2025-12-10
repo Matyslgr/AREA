@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { IAction } from '../../../../interfaces/service.interface';
-import { getAccessToken } from '../../../../utils/token.utils';
+import { getAccessTokenWithRefresh } from '../../../../utils/token.utils';
 import { UserWithAccounts } from '../../../../types/user.types';
 
 interface GoogleNewMailParams {
@@ -25,7 +25,7 @@ export const GoogleNewMailAction: IAction<GoogleNewMailParams, GoogleNewMailStat
 
   check: async (user: UserWithAccounts, params: GoogleNewMailParams, previousState?: GoogleNewMailState) => {
     try {
-      const token = getAccessToken(user, 'google');
+      const token = await getAccessTokenWithRefresh(user, 'google');
 
       const listUrl = 'https://gmail.googleapis.com/gmail/v1/users/me/messages';
       const listResponse = await axios.get(listUrl, {

@@ -24,4 +24,7 @@ export interface IOAuthProvider {
   getUserInfo(token: string): Promise<OAuthUser>;
 
   getAuthUrlParameters(): Record<string, string>;
+
+  // Step 3 (Optional): Refresh access token
+  refreshAccessToken?(refreshToken: string): Promise<OAuthTokens>;
 }
