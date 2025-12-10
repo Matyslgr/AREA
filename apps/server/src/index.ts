@@ -30,7 +30,10 @@ const server = Fastify({
 const main = async () => {
   try {
     // 1. Plugins
-    await server.register(cors, { origin: true });
+    await server.register(cors, { 
+      origin: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS']
+    });
     await server.register(swagger, swaggerConfig);
     await server.register(swaggerUi, swaggerUiConfig);
     await server.register(authPlugin); // JWT + Decorator

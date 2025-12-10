@@ -6,25 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
+import type { AreaDto } from "@area/shared";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-
-interface Area {
-  id: string;
-  name: string;
-  is_active: boolean;
-  user_id: string;
-  last_executed_at?: string | null;
-  error_log?: string | null;
-  action: {
-    name: string;
-    parameters: Record<string, unknown>;
-  };
-  reactions: Array<{
-    name: string;
-    parameters: Record<string, unknown>;
-  }>;
-}
 
 const getServiceFromAction = (actionName: string): string => {
   if (actionName.startsWith("GITHUB_")) return "github";
@@ -35,6 +19,7 @@ const getServiceFromAction = (actionName: string): string => {
   if (actionName.startsWith("TWITCH_")) return "twitch";
   if (actionName.startsWith("NOTION_")) return "notion";
   if (actionName.startsWith("LINKEDIN_")) return "linkedin";
+  if (actionName.startsWith("TIMER_")) return "timer";
   return "unknown";
 };
 
@@ -46,12 +31,13 @@ const serviceIcons: Record<string, string> = {
   twitch: "/assets/twitch.png",
   notion: "/assets/notion.png",
   linkedin: "/assets/linkedin.png",
+  timer: "https://img.icons8.com/fluency/96/clock.png",
 };
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [areas, setAreas] = useState<Area[]>([]);
-  const [filteredAreas, setFilteredAreas] = useState<Area[]>([]);
+  const [areas, setAreas] = useState<AreaDto[]>([]);
+  const [filteredAreas, setFilteredAreas] = useState<AreaDto[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -73,7 +59,7 @@ export default function Dashboard() {
 
   const fetchAreas = async () => {
     try {
-      const data = await api.get<Area[]>("/areas");
+      const data = await api.get<AreaDto[]>("/areas");
       setAreas(data);
       setFilteredAreas(data);
     } catch (error) {
@@ -87,7 +73,7 @@ export default function Dashboard() {
     navigate("/areas/create");
   };
 
-  const getUniqueServices = (area: Area): string[] => {
+  const getUniqueServices = (area: AreaDto): string[] => {
     const services = new Set<string>();
     services.add(getServiceFromAction(area.action.name));
     area.reactions.forEach((reaction) => {
