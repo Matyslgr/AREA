@@ -4,9 +4,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
-import { Eye, EyeOff, Lock, CheckCircle2, AlertCircle } from "lucide-react"
+import { Eye, EyeOff, Lock, CheckCircle2, AlertCircle, Zap } from "lucide-react"
 import { api } from "@/lib/api"
-import Navbar from "@/components/Navbar"
 
 export default function ResetPasswordPage() {
   const [searchParams] = useSearchParams()
@@ -58,21 +57,34 @@ export default function ResetPasswordPage() {
 
   if (!token) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#91B7FF] to-[#7BA5FF] flex items-center justify-center p-4">
-        <Navbar />
-        <Card className="w-full max-w-md shadow-xl border-0 bg-white">
-          <CardHeader className="text-center space-y-2">
-            <div className="mx-auto bg-red-100 w-16 h-16 rounded-full flex items-center justify-center mb-2">
-              <AlertCircle className="h-8 w-8 text-red-600" />
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
+        {/* Background Effects */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl" />
+        </div>
+
+        {/* Logo */}
+        <Link to="/" className="absolute top-6 left-6 flex items-center gap-2.5 text-white hover:opacity-80 transition-opacity">
+          <div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-amber-400 to-orange-500">
+            <Zap className="size-4 text-black" />
+          </div>
+          <span className="text-lg font-semibold tracking-tight">AREA</span>
+        </Link>
+
+        <Card className="relative w-full max-w-md bg-zinc-900 border-zinc-800 shadow-2xl">
+          <CardHeader className="text-center space-y-4">
+            <div className="mx-auto bg-red-500/20 w-16 h-16 rounded-full flex items-center justify-center">
+              <AlertCircle className="h-8 w-8 text-red-400" />
             </div>
-            <CardTitle className="text-2xl font-bold text-gray-900">Invalid Reset Link</CardTitle>
-            <CardDescription className="text-gray-600">
+            <CardTitle className="text-2xl font-bold text-white">Invalid Reset Link</CardTitle>
+            <CardDescription className="text-zinc-400">
               This password reset link is invalid or has expired
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Link to="/forgot-password">
-              <Button className="w-full bg-[#6097FF] hover:bg-[#5087EF] text-white">
+              <Button className="w-full bg-gradient-to-r from-amber-400 to-orange-500 text-black font-semibold hover:from-amber-500 hover:to-orange-600">
                 Request New Reset Link
               </Button>
             </Link>
@@ -83,30 +95,45 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#91B7FF] to-[#7BA5FF] flex items-center justify-center p-4">
-      <Navbar />
-      <Card className="w-full max-w-md shadow-xl border-0 bg-white pt-28">
-        <CardHeader className="text-center space-y-2">
-          <div className="mx-auto bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mb-2">
-            <Lock className="h-8 w-8 text-[#6097FF]" />
+    <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
+      {/* Background Effects */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl" />
+      </div>
+
+      {/* Logo */}
+      <Link to="/" className="absolute top-6 left-6 flex items-center gap-2.5 text-white hover:opacity-80 transition-opacity">
+        <div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-amber-400 to-orange-500">
+          <Zap className="size-4 text-black" />
+        </div>
+        <span className="text-lg font-semibold tracking-tight">AREA</span>
+      </Link>
+
+      <Card className="relative w-full max-w-md bg-zinc-900 border-zinc-800 shadow-2xl">
+        <CardHeader className="text-center space-y-4 pt-8">
+          <div className="mx-auto bg-amber-500/20 w-16 h-16 rounded-full flex items-center justify-center">
+            <Lock className="h-8 w-8 text-amber-400" />
           </div>
-          <CardTitle className="text-2xl font-bold text-gray-900">Reset Your Password</CardTitle>
-          <CardDescription className="text-gray-600">
-            Enter your new password below
-          </CardDescription>
+          <div>
+            <CardTitle className="text-2xl font-bold text-white">Reset Your Password</CardTitle>
+            <CardDescription className="text-zinc-400">
+              Enter your new password below
+            </CardDescription>
+          </div>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="pb-8">
           {success ? (
             <div className="space-y-4 text-center py-4">
-              <div className="mx-auto bg-green-100 w-16 h-16 rounded-full flex items-center justify-center">
-                <CheckCircle2 className="h-8 w-8 text-green-600" />
+              <div className="mx-auto bg-green-500/20 w-16 h-16 rounded-full flex items-center justify-center">
+                <CheckCircle2 className="h-8 w-8 text-green-400" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                <h3 className="text-lg font-semibold text-white mb-2">
                   Password Reset Successful!
                 </h3>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-zinc-400">
                   Redirecting you to login...
                 </p>
               </div>
@@ -114,14 +141,14 @@ export default function ResetPasswordPage() {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg flex items-start gap-2">
-                  <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg">
+                  <AlertCircle className="h-5 w-5 flex-shrink-0" />
                   <span className="text-sm">{error}</span>
                 </div>
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-gray-900">New Password</Label>
+                <Label htmlFor="password" className="text-zinc-200">New Password</Label>
                 <div className="relative">
                   <Input
                     id="password"
@@ -131,21 +158,21 @@ export default function ResetPasswordPage() {
                     minLength={8}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pr-10 text-gray-900"
+                    className="pr-10 bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus:border-amber-500/50"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
-                <p className="text-xs text-gray-500">Must be at least 8 characters</p>
+                <p className="text-xs text-zinc-500">Must be at least 8 characters</p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword" className="text-gray-900">Confirm Password</Label>
+                <Label htmlFor="confirmPassword" className="text-zinc-200">Confirm Password</Label>
                 <div className="relative">
                   <Input
                     id="confirmPassword"
@@ -155,12 +182,12 @@ export default function ResetPasswordPage() {
                     minLength={8}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="pr-10 text-gray-900"
+                    className="pr-10 bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus:border-amber-500/50"
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
                   >
                     {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -170,14 +197,14 @@ export default function ResetPasswordPage() {
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-[#6097FF] hover:bg-[#5087EF] text-white font-semibold shadow-md"
+                className="w-full bg-gradient-to-r from-amber-400 to-orange-500 text-black font-semibold hover:from-amber-500 hover:to-orange-600 shadow-lg shadow-amber-500/20"
               >
                 {loading ? "Resetting..." : "Reset Password"}
               </Button>
 
-              <div className="text-center text-sm text-gray-600 pt-2">
+              <div className="text-center text-sm text-zinc-400 pt-2">
                 Remember your password?{" "}
-                <Link to="/signin" className="text-[#6097FF] hover:underline font-medium">
+                <Link to="/signin" className="text-amber-400 hover:text-amber-300 transition-colors">
                   Back to Login
                 </Link>
               </div>
