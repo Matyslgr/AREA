@@ -66,6 +66,12 @@ services:
     build:
       context: .
       dockerfile: apps/mobile/Dockerfile
+      args:
+        - EXPO_PUBLIC_API_URL=${EXPO_PUBLIC_API_URL}
+    env_file:
+      - ./apps/mobile/.env
+    depends_on:
+      - server
     volumes:
       # Mount the shared volume to output the generated APK
       - apk_share:/shared
