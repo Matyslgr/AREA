@@ -198,7 +198,7 @@ export default function DashboardScreen() {
               <CardTitle className="text-lg">Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="flex-row gap-3">
-              <Button variant="default" className="flex-1">
+              <Button variant="default" className="flex-1" onPress={() => router.push('/(app)/create-area')}>
                 <Text className="text-primary-foreground text-sm">+ New AREA</Text>
               </Button>
               <Button
@@ -259,7 +259,7 @@ export default function DashboardScreen() {
                   <Text className="text-muted-foreground text-center text-sm">
                     Create your first automation to connect your services
                   </Text>
-                  <Button variant="default" className="mt-4">
+                  <Button variant="default" className="mt-4" onPress={() => router.push('/(app)/create-area')}>
                     <Text className="text-primary-foreground text-sm">Create AREA</Text>
                   </Button>
                 </CardContent>
