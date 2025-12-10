@@ -1,6 +1,5 @@
 import * as React from 'react';
 import * as WebBrowser from 'expo-web-browser';
-import { makeRedirectUri } from 'expo-auth-session';
 import { authApi } from './api';
 
 // Ensure the browser session is completed when the app comes back to the foreground
@@ -15,10 +14,7 @@ export interface OAuthResult {
 }
 
 // Mobile OAuth callback uses deep link scheme, not HTTP URL
-const MOBILE_REDIRECT_URI = makeRedirectUri({
-  scheme: 'area',
-  path: 'auth/callback',
-});
+const MOBILE_REDIRECT_URI = 'area://auth/callback';
 
 export async function initiateOAuth(
   provider: string,
@@ -32,7 +28,6 @@ export async function initiateOAuth(
     }
 
     console.log('OAuth URL from server:', urlData.url);
-    console.log('MOBILE_REDIRECT_URI:', MOBILE_REDIRECT_URI);
 
     const result = await WebBrowser.openAuthSessionAsync(
       urlData.url,
