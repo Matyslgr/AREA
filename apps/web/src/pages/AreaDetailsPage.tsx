@@ -93,11 +93,11 @@ export default function AreaDetailsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#91B7FF] to-[#7BA5FF] flex flex-col">
+      <div className="min-h-screen bg-zinc-950 flex flex-col">
         <Navbar />
         <div className="flex-1 flex items-center justify-center">
-          <div className="flex items-center gap-2 text-white">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-white border-t-transparent" />
+          <div className="flex items-center gap-3 text-zinc-400">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-amber-400 border-t-transparent" />
             Loading area details...
           </div>
         </div>
@@ -113,7 +113,7 @@ export default function AreaDetailsPage() {
   const actionService = getServiceFromAction(area.action.name);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#91B7FF] to-[#7BA5FF] flex flex-col">
+    <div className="min-h-screen bg-zinc-950 flex flex-col">
       <Navbar />
 
       <div className="flex-1 container mx-auto px-4 pt-28 md:pt-32 pb-16 space-y-8">
@@ -121,24 +121,27 @@ export default function AreaDetailsPage() {
           <Button
             variant="ghost"
             onClick={() => navigate("/dashboard")}
-            className="w-fit text-white hover:bg-white/10 -ml-2"
+            className="w-fit text-zinc-400 hover:text-white hover:bg-zinc-800 -ml-2"
           >
             <ArrowLeft className="h-5 w-5 mr-2" />
             Back to Dashboard
           </Button>
 
-          <div className="flex items-start justify-between">
+          <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-4xl font-bold tracking-tight text-white">{area.name}</h1>
+                <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-white">{area.name}</h1>
                 <Badge
-                  variant={area.is_active ? "success" : "secondary"}
-                  className="text-sm"
+                  className={`${
+                    area.is_active
+                      ? "bg-green-500/20 text-green-400 border-green-500/30"
+                      : "bg-zinc-800 text-zinc-400 border-zinc-700"
+                  }`}
                 >
                   {area.is_active ? "Active" : "Inactive"}
                 </Badge>
               </div>
-              <p className="text-white/90">
+              <p className="text-zinc-400">
                 {area.last_executed_at
                   ? `Last executed: ${new Date(area.last_executed_at).toLocaleString()}`
                   : "Never executed"}
@@ -149,7 +152,7 @@ export default function AreaDetailsPage() {
               <Button
                 variant="outline"
                 onClick={handleToggleActive}
-                className="bg-white/10 text-white border-white/20 hover:bg-white/20"
+                className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white"
               >
                 {area.is_active ? (
                   <>
@@ -166,7 +169,7 @@ export default function AreaDetailsPage() {
               <Button
                 variant="destructive"
                 onClick={() => setDeleteDialogOpen(true)}
-                className="bg-red-500 hover:bg-red-600"
+                className="bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
                 Delete
@@ -177,22 +180,22 @@ export default function AreaDetailsPage() {
 
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Action Card - Left */}
-          <Card className="bg-white border-0 shadow-xl">
+          <Card className="bg-zinc-900 border-zinc-800 shadow-xl">
             <CardHeader>
               <div className="flex items-center gap-3 mb-2">
-                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">A</span>
+                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
+                  <span className="text-black font-bold text-lg">A</span>
                 </div>
                 <div>
-                  <CardTitle className="text-2xl text-gray-900">Action</CardTitle>
-                  <CardDescription className="text-gray-600">Trigger event</CardDescription>
+                  <CardTitle className="text-2xl text-white">Action</CardTitle>
+                  <CardDescription className="text-zinc-400">Trigger event</CardDescription>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center gap-4 p-4 bg-zinc-800 rounded-lg border border-zinc-700">
                 {actionService !== "unknown" && (
-                  <div className="h-12 w-12 rounded-lg bg-white flex items-center justify-center shadow-sm">
+                  <div className="h-12 w-12 rounded-lg bg-zinc-900 flex items-center justify-center border border-zinc-700">
                     <img
                       src={serviceIcons[actionService] || "/assets/default.png"}
                       alt={actionService}
@@ -201,27 +204,27 @@ export default function AreaDetailsPage() {
                   </div>
                 )}
                 <div className="flex-1">
-                  <p className="text-sm text-gray-600 mb-1">Service</p>
-                  <p className="font-semibold text-gray-900 capitalize">{actionService}</p>
+                  <p className="text-sm text-zinc-400 mb-1">Service</p>
+                  <p className="font-semibold text-white capitalize">{actionService}</p>
                 </div>
               </div>
 
               <div>
-                <h3 className="text-sm font-medium text-gray-900 mb-3">Action Details</h3>
+                <h3 className="text-sm font-medium text-zinc-200 mb-3">Action Details</h3>
                 <div className="space-y-3">
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <p className="text-sm text-gray-600 mb-1">Action Type</p>
-                    <p className="font-medium text-gray-900">{formatActionName(area.action.name)}</p>
+                  <div className="p-3 bg-zinc-800 rounded-lg border border-zinc-700">
+                    <p className="text-sm text-zinc-400 mb-1">Action Type</p>
+                    <p className="font-medium text-white">{formatActionName(area.action.name)}</p>
                   </div>
 
                   {Object.keys(area.action.parameters).length > 0 && (
-                    <div className="p-3 bg-gray-50 rounded-lg">
-                      <p className="text-sm text-gray-600 mb-2">Parameters</p>
+                    <div className="p-3 bg-zinc-800 rounded-lg border border-zinc-700">
+                      <p className="text-sm text-zinc-400 mb-2">Parameters</p>
                       <div className="space-y-2">
                         {Object.entries(area.action.parameters).map(([key, value]) => (
                           <div key={key} className="flex justify-between text-sm">
-                            <span className="text-gray-600 capitalize">{key.replace(/_/g, " ")}:</span>
-                            <span className="text-gray-900 font-medium">{String(value)}</span>
+                            <span className="text-zinc-400 capitalize">{key.replace(/_/g, " ")}:</span>
+                            <span className="text-white font-medium">{String(value)}</span>
                           </div>
                         ))}
                       </div>
@@ -233,17 +236,17 @@ export default function AreaDetailsPage() {
           </Card>
 
           {/* Reactions Card - Right */}
-          <Card className="bg-white border-0 shadow-xl">
+          <Card className="bg-zinc-900 border-zinc-800 shadow-xl">
             <CardHeader>
               <div className="flex items-center gap-3 mb-2">
-                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center">
+                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
                   <span className="text-white font-bold text-lg">R</span>
                 </div>
                 <div>
-                  <CardTitle className="text-2xl text-gray-900">
+                  <CardTitle className="text-2xl text-white">
                     Reaction{area.reactions.length > 1 ? "s" : ""}
                   </CardTitle>
-                  <CardDescription className="text-gray-600">
+                  <CardDescription className="text-zinc-400">
                     {area.reactions.length} response{area.reactions.length !== 1 ? "s" : ""}
                   </CardDescription>
                 </div>
@@ -253,10 +256,10 @@ export default function AreaDetailsPage() {
               {area.reactions.map((reaction, index) => {
                 const reactionService = getServiceFromAction(reaction.name);
                 return (
-                  <div key={index} className="p-4 bg-gray-50 rounded-lg space-y-3">
+                  <div key={index} className="p-4 bg-zinc-800 rounded-lg border border-zinc-700 space-y-3">
                     <div className="flex items-center gap-4">
                       {reactionService !== "unknown" && (
-                        <div className="h-12 w-12 rounded-lg bg-white flex items-center justify-center shadow-sm">
+                        <div className="h-12 w-12 rounded-lg bg-zinc-900 flex items-center justify-center border border-zinc-700">
                           <img
                             src={serviceIcons[reactionService] || "/assets/default.png"}
                             alt={reactionService}
@@ -265,24 +268,24 @@ export default function AreaDetailsPage() {
                         </div>
                       )}
                       <div className="flex-1">
-                        <p className="text-sm text-gray-600 mb-1">Service</p>
-                        <p className="font-semibold text-gray-900 capitalize">{reactionService}</p>
+                        <p className="text-sm text-zinc-400 mb-1">Service</p>
+                        <p className="font-semibold text-white capitalize">{reactionService}</p>
                       </div>
                     </div>
 
-                    <div className="pt-3 border-t border-gray-200">
-                      <p className="text-sm text-gray-600 mb-1">Reaction Type</p>
-                      <p className="font-medium text-gray-900">{formatActionName(reaction.name)}</p>
+                    <div className="pt-3 border-t border-zinc-700">
+                      <p className="text-sm text-zinc-400 mb-1">Reaction Type</p>
+                      <p className="font-medium text-white">{formatActionName(reaction.name)}</p>
                     </div>
 
                     {Object.keys(reaction.parameters).length > 0 && (
-                      <div className="pt-3 border-t border-gray-200">
-                        <p className="text-sm text-gray-600 mb-2">Parameters</p>
+                      <div className="pt-3 border-t border-zinc-700">
+                        <p className="text-sm text-zinc-400 mb-2">Parameters</p>
                         <div className="space-y-2">
                           {Object.entries(reaction.parameters).map(([key, value]) => (
                             <div key={key} className="flex justify-between text-sm">
-                              <span className="text-gray-600 capitalize">{key.replace(/_/g, " ")}:</span>
-                              <span className="text-gray-900 font-medium truncate ml-2 max-w-[200px]">
+                              <span className="text-zinc-400 capitalize">{key.replace(/_/g, " ")}:</span>
+                              <span className="text-white font-medium truncate ml-2 max-w-[200px]">
                                 {String(value)}
                               </span>
                             </div>
@@ -298,13 +301,13 @@ export default function AreaDetailsPage() {
         </div>
 
         {area.error_log && (
-          <Card className="bg-red-50 border-red-200 shadow-lg">
+          <Card className="bg-red-500/10 border-red-500/30 shadow-lg">
             <CardHeader>
-              <CardTitle className="text-red-900">Error Log</CardTitle>
-              <CardDescription className="text-red-700">Last execution error</CardDescription>
+              <CardTitle className="text-red-400">Error Log</CardTitle>
+              <CardDescription className="text-red-400/70">Last execution error</CardDescription>
             </CardHeader>
             <CardContent>
-              <pre className="text-sm text-red-800 whitespace-pre-wrap font-mono bg-red-100 p-4 rounded-lg">
+              <pre className="text-sm text-red-300 whitespace-pre-wrap font-mono bg-red-500/10 p-4 rounded-lg border border-red-500/20">
                 {area.error_log}
               </pre>
             </CardContent>
@@ -313,10 +316,10 @@ export default function AreaDetailsPage() {
       </div>
 
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
+        <DialogContent className="bg-zinc-900 border-zinc-800">
           <DialogHeader>
-            <DialogTitle>Delete AREA</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-white">Delete AREA</DialogTitle>
+            <DialogDescription className="text-zinc-400">
               Are you sure you want to delete "{area.name}"? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
@@ -324,7 +327,7 @@ export default function AreaDetailsPage() {
             <Button
               variant="outline"
               onClick={() => setDeleteDialogOpen(false)}
-              className="text-gray-900"
+              className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
             >
               Cancel
             </Button>
