@@ -26,6 +26,8 @@ services:
       dockerfile: apps/server/Dockerfile
     ports:
       - "8080:8080"
+    env_file:
+      - ./apps/server/.env
     environment:
       DATABASE_URL: postgres://user:password@db:5432/area
       PORT: 8080
@@ -42,10 +44,12 @@ services:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
+      args:
+        - VITE_API_URL=${VITE_API_URL}
     ports:
       - "8081:8081"
-    environment:
-      VITE_API_URL: http://localhost:8080
+    env_file:
+      - ./apps/web/.env
     depends_on:
       - server
     networks:
