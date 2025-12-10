@@ -49,12 +49,12 @@ export class GithubProvider implements IOAuthProvider {
       const data = await this.httpClient.post<GitHubTokenResponse>(url, payload, config);
 
       console.log('GitHub Token Response:', data);
-      
+
       return {
         access_token: data.access_token,
         refresh_token: undefined,
         expires_in: 0,
-        scope: data.scope,
+        scope: data.scope.replace(/,/g, ' ')
       };
     } catch (error: any) {
       console.error('GitHub Token Error:', error.response?.data || error.message);

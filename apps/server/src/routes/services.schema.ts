@@ -37,6 +37,7 @@ const serviceObject = {
     id: { type: 'string' },
     name: { type: 'string' },
     description: { type: 'string' },
+    is_oauth: { type: 'boolean' },
     actions: {
       type: 'array',
       items: actionObject
