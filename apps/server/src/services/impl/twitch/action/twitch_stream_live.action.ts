@@ -24,9 +24,13 @@ export const TwitchStreamLiveAction: IAction<TwitchLiveParams, TwitchLiveState> 
   check: async (user: UserWithAccounts, params: TwitchLiveParams, previousState?: TwitchLiveState) => {
     try {
       const token = getAccessToken(user, 'twitch');
-      const clientId = process.env.TWITCH_CLIENT_ID;
+      const clientId = process.env.TWITCH_CLIENT_ID || '';
       const http = new AxiosAdapter();
 
+      if (!clientId) {
+        console.warn('[Twitch] Missing TWITCH_CLIENT_ID in env');
+        return null;
+      }
       const response = await http.get<any>(`https://api.twitch.tv/helix/streams?user_login=${params.streamer_login}`, {
         headers: {
           Authorization: `Bearer ${token}`,
