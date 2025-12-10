@@ -5,7 +5,8 @@ WORKDIR /app
 ARG EXPO_PUBLIC_API_URL
 ENV EXPO_PUBLIC_API_URL=${EXPO_PUBLIC_API_URL}
 
-COPY package.json turbo.json package-lock.json ./
+COPY package.json turbo.json ./
+COPY package-lock.json* ./
 COPY apps/server ./apps/server
 COPY apps/web ./apps/web
 COPY apps/mobile ./apps/mobile
