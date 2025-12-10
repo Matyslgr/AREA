@@ -36,15 +36,18 @@ jobs:
       - name: 📱 Generate Release APK (Simulation)
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          mkdir -p release-assets
-          echo "Fake APK version ${{ github.ref_name }}" > release-assets/client.apk
+          # In a real scenario, we would build our mobile like this:
+          # cd apps/mobile && ./gradlew assembleRelease
+          # For the sake of this example, we'll just create a dummy APK file.
+          echo "APK Version ${{ github.ref_name }}" > client.apk
 
       - name: 📤 Upload Artifacts
         if: startsWith(github.ref, 'refs/tags/')
         uses: actions/upload-artifact@v4
         with:
-          name: release-files
-          path: release-assets/
+          name: client-apk
+          path: client.apk
+          if-no-files-found: error
 
   mirror:
     name: 🪞 Push to Epitech Mirror
@@ -65,4 +68,4 @@ jobs:
 
     uses: Matyslgr/.github/.github/workflows/release_maker.yml@main
     with:
-      artifact_pattern: "release-files/*"
+      artifact_pattern: "*"
