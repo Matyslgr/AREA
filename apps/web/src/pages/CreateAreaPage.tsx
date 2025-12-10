@@ -32,6 +32,19 @@ interface LinkedAccount {
   scopes: string[]
 }
 
+interface SavedState {
+  step: number
+  areaName: string
+  actionServiceId?: string
+  reactionServiceId?: string
+  actionId?: string
+  reactionId?: string
+  actionParams: Record<string, unknown>
+  reactionParams: Record<string, unknown>
+}
+
+const STORAGE_KEY_FORM = 'area-creation-state'
+
 const STEPS = [
   { number: 1, title: "Name & Services", description: "Choose your AREA name and services" },
   { number: 2, title: "Action", description: "Select and configure the trigger" },
@@ -81,6 +94,51 @@ export default function CreateAreaPage() {
     fetchLinkedAccounts()
   }, [])
 
+  // Effect to restore saved form state from localStorage
+  useEffect(() => {
+    // Only restore if services are loaded
+    if (services.length === 0) return
+
+    const savedJson = localStorage.getItem(STORAGE_KEY_FORM)
+    if (!savedJson) return
+
+    try {
+      const saved: SavedState = JSON.parse(savedJson)
+
+      // Restore simple fields
+      setAreaName(saved.areaName)
+      setCurrentStep(saved.step)
+      setActionParams(saved.actionParams || {})
+      setReactionParams(saved.reactionParams || {})
+
+      // Restore complex objects (mapping ID -> Object)
+      if (saved.actionServiceId) {
+        const s = services.find(x => x.id === saved.actionServiceId)
+        if (s) {
+          setSelectedActionService(s)
+          if (saved.actionId) {
+            const a = s.actions.find(x => x.id === saved.actionId)
+            setSelectedAction(a || null)
+          }
+        }
+      }
+
+      if (saved.reactionServiceId) {
+        const s = services.find(x => x.id === saved.reactionServiceId)
+        if (s) {
+          setSelectedReactionService(s)
+          if (saved.reactionId) {
+            const r = s.reactions.find(x => x.id === saved.reactionId)
+            setSelectedReaction(r || null)
+          }
+        }
+      }
+
+    } catch (e) {
+      console.error("Failed to parse saved form state", e)
+    }
+  }, [services]) // Depend on services to ensure they are loaded first
+
   const fetchServices = async () => {
     try {
       const data = await api.get<ServiceDto[]>("/services")
@@ -112,6 +170,7 @@ export default function CreateAreaPage() {
   const hasRequiredScopes = (serviceId: string, requiredScopes: string[]) => {
     if (!requiredScopes || requiredScopes.length === 0) return true
     const account = getServiceAccount(serviceId)
+    console.log("Checking scopes for service:", serviceId, "Required:", requiredScopes, "Account scopes:", account?.scopes)
     if (!account) return false
     return requiredScopes.every(scope => account.scopes.includes(scope))
   }
@@ -167,17 +226,33 @@ export default function CreateAreaPage() {
     setReactionParams({})
   }
 
+  const saveFormState = () => {
+    const state: SavedState = {
+      step: currentStep,
+      areaName,
+      actionServiceId: selectedActionService?.id,
+      reactionServiceId: selectedReactionService?.id,
+      actionId: selectedAction?.id,
+      reactionId: selectedReaction?.id,
+      actionParams,
+      reactionParams
+    }
+    localStorage.setItem(STORAGE_KEY_FORM, JSON.stringify(state))
+  }
+
   const handleLinkAccount = async () => {
     try {
       const serviceId = services.find(s => s.name === modalService)?.id
       if (!serviceId) return
+
+      saveFormState()
 
       localStorage.setItem('oauth-redirect', '/areas/create')
 
       const { url } = await api.get<{ url: string }>(
         `/auth/oauth/authorize/${serviceId}?mode=connect`
       )
-      
+
       window.location.href = url
     } catch (err) {
       console.error(`Failed to link ${modalService}:`, err)
@@ -189,12 +264,18 @@ export default function CreateAreaPage() {
       const serviceId = services.find(s => s.name === modalService)?.id
       if (!serviceId) return
 
+      saveFormState()
+
       localStorage.setItem('oauth-redirect', '/areas/create')
 
+      console.log("Requesting additional permissions for scopes:", modalScopes)
+
+      const scopeParam = encodeURIComponent(modalScopes.join(' '))
+
       const { url } = await api.get<{ url: string }>(
-        `/auth/oauth/authorize/${serviceId}?mode=connect`
+        `/auth/oauth/authorize/${serviceId}?mode=connect&scope=${scopeParam}`
       )
-      
+
       window.location.href = url
     } catch (err) {
       console.error(`Failed to request permissions for ${modalService}:`, err)
@@ -269,6 +350,7 @@ export default function CreateAreaPage() {
       }
 
       await api.post("/areas", payload)
+      localStorage.removeItem(STORAGE_KEY_FORM)
       navigate("/dashboard")
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create AREA")
