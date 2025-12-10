@@ -152,8 +152,15 @@ export interface OAuthAccount {
   created_at: string;
 }
 
+export interface LinkedAccountInfo {
+  id: string;
+  provider: string;
+  scopes: string[];
+}
+
 export interface AccountDetails extends User {
   accounts: OAuthAccount[];
+  linkedAccounts?: LinkedAccountInfo[];
   hasPassword: boolean;
 }
 
@@ -217,6 +224,7 @@ export interface ServiceAction {
   name: string;
   description: string;
   parameters: { name: string; type: string; description: string; required: boolean }[];
+  scopes?: string[];
 }
 
 export interface ServiceReaction {
@@ -224,6 +232,7 @@ export interface ServiceReaction {
   name: string;
   description: string;
   parameters: { name: string; type: string; description: string; required: boolean }[];
+  scopes?: string[];
 }
 
 export interface Service {
