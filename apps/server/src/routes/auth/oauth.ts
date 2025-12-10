@@ -50,10 +50,10 @@ export async function oauthRoutes(fastify: FastifyInstance) {
       const authHeader = request.headers.authorization;
       if (authHeader) {
         try {
-          const decoded = fastify.jwt.verify<{ userId: string }>(authHeader.replace('Bearer ', ''));
+          const decoded = fastify.jwt.verify<{ id: string }>(authHeader.replace('Bearer ', ''));
 
           const account = await prisma.account.findFirst({
-            where: { user_id: decoded.userId, provider: providerName }
+            where: { user_id: decoded.id, provider: providerName }
           });
           if (account && account.scope) {
             finalScopeList.push(...account.scope.split(' '));
