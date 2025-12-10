@@ -16,10 +16,13 @@ const actionObject = {
     id: { type: 'string' },
     name: { type: 'string' },
     description: { type: 'string' },
-    // Ici, on réutilise parameterObject !
     parameters: {
       type: 'array',
       items: parameterObject
+    },
+    scopes: {
+      type: 'array',
+      items: { type: 'string' }
     }
   }
 };
@@ -34,7 +37,6 @@ const serviceObject = {
     id: { type: 'string' },
     name: { type: 'string' },
     description: { type: 'string' },
-    is_oauth: { type: 'boolean' },
     actions: {
       type: 'array',
       items: actionObject
@@ -47,7 +49,7 @@ const serviceObject = {
 };
 
 export const listServicesSchema = {
-  description: 'Get catalog of all available services',
+  description: 'Get catalog of all available services, actions, and reactions.',
   tags: ['services'],
   response: {
     200: {

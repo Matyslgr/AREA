@@ -8,8 +8,9 @@ import HomePage from './pages/HomePage'
 import { AuthCallback } from '@/pages/AuthCallback'
 import Dashboard from '@/pages/Dashboard'
 import AccountSetup from '@/pages/AccountSetup'
-import ForgotPasswordPage from './pages/ForgotPasswordPage';
-import ResetPasswordPage from './pages/ResetPasswordPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
+import CreateAreaPage from './pages/CreateAreaPage'
 
 
 function App() {
@@ -34,6 +35,7 @@ function App() {
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/account-setup" element={<AccountSetup />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/areas/create" element={<CreateAreaPage />} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>

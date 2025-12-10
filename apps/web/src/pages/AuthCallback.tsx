@@ -71,7 +71,7 @@ export const AuthCallback = () => {
             localStorage.setItem('area-token', tokenFromState);
           }
 
-          const token = localStorage.getItem('area-token');
+          const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
           console.log("🔗 CONNECT MODE - Token in localStorage:", token ? token.substring(0, 20) + "..." : "NULL");
 
           data = await api.post('/auth/oauth/link', {
@@ -79,7 +79,15 @@ export const AuthCallback = () => {
             code
           });
           console.log("✅ Service linked successfully:", data);
-          navigate('/account-setup');
+
+          // Check if we should redirect to a specific page
+          const redirectTo = localStorage.getItem('oauth-redirect');
+          if (redirectTo) {
+            localStorage.removeItem('oauth-redirect');
+            navigate(redirectTo);
+          } else {
+            navigate('/account-setup');
+          }
         } else {
           data = await api.post<AuthResponse>('/auth/oauth/login', {
             provider,

@@ -40,7 +40,7 @@ export default function Navbar() {
                       <>
                         <Button
                           className="rounded-full bg-[#6097FF] px-5 py-2 text-sm text-white hover:bg-[#5087ef]"
-                          onClick={() => navigate("/home")}>
+                          onClick={() => navigate("/dashboard")}>
                           Dashboard
                         </Button>
                         <Button
@@ -98,7 +98,7 @@ export default function Navbar() {
                 <Button
                   className="rounded-full bg-[#6097FF] px-6 py-6 text-base font-medium text-white hover:bg-[#5087ef] transition-all hover:scale-105"
                   onClick={() => {
-                    navigate("/home")
+                    navigate("/dashboard")
                     setIsMenuOpen(false)
                   }}>
                   Dashboard

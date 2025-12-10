@@ -19,7 +19,8 @@ export const getAccountSchema = {
               id: { type: 'string' },
               provider: { type: 'string' },
               provider_account_id: { type: 'string' },
-              expires_at: { type: 'string', format: 'date-time', nullable: true }
+              expires_at: { type: 'string', format: 'date-time', nullable: true },
+              scopes: { type: 'array', items: { type: 'string' }}
             }
           }
         }
@@ -102,3 +103,103 @@ export const updateAccountSchema = {
     }
   }
 };
+
+export const getLinkedAccountSchema = {
+  description: 'Get details of a specific linked OAuth provider',
+  tags: ['auth'],
+  security: [{ bearerAuth: [] }],
+  params: {
+    type: 'object',
+    required: ['provider'],
+    properties: {
+      provider: { type: 'string', description: 'Provider name (google, github...)' }
+    }
+  },
+  response: {
+    200: {
+      description: 'Linked account details',
+      type: 'object',
+      properties: {
+        account: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            provider: { type: 'string' },
+            provider_account_id: { type: 'string' },
+            expires_at: { type: 'string', format: 'date-time', nullable: true },
+            scopes: {
+              type: 'array',
+              items: { type: 'string' }
+            }
+          }
+        }
+      }
+    },
+    404: {
+      description: 'Provider not linked',
+      type: 'object',
+      properties: {
+        error: { type: 'string' }
+      }
+    },
+    500: {
+      description: 'Internal server error',
+      type: 'object',
+      properties: {
+        error: { type: 'string' }
+      }
+    }
+  }
+};
+
+export const unlinkAccountSchema = {
+  description: 'Unlink OAuth account from user',
+  tags: ['auth'],
+  security: [{ bearerAuth: [] }],
+  params: {
+    type: 'object',
+    required: ['provider'],
+    properties: {
+      provider: { type: 'string', description: 'OAuth provider name to unlink' }
+    }
+  },
+  response: {
+    200: {
+      description: 'Account unlinked successfully',
+      type: 'object',
+      properties: {
+        success: { type: 'boolean' },
+        message: { type: 'string' }
+      }
+    },
+    400: {
+      description: 'Bad request - Cannot unlink last authentication method',
+      type: 'object',
+      properties: {
+        error: { type: 'string' }
+      }
+    },
+    401: {
+      description: 'Unauthorized',
+      type: 'object',
+      properties: {
+        error: { type: 'string' }
+      }
+    },
+    404: {
+      description: 'Account not found',
+      type: 'object',
+      properties: {
+        error: { type: 'string' }
+      }
+    },
+    500: {
+      description: 'Internal server error',
+      type: 'object',
+      properties: {
+        error: { type: 'string' }
+      }
+    }
+  }
+};
+
