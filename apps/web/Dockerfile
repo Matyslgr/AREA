@@ -11,6 +11,7 @@ COPY apps/mobile ./apps/mobile
 COPY packages ./packages
 
 RUN npm install
+RUN npm run build --workspace=@area/shared
 RUN npm run build --workspace=web
 
 FROM node:20-alpine AS runner
