@@ -2,7 +2,8 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-COPY package.json turbo.json package-lock.json ./
+COPY package.json turbo.json ./
+COPY package-lock.json* ./
 
 COPY apps/server ./apps/server
 COPY apps/web ./apps/web
