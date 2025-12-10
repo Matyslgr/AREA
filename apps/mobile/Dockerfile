@@ -21,8 +21,5 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/apps/mobile ./apps/mobile
 COPY --from=builder /app/package.json ./package.json
 
-# Volume where the generated APK will be stored
-VOLUME /shared
-
 # Copy APK to shared volume and keep container alive
 CMD ["sh", "-c", "echo 'AREA Mobile App - Build Complete' > /shared/client.apk && echo 'Version: 1.0.0' >> /shared/client.apk && echo 'Build Date: '$(date) >> /shared/client.apk && echo 'APK generated at /shared/client.apk' && tail -f /dev/null"]
