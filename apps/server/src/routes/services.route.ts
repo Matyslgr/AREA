@@ -16,6 +16,7 @@ export async function serviceRoutes(fastify: FastifyInstance) {
       name: s.name,
       version: s.version || '1.0.0',
       description: s.description,
+      is_oauth: s.is_oauth,
 
       actions: s.actions.map(a => ({
         id: a.id,

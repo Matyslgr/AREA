@@ -142,6 +142,7 @@ export default function CreateAreaPage() {
     try {
       const data = await api.get<ServiceDto[]>("/services")
       setServices(data)
+      console.log("Fetched services:", data)
     } catch (err) {
       console.error("Failed to fetch services:", err)
     }
@@ -151,6 +152,7 @@ export default function CreateAreaPage() {
     try {
       const data = await api.get<{ linkedAccounts: Array<{ id: string; provider: string; scopes: string[] }> }>("/auth/account")
       const accounts = data.linkedAccounts || []
+      console.log("Fetched linked accounts:", accounts)
       setLinkedAccounts(accounts.map((acc) => ({
         id: acc.id,
         service: acc.provider,
@@ -177,12 +179,16 @@ export default function CreateAreaPage() {
   const handleServiceSelect = (service: ServiceDto, type: "action" | "reaction") => {
     const account = getServiceAccount(service.id)
 
-    if (service.id !== "timer" && !account) {
+    console.log("Service OAuth requirement:", service.is_oauth, "Account found:", !!account)
+    if (service.is_oauth && !account) {
+      console.log("Service account not linked for:", service.name)
       setModalService(service.name)
       setModalType(type)
       setShowAccountModal(true)
       return
     }
+
+    console.log("Selected service:", service.name, "for", type)
 
     if (type === "action") {
       setSelectedActionService(service)
@@ -194,7 +200,7 @@ export default function CreateAreaPage() {
   const handleActionSelect = (action: ServiceDto["actions"][0]) => {
     const account = getServiceAccount(selectedActionService!.id)
 
-    if (selectedActionService!.id !== "timer" && action.scopes && action.scopes.length > 0) {
+    if (selectedActionService!.is_oauth && action.scopes && action.scopes.length > 0) {
       if (!account || !hasRequiredScopes(selectedActionService!.id, action.scopes)) {
         setModalService(selectedActionService!.name)
         setModalScopes(action.scopes)
@@ -211,7 +217,7 @@ export default function CreateAreaPage() {
   const handleReactionSelect = (reaction: ServiceDto["reactions"][0]) => {
     const account = getServiceAccount(selectedReactionService!.id)
 
-    if (selectedReactionService!.id !== "timer" && reaction.scopes && reaction.scopes.length > 0) {
+    if (selectedReactionService!.is_oauth && reaction.scopes && reaction.scopes.length > 0) {
       if (!account || !hasRequiredScopes(selectedReactionService!.id, reaction.scopes)) {
         setModalService(selectedReactionService!.name)
         setModalScopes(reaction.scopes)
@@ -481,7 +487,7 @@ export default function CreateAreaPage() {
                     <Label className="text-zinc-200 text-base font-semibold flex items-center gap-2">Action Service (Trigger)</Label>
                     <div className="grid grid-cols-2 gap-3">
                       {services.filter(s => s.actions.length > 0).map((service) => {
-                        const isLinked = getServiceAccount(service.id) || service.id === "timer"
+                        const isLinked = getServiceAccount(service.id) || !service.is_oauth
                         return (
                           <button
                             key={service.id}
@@ -516,7 +522,7 @@ export default function CreateAreaPage() {
                     </Label>
                     <div className="grid grid-cols-2 gap-3">
                       {services.filter(s => s.reactions.length > 0).map((service) => {
-                        const isLinked = getServiceAccount(service.id) || service.id === "timer"
+                        const isLinked = getServiceAccount(service.id) || !service.is_oauth
                         return (
                           <button
                             key={service.id}

@@ -49,6 +49,7 @@ export interface IService {
   name: string;        // ex: "GitHub"
   version: string;
   description: string;
+  is_oauth: boolean;
   actions: IAction[];
   reactions: IReaction[];
 }

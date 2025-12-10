@@ -3,6 +3,7 @@ export interface ServiceDto {
   name: string;
   description: string;
   version?: string;
+  is_oauth: boolean;
   actions: ServiceActionDto[];
   reactions: ServiceReactionDto[];
 }
