@@ -41,6 +41,9 @@ export class AuthManager {
     const tokens: OAuthTokens = await provider.getTokens(code);
     const oauthUser: OAuthUser = await provider.getUserInfo(tokens.access_token);
 
+    console.log(`🔍 OAuth Login Debug - Provider: ${providerName}`);
+    console.log(`📧 OAuth Email: ${oauthUser.email}`);
+    console.log(`🆔 OAuth User ID: ${oauthUser.id}`);
 
     let userId: string;
     let isNewUser = false;
@@ -53,17 +56,25 @@ export class AuthManager {
       }
     });
 
+    console.log(`🔗 Existing ${providerName} account:`, existingAccount ? 'FOUND' : 'NOT FOUND');
+
     if (existingAccount) {
       userId = existingAccount.user_id;
+      console.log(`✅ Using existing account, user_id: ${userId}`);
       await this.upsertAccount(userId, providerName, oauthUser, tokens);
     } else {
       isNewAccount = true;
+      console.log(`🆕 New ${providerName} account, checking if user exists by email...`);
+
       let user = await prisma.user.findUnique({
         where: { email: oauthUser.email }
       });
 
+      console.log(`👤 User with email ${oauthUser.email}:`, user ? 'FOUND' : 'NOT FOUND');
+
       if (!user) {
         isNewUser = true;
+        console.log(`🎉 Creating NEW user with email: ${oauthUser.email}`);
         user = await prisma.user.create({
           data: {
             email: oauthUser.email,
@@ -71,6 +82,8 @@ export class AuthManager {
             password: '',
           }
         });
+      } else {
+        console.log(`🔄 Linking ${providerName} to EXISTING user: ${user.id}`);
       }
 
       userId = user.id;
@@ -78,6 +91,8 @@ export class AuthManager {
     }
 
     const user = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
+
+    console.log(`📤 Returning: isNewUser=${isNewUser}, isNewAccount=${isNewAccount}, hasPassword=${!!user.password && user.password.length > 0}`);
 
     return {
       user,

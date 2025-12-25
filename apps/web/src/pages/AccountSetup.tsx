@@ -46,12 +46,6 @@ export default function AccountSetup() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const token = localStorage.getItem('area-token')
-    if (!token) {
-      navigate("/signin")
-      return
-    }
-
     const fetchAccountDetails = async () => {
       try {
         const details = await api.get<AccountDetails>("/auth/account")

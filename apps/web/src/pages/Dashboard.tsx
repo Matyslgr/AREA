@@ -40,6 +40,7 @@ export default function Dashboard() {
   const [filteredAreas, setFilteredAreas] = useState<AreaDto[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchAreas();
@@ -59,11 +60,13 @@ export default function Dashboard() {
 
   const fetchAreas = async () => {
     try {
+      setError(null);
       const data = await api.get<AreaDto[]>("/areas");
       setAreas(data);
       setFilteredAreas(data);
     } catch (error) {
       console.error("Failed to fetch areas:", error);
+      setError("Failed to load your areas. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -90,7 +93,6 @@ export default function Dashboard() {
       <Navbar />
 
       <div className="flex-1 container mx-auto px-4 pt-28 md:pt-32 pb-16 space-y-8">
-        {/* Header */}
         <div className="flex flex-col gap-2">
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-white">My AREAs</h1>
           <p className="text-zinc-400">
@@ -98,7 +100,6 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-3">
           <Card className="bg-zinc-900 border-zinc-800 shadow-xl">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -140,7 +141,29 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Search and Create */}
+        {error && (
+          <Card className="bg-red-500/10 border-red-500/30">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-3">
+                <div className="flex-1">
+                  <p className="text-sm text-red-400">{error}</p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setError(null);
+                    fetchAreas();
+                  }}
+                  className="text-red-400 hover:text-red-300 hover:bg-red-500/20"
+                >
+                  Retry
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
@@ -162,7 +185,6 @@ export default function Dashboard() {
           </Button>
         </div>
 
-        {/* Areas List */}
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="flex items-center gap-3 text-zinc-400">

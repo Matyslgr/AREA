@@ -84,9 +84,9 @@ export const AuthCallback = () => {
           const redirectTo = localStorage.getItem('oauth-redirect');
           if (redirectTo) {
             localStorage.removeItem('oauth-redirect');
-            navigate(redirectTo);
+            window.location.href = redirectTo;
           } else {
-            navigate('/account-setup');
+            window.location.href = '/account-setup';
           }
         } else {
           data = await api.post<AuthResponse>('/auth/oauth/login', {
@@ -108,10 +108,10 @@ export const AuthCallback = () => {
 
           if (isNewUser) {
             console.log("🆕 New user, redirecting to account setup");
-            navigate('/account-setup');
+            window.location.href = '/account-setup';
           } else {
             console.log("👤 Existing user, redirecting to dashboard");
-            navigate('/dashboard');
+            window.location.href = '/dashboard';
           }
         }
 

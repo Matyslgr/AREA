@@ -25,19 +25,39 @@ function App() {
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
             <Route
-              path="/home"
+              path="/account-setup"
               element={
                 <ProtectedRoute>
-                  <HomePage />
+                  <AccountSetup />
                 </ProtectedRoute>
               }
             />
-            <Route path="/auth/callback" element={<AuthCallback />} />
-            <Route path="/account-setup" element={<AccountSetup />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/areas/create" element={<CreateAreaPage />} />
-            <Route path="/areas/:id" element={<AreaDetailsPage />} />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/areas/create"
+              element={
+                <ProtectedRoute>
+                  <CreateAreaPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/areas/:id"
+              element={
+                <ProtectedRoute>
+                  <AreaDetailsPage />
+                </ProtectedRoute>
+              }
+            />
           </Routes>
         </BrowserRouter>
       </AuthProvider>

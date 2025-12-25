@@ -47,6 +47,7 @@ export default function AreaDetailsPage() {
   const [area, setArea] = useState<AreaDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -69,13 +70,14 @@ export default function AreaDetailsPage() {
   const handleToggleActive = async () => {
     if (!area) return;
     try {
+      setError(null);
       await api.put(`/areas/${area.id}`, {
         is_active: !area.is_active,
       });
       setArea({ ...area, is_active: !area.is_active });
     } catch (error) {
       console.error("Failed to toggle area:", error);
-      alert("Failed to toggle AREA status. Please try again.");
+      setError("Failed to toggle AREA status. Please try again.");
     }
   };
 
@@ -83,11 +85,13 @@ export default function AreaDetailsPage() {
     if (!area) return;
 
     try {
+      setError(null);
       await api.delete(`/areas/${area.id}`);
       navigate("/dashboard");
     } catch (error) {
       console.error("Failed to delete area:", error);
-      alert("Failed to delete AREA. Please try again.");
+      setError("Failed to delete AREA. Please try again.");
+      setDeleteDialogOpen(false);
     }
   };
 
@@ -178,8 +182,27 @@ export default function AreaDetailsPage() {
           </div>
         </div>
 
+        {error && (
+          <Card className="bg-red-500/10 border-red-500/30">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-3">
+                <div className="flex-1">
+                  <p className="text-sm text-red-400">{error}</p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setError(null)}
+                  className="text-red-400 hover:text-red-300 hover:bg-red-500/20"
+                >
+                  Dismiss
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <div className="grid gap-6 lg:grid-cols-2">
-          {/* Action Card - Left */}
           <Card className="bg-zinc-900 border-zinc-800 shadow-xl">
             <CardHeader>
               <div className="flex items-center gap-3 mb-2">
@@ -235,7 +258,6 @@ export default function AreaDetailsPage() {
             </CardContent>
           </Card>
 
-          {/* Reactions Card - Right */}
           <Card className="bg-zinc-900 border-zinc-800 shadow-xl">
             <CardHeader>
               <div className="flex items-center gap-3 mb-2">

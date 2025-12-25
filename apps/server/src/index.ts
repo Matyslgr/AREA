@@ -30,9 +30,11 @@ const server = Fastify({
 const main = async () => {
   try {
     // 1. Plugins
-    await server.register(cors, { 
+    await server.register(cors, {
       origin: true,
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS']
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization']
     });
     await server.register(swagger, swaggerConfig);
     await server.register(swaggerUi, swaggerUiConfig);

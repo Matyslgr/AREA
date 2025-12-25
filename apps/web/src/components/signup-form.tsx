@@ -1,5 +1,5 @@
-import { useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
+import { useState, useEffect } from "react"
+import { Link, useNavigate, useSearchParams } from "react-router-dom"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -16,6 +16,13 @@ interface SignupFormProps extends React.ComponentProps<"form"> {
   onOAuthSignup?: (provider: string) => void
 }
 
+const ERROR_MESSAGES: Record<string, string> = {
+  missing_code: "OAuth authentication failed: No authorization code received",
+  missing_provider: "OAuth authentication failed: Provider not specified",
+  auth_failed: "Authentication failed. Please try again.",
+  oauth_init_failed: "Failed to start authentication. Please try again.",
+}
+
 export function SignupForm({
   className,
   onOAuthSignup,
@@ -28,6 +35,17 @@ export function SignupForm({
   const [loading, setLoading] = useState(false)
   const { signup } = useAuth()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  useEffect(() => {
+    const errorParam = searchParams.get('error')
+    if (errorParam) {
+      const errorMessage = ERROR_MESSAGES[errorParam] || "An error occurred. Please try again."
+      setError(errorMessage)
+      searchParams.delete('error')
+      setSearchParams(searchParams, { replace: true })
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
