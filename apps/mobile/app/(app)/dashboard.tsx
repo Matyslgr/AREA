@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Text } from '@/components/ui/text';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
-import { Area, areasApi, authApi, OAuthAccount } from '@/lib/api';
+import { Area, areasApi } from '@/lib/api';
 import { router } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
@@ -15,106 +15,88 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
-  Switch,
+  TextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-// Service configuration with local assets
-const SERVICE_CONFIG: Record<
-  string,
-  { name: string; icon: ImageSourcePropType; useTint: boolean }
-> = {
-  google: {
-    name: 'Google',
-    icon: require('../../assets/google.png'),
-    useTint: false,
-  },
-  github: {
-    name: 'GitHub',
-    icon: require('../../assets/github.png'),
-    useTint: true,
-  },
-  spotify: {
-    name: 'Spotify',
-    icon: require('../../assets/spotify.png'),
-    useTint: false,
-  },
-  notion: {
-    name: 'Notion',
-    icon: require('../../assets/notion.png'),
-    useTint: true,
-  },
-  linkedin: {
-    name: 'LinkedIn',
-    icon: require('../../assets/linkedin.png'),
-    useTint: false,
-  },
-  twitch: {
-    name: 'Twitch',
-    icon: require('../../assets/twitch.png'),
-    useTint: false,
-  },
+// --- LOGIC PORTED FROM WEB ---
+
+const getServiceFromAction = (actionName: string): string => {
+  if (actionName.startsWith("GITHUB_")) return "github";
+  if (actionName.startsWith("GOOGLE_")) return "google";
+  if (actionName.startsWith("GMAIL_")) return "google";
+  if (actionName.startsWith("DISCORD_")) return "discord";
+  if (actionName.startsWith("SPOTIFY_")) return "spotify";
+  if (actionName.startsWith("TWITCH_")) return "twitch";
+  if (actionName.startsWith("NOTION_")) return "notion";
+  if (actionName.startsWith("LINKEDIN_")) return "linkedin";
+  if (actionName.startsWith("TIMER_")) return "timer";
+  return "unknown";
 };
 
-const ALL_PROVIDERS = ['google', 'github', 'spotify', 'notion', 'linkedin', 'twitch'];
+// Mapping for local assets instead of string URLs
+const serviceIcons: Record<string, ImageSourcePropType> = {
+  github: require('../../assets/github.png'),
+  google: require('../../assets/google.png'),
+  spotify: require('../../assets/spotify.png'),
+  twitch: require('../../assets/twitch.png'),
+  notion: require('../../assets/notion.png'),
+  linkedin: require('../../assets/linkedin.png'),
+};
 
 export default function DashboardScreen() {
   const { user, signOut } = useAuth();
   const { colorScheme, setColorScheme } = useColorScheme();
 
-  const [connectedAccounts, setConnectedAccounts] = React.useState<OAuthAccount[]>([]);
+  // --- STATE ---
   const [areas, setAreas] = React.useState<Area[]>([]);
+  const [filteredAreas, setFilteredAreas] = React.useState<Area[]>([]);
+  const [searchQuery, setSearchQuery] = React.useState("");
   const [loading, setLoading] = React.useState(true);
   const [refreshing, setRefreshing] = React.useState(false);
-  const [togglingArea, setTogglingArea] = React.useState<string | null>(null);
 
-  const fetchData = React.useCallback(async () => {
+  // --- FETCH LOGIC (Matches Web fetchAreas) ---
+  const fetchAreas = React.useCallback(async () => {
     try {
-      const [accountsRes, areasRes] = await Promise.all([
-        authApi.getOAuthAccounts(),
-        areasApi.list(),
-      ]);
-
-      if (accountsRes.data?.accounts) {
-        setConnectedAccounts(accountsRes.data.accounts);
-      }
-      if (areasRes.data) {
-        setAreas(areasRes.data);
+      const response = await areasApi.list();
+      if (response.data) {
+        setAreas(response.data);
+        if (searchQuery.trim() === "") {
+          setFilteredAreas(response.data);
+        }
       }
     } catch (error) {
-      console.error('Failed to fetch dashboard data:', error);
+      console.error('Failed to fetch areas:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [searchQuery]);
 
   React.useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    fetchAreas();
+  }, []);
+
+  // --- FILTERING EFFECT (Matches Web useEffect) ---
+  React.useEffect(() => {
+    if (searchQuery.trim() === "") {
+      setFilteredAreas(areas);
+    } else {
+      setFilteredAreas(
+        areas.filter((area) =>
+          area.name.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      );
+    }
+  }, [searchQuery, areas]);
 
   const onRefresh = React.useCallback(() => {
     setRefreshing(true);
-    fetchData();
-  }, [fetchData]);
+    fetchAreas();
+  }, [fetchAreas]);
 
-  async function toggleArea(areaId: string, currentStatus: boolean) {
-    setTogglingArea(areaId);
-    try {
-      const { error } = await areasApi.update(areaId, { is_active: !currentStatus });
-      if (!error) {
-        setAreas((prev) =>
-          prev.map((area) =>
-            area.id === areaId ? { ...area, is_active: !currentStatus } : area
-          )
-        );
-      }
-    } finally {
-      setTogglingArea(null);
-    }
-  }
-
+  // --- ACTIONS ---
   function toggleTheme() {
     setColorScheme(colorScheme === 'dark' ? 'light' : 'dark');
   }
@@ -123,14 +105,16 @@ export default function DashboardScreen() {
     await signOut();
   }
 
-  const connectedProviders = new Set(connectedAccounts.map((a) => a.provider));
-  const activeAreas = areas.filter((a) => a.is_active).length;
+  // --- CALCULATED STATS (Matches Web Logic) ---
+  const activeAreasCount = areas.filter(area => area.is_active).length;
+  const totalReactions = areas.reduce((sum, area) => sum + area.reactions.length, 0);
+  const activePercentage = areas.length > 0 ? Math.round((activeAreasCount / areas.length) * 100) : 0;
 
   if (loading) {
     return (
       <SafeAreaView className="bg-background flex-1 items-center justify-center">
         <ActivityIndicator size="large" />
-        <Text className="text-muted-foreground mt-4">Loading dashboard...</Text>
+        <Text className="text-muted-foreground mt-4">Loading your areas...</Text>
       </SafeAreaView>
     );
   }
@@ -168,266 +152,171 @@ export default function DashboardScreen() {
             </View>
           </View>
 
-          {/* Stats Cards */}
+          {/* Stats Cards (Matches Web Stats) */}
           <View className="mb-6 flex-row gap-3">
-            <Card className="border-border flex-1">
+            {/* Total AREAs */}
+            <Card className="border-border flex-1 bg-card">
               <CardContent className="items-center py-4">
                 <Text className="text-primary text-2xl font-bold">{areas.length}</Text>
-                <Text className="text-muted-foreground text-xs">Total AREAs</Text>
+                <Text className="text-muted-foreground text-xs text-center">Total AREAs</Text>
+                <Text className="text-muted-foreground text-[10px] mt-1">{activeAreasCount} active</Text>
               </CardContent>
             </Card>
-            <Card className="border-border flex-1">
+
+            {/* Active Percentage */}
+            <Card className="border-border flex-1 bg-card">
               <CardContent className="items-center py-4">
-                <Text className="text-green-500 text-2xl font-bold">{activeAreas}</Text>
-                <Text className="text-muted-foreground text-xs">Active</Text>
+                <Text className="text-green-500 text-2xl font-bold">{activePercentage}%</Text>
+                <Text className="text-muted-foreground text-xs text-center">Active Rate</Text>
+                <Text className="text-muted-foreground text-[10px] mt-1">% of total</Text>
               </CardContent>
             </Card>
-            <Card className="border-border flex-1">
+
+            {/* Total Reactions */}
+            <Card className="border-border flex-1 bg-card">
               <CardContent className="items-center py-4">
-                <Text className="text-primary text-2xl font-bold">
-                  {connectedAccounts.length}
-                </Text>
-                <Text className="text-muted-foreground text-xs">Services</Text>
+                <Text className="text-orange-500 text-2xl font-bold">{totalReactions}</Text>
+                <Text className="text-muted-foreground text-xs text-center">Reactions</Text>
+                <Text className="text-muted-foreground text-[10px] mt-1">Total</Text>
               </CardContent>
             </Card>
           </View>
 
-          {/* Quick Actions */}
-          <Card className="border-border mb-6">
-            <CardHeader>
-              <CardTitle className="text-lg">Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="flex-row gap-3">
-              <Button variant="default" className="flex-1" onPress={() => router.push('/(app)/create-area')}>
-                <Text className="text-primary-foreground text-sm">+ New AREA</Text>
-              </Button>
-              <Button
-                variant="outline"
-                className="flex-1"
-                onPress={() => router.push('/(app)/account-setup')}
-              >
-                <Text className="text-sm">+ Connect Service</Text>
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Connected Services */}
-          <View className="mb-6">
-            <Text className="text-foreground mb-3 font-semibold">Connected Services</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <View className="flex-row gap-3">
-                {ALL_PROVIDERS.map((provider) => {
-                  const config = SERVICE_CONFIG[provider];
-                  const isConnected = connectedProviders.has(provider);
-                  return (
-                    <ServiceCard
-                      key={provider}
-                      name={config.name}
-                      icon={config.icon}
-                      useTint={config.useTint}
-                      connected={isConnected}
-                      colorScheme={colorScheme}
-                    />
-                  );
-                })}
-                <Pressable
-                  onPress={() => router.push('/(app)/account-setup')}
-                  className="border-border bg-muted/50 h-20 w-20 items-center justify-center rounded-2xl border border-dashed"
-                >
-                  <Text className="text-muted-foreground text-2xl">+</Text>
-                </Pressable>
-              </View>
-            </ScrollView>
-          </View>
-
-          {/* AREAs List */}
-          <View className="mb-6">
-            <View className="mb-3 flex-row items-center justify-between">
-              <Text className="text-foreground font-semibold">Your AREAs</Text>
-              {areas.length > 0 && (
-                <Pressable>
-                  <Text className="text-primary text-sm">View all</Text>
-                </Pressable>
-              )}
+          {/* Search & Create (Matches Web Controls) */}
+          <View className="mb-6 gap-3">
+            <View className="flex-row items-center gap-2 bg-secondary/50 rounded-xl px-4 py-3 border border-border">
+              <Text className="text-muted-foreground">🔍</Text>
+              <TextInput
+                placeholder="Search areas..."
+                placeholderTextColor="#9ca3af"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                className="flex-1 text-foreground"
+              />
             </View>
 
-            {areas.length === 0 ? (
-              <Card className="border-border">
+            <Button
+              className="bg-primary w-full"
+              onPress={() => router.push('/(app)/create-area')}
+            >
+              <Text className="text-primary-foreground font-semibold">+ Create AREA</Text>
+            </Button>
+          </View>
+
+          {/* Areas List */}
+          <View className="mb-6">
+            <Text className="text-foreground font-semibold mb-3">Your Automation Workflows</Text>
+
+            {filteredAreas.length === 0 ? (
+              <Card className="border-border bg-card">
                 <CardContent className="items-center py-8">
-                  <Text className="text-muted-foreground mb-2 text-4xl">🔗</Text>
-                  <Text className="text-foreground mb-1 font-medium">No AREAs yet</Text>
-                  <Text className="text-muted-foreground text-center text-sm">
-                    Create your first automation to connect your services
+                  <Text className="text-muted-foreground mb-2 text-4xl">⚡</Text>
+                  <Text className="text-foreground mb-1 font-medium">
+                    {searchQuery ? "No matching areas" : "No areas yet"}
                   </Text>
-                  <Button variant="default" className="mt-4" onPress={() => router.push('/(app)/create-area')}>
-                    <Text className="text-primary-foreground text-sm">Create AREA</Text>
-                  </Button>
+                  <Text className="text-muted-foreground text-center text-sm px-4">
+                    {searchQuery
+                      ? `No areas matching "${searchQuery}"`
+                      : "Create your first automation to get started with AREA"
+                    }
+                  </Text>
                 </CardContent>
               </Card>
             ) : (
               <View className="gap-3">
-                {areas.slice(0, 5).map((area) => (
-                  <AreaCard
-                    key={area.id}
-                    area={area}
-                    toggling={togglingArea === area.id}
-                    onToggle={() => toggleArea(area.id, area.is_active)}
-                  />
+                {filteredAreas.map((area) => (
+                  <AreaCard key={area.id} area={area} colorScheme={colorScheme} />
                 ))}
               </View>
             )}
           </View>
-
-          {/* Recent Activity */}
-          {areas.some((a) => a.last_executed_at) && (
-            <View>
-              <Text className="text-foreground mb-3 font-semibold">Recent Activity</Text>
-              <Card className="border-border">
-                <CardContent className="py-4">
-                  {areas
-                    .filter((a) => a.last_executed_at)
-                    .sort(
-                      (a, b) =>
-                        new Date(b.last_executed_at!).getTime() -
-                        new Date(a.last_executed_at!).getTime()
-                    )
-                    .slice(0, 3)
-                    .map((area) => (
-                      <View
-                        key={area.id}
-                        className="border-border flex-row items-center justify-between border-b py-2 last:border-b-0"
-                      >
-                        <View className="flex-1">
-                          <Text className="text-foreground text-sm font-medium">
-                            {area.name}
-                          </Text>
-                          <Text className="text-muted-foreground text-xs">
-                            {formatRelativeTime(area.last_executed_at!)}
-                          </Text>
-                        </View>
-                        <View
-                          className={cn(
-                            'h-2 w-2 rounded-full',
-                            area.error_log ? 'bg-red-500' : 'bg-green-500'
-                          )}
-                        />
-                      </View>
-                    ))}
-                </CardContent>
-              </Card>
-            </View>
-          )}
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function ServiceCard({
-  name,
-  icon,
-  useTint,
-  connected,
-  colorScheme,
-}: {
-  name: string;
-  icon: ImageSourcePropType;
-  useTint: boolean;
-  connected: boolean;
-  colorScheme: 'light' | 'dark' | undefined;
-}) {
-  return (
-    <Pressable
-      onPress={() => router.push('/(app)/account-setup')}
-      className={cn(
-        'border-border h-20 w-20 items-center justify-center rounded-2xl border',
-        connected ? 'bg-card' : 'bg-muted/50 opacity-50'
-      )}
-    >
-      <Image
-        source={icon}
-        className={cn('h-8 w-8', useTint && Platform.select({ web: 'dark:invert' }))}
-        tintColor={Platform.select({
-          native: useTint ? (colorScheme === 'dark' ? 'white' : 'black') : undefined,
-        })}
-      />
-      <Text className="text-foreground mt-1 text-xs">{name}</Text>
-      {connected && (
-        <View className="bg-green-500 absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-white dark:border-zinc-900" />
-      )}
-    </Pressable>
-  );
-}
+// --- UPDATED CARD LOGIC ---
 
-function AreaCard({
-  area,
-  toggling,
-  onToggle,
-}: {
-  area: Area;
-  toggling: boolean;
-  onToggle: () => void;
-}) {
-  const actionService = area.action.name.split('.')[0];
-  const reactionServices = area.reactions.map((r) => r.name.split('.')[0]);
+function AreaCard({ area, colorScheme }: { area: Area, colorScheme: 'light' | 'dark' | undefined }) {
+  // Logic from Web: getUniqueServices
+  const getUniqueServices = (area: Area): string[] => {
+    const services = new Set<string>();
+    services.add(getServiceFromAction(area.action.name));
+    area.reactions.forEach((reaction) => {
+      services.add(getServiceFromAction(reaction.name));
+    });
+    return Array.from(services).filter((s) => s !== "unknown");
+  };
+
+  const uniqueServices = getUniqueServices(area);
 
   return (
-    <Card className="border-border">
-      <CardContent className="flex-row items-center justify-between py-4">
-        <View className="flex-1 pr-4">
-          <Text className="text-foreground font-medium">{area.name}</Text>
-          <Text className="text-muted-foreground text-xs">
-            {actionService} → {reactionServices.join(', ')}
-          </Text>
-          {area.error_log && (
-            <Text className="text-red-500 mt-1 text-xs" numberOfLines={1}>
-              Error: {area.error_log}
-            </Text>
-          )}
-        </View>
-        <View className="flex-row items-center gap-3">
-          <View
-            className={cn(
-              'rounded-full px-2 py-1',
-              area.is_active ? 'bg-green-500/10' : 'bg-muted'
-            )}
-          >
-            <Text
+    <Pressable onPress={() => { /* Navigate to detail if needed */ }}>
+      <Card className="border-border bg-card">
+        <CardContent className="py-4 space-y-3">
+          {/* Header: Name and Status */}
+          <View className="flex-row justify-between items-start">
+            <View className="flex-1 mr-2">
+              <Text className="text-foreground font-bold text-lg" numberOfLines={1}>
+                {area.name}
+              </Text>
+              <Text className="text-muted-foreground text-xs mt-1" numberOfLines={1}>
+                {area.action.name.replace(/_/g, " ")}
+              </Text>
+            </View>
+
+            <View
               className={cn(
-                'text-xs font-medium',
-                area.is_active ? 'text-green-500' : 'text-muted-foreground'
+                'rounded-full px-2 py-1 border',
+                area.is_active
+                  ? 'bg-green-500/10 border-green-500/20'
+                  : 'bg-zinc-500/10 border-zinc-500/20'
               )}
             >
-              {area.is_active ? 'Active' : 'Paused'}
-            </Text>
+              <Text
+                className={cn(
+                  'text-xs font-medium',
+                  area.is_active ? 'text-green-500' : 'text-zinc-500'
+                )}
+              >
+                {area.is_active ? 'Active' : 'Inactive'}
+              </Text>
+            </View>
           </View>
-          {toggling ? (
-            <ActivityIndicator size="small" />
-          ) : (
-            <Switch
-              value={area.is_active}
-              onValueChange={onToggle}
-              trackColor={{ false: '#767577', true: '#22c55e' }}
-              thumbColor={area.is_active ? '#fff' : '#f4f3f4'}
-            />
-          )}
-        </View>
-      </CardContent>
-    </Card>
+
+          {/* Icons Row */}
+          <View className="flex-row flex-wrap gap-2">
+            {uniqueServices.map((service) => (
+               <View
+                key={service}
+                className="h-8 w-8 rounded-lg bg-secondary flex items-center justify-center overflow-hidden border border-border"
+              >
+                <Image
+                  source={serviceIcons[service] || require('../../assets/google.png')} // Fallback icon
+                  className={cn('h-5 w-5',
+                    // Optional: tint Logic if needed, similar to Web might not need it for logos
+                    // keeping it simple
+                  )}
+                  resizeMode="contain"
+                />
+              </View>
+            ))}
+          </View>
+
+          {/* Footer: Reactions count and Date */}
+          <View className="flex-row justify-between items-center border-t border-border pt-3 mt-1">
+             <Text className="text-muted-foreground text-xs font-medium">
+               {area.reactions.length} reaction{area.reactions.length !== 1 ? "s" : ""}
+             </Text>
+             {area.last_executed_at && (
+               <Text className="text-muted-foreground text-[10px]">
+                 Last run: {new Date(area.last_executed_at).toLocaleDateString()}
+               </Text>
+             )}
+          </View>
+        </CardContent>
+      </Card>
+    </Pressable>
   );
-}
-
-function formatRelativeTime(dateString: string): string {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-
-  if (diffMins < 1) return 'Just now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return date.toLocaleDateString();
 }

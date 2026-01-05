@@ -1,44 +1,35 @@
 import * as SecureStore from 'expo-secure-store';
-import Constants from 'expo-constants';
+
+const API_URL_KEY = 'api-url';
+const TOKEN_KEY = 'area-token';
+const USER_KEY = 'area-user';
 
 /**
- * Auto-detect the API URL based on the environment.
- * In development, extracts the IP from Expo's dev server.
- * Falls back to EXPO_PUBLIC_API_URL or localhost.
+ * Loads the API URL from storage or fallback to auto-detection
  */
-function getApiUrl(): string {
-  // If explicitly set in env, use it (useful for production builds)
-  if (process.env.EXPO_PUBLIC_API_URL) {
-    return process.env.EXPO_PUBLIC_API_URL;
+export async function getApiUrl(): Promise<string> {
+  try {
+    const savedUrl = await SecureStore.getItemAsync(API_URL_KEY);
+    if (savedUrl)
+      return savedUrl;
+  } catch {
+    console.error('Failed to load API URL from storage');
   }
-
-  // In development, try to get IP from Expo's debugger host
-  const debuggerHost =
-    Constants.expoConfig?.hostUri || // Expo SDK 49+
-    (Constants.manifest2 as { extra?: { expoGo?: { debuggerHost?: string } } })?.extra?.expoGo
-      ?.debuggerHost ||
-    (Constants.manifest as { debuggerHost?: string })?.debuggerHost;
-
-  if (debuggerHost) {
-    // debuggerHost is "IP:PORT" (e.g., "192.168.1.114:8081")
-    // Extract just the IP and use port 8080 for the API server
-    const ip = debuggerHost.split(':')[0];
-    return `http://${ip}:8080`;
-  }
-
-  // Fallback for web or when debuggerHost is not available
   return 'http://localhost:8080';
 }
 
-const API_URL = getApiUrl();
-
-// Log the API URL in development for debugging
-if (__DEV__) {
-  console.log('[API] Using API URL:', API_URL);
+/**
+ * Saves a new API URL (e.g., your static ngrok URL)
+ */
+export async function setApiUrl(url: string): Promise<void> {
+  try {
+    // Ensure URL doesn't end with a slash
+    const formattedUrl = url.endsWith('/') ? url.slice(0, -1) : url;
+    await SecureStore.setItemAsync(API_URL_KEY, formattedUrl);
+  } catch (error) {
+    console.error('Failed to save API URL', error);
+  }
 }
-
-const TOKEN_KEY = 'area-token';
-const USER_KEY = 'area-user';
 
 export async function getToken(): Promise<string | null> {
   try {
@@ -106,13 +97,17 @@ async function request<T>(
 ): Promise<ApiResponse<T>> {
   try {
     const token = await getToken();
+    const baseUrl = await getApiUrl();
+
+    if (__DEV__) console.log(`[REQ] ${baseUrl}${endpoint}`);
+
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
       ...(token && { Authorization: `Bearer ${token}` }),
       ...options.headers,
     };
 
-    const response = await fetch(`${API_URL}${endpoint}`, {
+    const response = await fetch(`${baseUrl}${endpoint}`, {
       ...options,
       headers,
     });
@@ -185,8 +180,15 @@ export const authApi = {
   updatePassword: (password: string, currentPassword?: string) =>
     api.post<{ message: string; user: User }>('/auth/account/password', { password, currentPassword }),
 
-  getOAuthUrl: (provider: string, mode: 'login' | 'connect' | 'signup') =>
-    api.get<{ url: string }>(`/auth/oauth/authorize/${provider}?mode=${mode}`),
+  getOAuthUrl: (provider: string, mode: 'login' | 'connect' | 'signup', redirectUri?: string) => {
+    let url = `/auth/oauth/authorize/${provider}?mode=${mode}&source=mobile`;
+
+    if (redirectUri) {
+      url += `&redirect=${encodeURIComponent(redirectUri)}`;
+    }
+
+    return api.get<{ url: string }>(url);
+  },
 
   oauthLogin: (provider: string, code: string) =>
     api.post<AuthResponse>('/auth/oauth/login', { provider, code }),

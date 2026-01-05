@@ -4,6 +4,8 @@ import { Text } from '@/components/ui/text';
 import { Link } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
+import { ServerConfigModal } from '@/components/server-config-modal';
+import { getApiUrl } from '@/lib/api';
 import {
   Dimensions,
   Image,
@@ -73,8 +75,29 @@ export default function HomePage() {
   const { colorScheme } = useColorScheme();
   const [activeFeature, setActiveFeature] = React.useState(0);
 
+  const [isConfiguring, setIsConfiguring] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    async function checkServerConfig() {
+      const url = await getApiUrl();
+      // We consider "http://localhost:8080" as not configured for physical mobile
+      if (!url || url === 'http://localhost:8080') {
+        setIsConfiguring(true);
+      }
+      setIsLoading(false);
+    }
+    checkServerConfig();
+  }, []);
+
+  if (isLoading) return null; // Or a Spinner/Loader
+
   return (
     <SafeAreaView className="bg-background flex-1">
+      <ServerConfigModal
+        visible={isConfiguring}
+        onSave={() => setIsConfiguring(false)}
+      />
       <ScrollView
         contentContainerStyle={{ flexGrow: 1 }}
         showsVerticalScrollIndicator={false}

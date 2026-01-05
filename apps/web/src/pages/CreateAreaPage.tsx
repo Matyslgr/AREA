@@ -278,7 +278,7 @@ export default function CreateAreaPage() {
       const scopeParam = encodeURIComponent(modalScopes.join(' '))
 
       const { url } = await api.get<{ url: string }>(
-        `/auth/oauth/authorize/${serviceId}?mode=connect&scope=${scopeParam}`
+        `/auth/oauth/authorize/${serviceId}?mode=connect&source=web&scope=${scopeParam}`
       )
 
       window.location.href = url
