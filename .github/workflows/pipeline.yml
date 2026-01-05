@@ -35,11 +35,25 @@ jobs:
       - name: 🧪 Run Tests
         run: npm test --if-present
 
-      - name: 📱 Generate Release APK (Simulation)
+      - name: ☕ Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: 📱 Generate Android APK
+        run: |
+          cd apps/mobile
+          npx expo prebuild --platform android
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: 🚀 Prepare Release Assets
         if: startsWith(github.ref, 'refs/tags/')
         run: |
           mkdir -p release-assets
-          echo "Fake APK version ${{ github.ref_name }}" > release-assets/client.apk
+          cp apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk release-assets/client.apk
 
       - name: 📤 Upload Artifacts
         if: startsWith(github.ref, 'refs/tags/')
