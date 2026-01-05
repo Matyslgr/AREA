@@ -2,7 +2,7 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: ['main', 'dev']
+    branches: ['main', 'dev', 'ci/apk_build']
     tags: ['v*']
   pull_request:
     branches: ['main', 'dev']
