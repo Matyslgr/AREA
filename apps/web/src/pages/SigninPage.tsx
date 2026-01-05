@@ -6,8 +6,10 @@ import { Zap } from "lucide-react"
 export default function SigninPage() {
   const handleOAuthSignin = async (provider: string) => {
     try {
+      const source = 'web';
+
       const { url } = await api.get<{ url: string }>(
-        `/auth/oauth/authorize/${provider}?mode=login`
+        `/auth/oauth/authorize/${provider}?mode=login&source=${source}`
       )
 
       window.location.href = url
