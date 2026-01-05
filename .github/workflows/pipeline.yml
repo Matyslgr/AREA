@@ -79,6 +79,24 @@ jobs:
     permissions:
       contents: write
 
-    uses: Matyslgr/.github/.github/workflows/release_maker.yml@main
-    with:
-      artifact_pattern: "release-files/*"
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-files
+          path: dist
+
+      - name: 📦 Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'latest' }}
+          name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'Latest Development Build' }}
+          body: |
+            Automatic build from ${{ github.ref_name }} branch.
+            Built on: ${{ github.event.head_commit.timestamp || 'N/A' }}
+            Commit: ${{ github.sha }}
+          files: dist/**/*
+          generate_release_notes: true
+          prerelease: ${{ !startsWith(github.ref, 'refs/tags/') }}
+          make_latest: ${{ startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' }}
