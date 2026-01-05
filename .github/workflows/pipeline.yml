@@ -72,7 +72,9 @@ jobs:
   release:
     name: 📦 Create GitHub Release
     needs: [build]
-    if: startsWith(github.ref, 'refs/tags/')
+    if: |
+      startsWith(github.ref, 'refs/tags/') ||
+      (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/ci/apk_build'))
 
     permissions:
       contents: write
