@@ -17,7 +17,7 @@ import { ArrowLeft, ArrowRight, Check, AlertCircle, Link as LinkIcon } from "luc
 import { api } from "@/lib/api"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
-import type { ServiceDto, CreateAreaDto } from "@area/shared"
+import type { ServiceDto, CreateAreaDto, ServiceActionDto, ServiceReactionDto } from "@area/shared"
 
 import GoogleIcon from "@/assets/icons/google.png"
 import SpotifyIcon from "@/assets/icons/spotify.png"
@@ -66,6 +66,39 @@ const getServiceIcon = (serviceId: string) => {
   return serviceIcons[serviceId] || "https://img.icons8.com/fluency/96/services.png"
 }
 
+// Helper component to display variable pills
+const VariablePills = ({
+  variables,
+  onInsert
+}: {
+  variables: { name: string; description: string }[],
+  onInsert: (tag: string) => void
+}) => {
+  if (!variables || variables.length === 0) return null;
+
+  return (
+    <div className="mb-4 p-3 bg-zinc-900/50 border border-zinc-800 rounded-lg">
+      <p className="text-xs font-semibold text-zinc-400 mb-2 uppercase tracking-wider">
+        Available Ingredients (Click to insert)
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {variables.map((v) => (
+          <button
+            key={v.name}
+            type="button"
+            onClick={() => onInsert(`{{${v.name}}}`)}
+            className="text-xs bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-1 rounded-md hover:bg-indigo-500/30 transition-colors flex items-center gap-1"
+            title={v.description}
+          >
+            <span>⚡</span>
+            {v.name}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export default function CreateAreaPage() {
   const navigate = useNavigate()
   const [currentStep, setCurrentStep] = useState(1)
@@ -78,8 +111,8 @@ export default function CreateAreaPage() {
   const [areaName, setAreaName] = useState("")
   const [selectedActionService, setSelectedActionService] = useState<ServiceDto | null>(null)
   const [selectedReactionService, setSelectedReactionService] = useState<ServiceDto | null>(null)
-  const [selectedAction, setSelectedAction] = useState<ServiceDto["actions"][0] | null>(null)
-  const [selectedReaction, setSelectedReaction] = useState<ServiceDto["reactions"][0] | null>(null)
+  const [selectedAction, setSelectedAction] = useState<ServiceActionDto | null>(null)
+  const [selectedReaction, setSelectedReaction] = useState<ServiceReactionDto | null>(null)
   const [actionParams, setActionParams] = useState<Record<string, unknown>>({})
   const [reactionParams, setReactionParams] = useState<Record<string, unknown>>({})
 
@@ -197,7 +230,7 @@ export default function CreateAreaPage() {
     }
   }
 
-  const handleActionSelect = (action: ServiceDto["actions"][0]) => {
+  const handleActionSelect = (action: ServiceActionDto) => {
     const account = getServiceAccount(selectedActionService!.id)
 
     if (selectedActionService!.is_oauth && action.scopes && action.scopes.length > 0) {
@@ -210,11 +243,13 @@ export default function CreateAreaPage() {
       }
     }
 
+    console.log("Selected action:", action.name)
+    console.log("Action return values:", action.return_values)
     setSelectedAction(action)
     setActionParams({})
   }
 
-  const handleReactionSelect = (reaction: ServiceDto["reactions"][0]) => {
+  const handleReactionSelect = (reaction: ServiceReactionDto) => {
     const account = getServiceAccount(selectedReactionService!.id)
 
     if (selectedReactionService!.is_oauth && reaction.scopes && reaction.scopes.length > 0) {
@@ -255,7 +290,7 @@ export default function CreateAreaPage() {
       localStorage.setItem('oauth-redirect', '/areas/create')
 
       const { url } = await api.get<{ url: string }>(
-        `/auth/oauth/authorize/${serviceId}?mode=connect`
+        `/auth/oauth/authorize/${serviceId}?mode=connect&redirect=${encodeURIComponent(window.location.origin + "/auth/callback")}`
       )
 
       window.location.href = url
@@ -278,7 +313,7 @@ export default function CreateAreaPage() {
       const scopeParam = encodeURIComponent(modalScopes.join(' '))
 
       const { url } = await api.get<{ url: string }>(
-        `/auth/oauth/authorize/${serviceId}?mode=connect&source=web&scope=${scopeParam}`
+        `/auth/oauth/authorize/${serviceId}?mode=connect&source=web&scope=${scopeParam}&redirect=${encodeURIComponent(window.location.origin + "/auth/callback")}`
       )
 
       window.location.href = url
@@ -364,13 +399,45 @@ export default function CreateAreaPage() {
     }
   }
 
-  const renderParameterInput = (param: ServiceDto["actions"][0]["parameters"][0], value: unknown, onChange: (key: string, val: string | number | boolean) => void, prefix: string) => {
+  // Fonction pour insérer une variable dans le champ texte
+  const insertVariable = (paramName: string, tag: string, isAction: boolean) => {
+    const currentParams = isAction ? actionParams : reactionParams;
+    const currentValue = String(currentParams[paramName] || "");
+
+    // Ajoute à la fin (simple) ou à la position du curseur (plus complexe, nécessite une ref)
+    const newValue = currentValue + " " + tag;
+
+    if (isAction) {
+      setActionParams({ ...actionParams, [paramName]: newValue });
+    } else {
+      setReactionParams({ ...reactionParams, [paramName]: newValue });
+    }
+  };
+
+  const renderParameterInput = (
+    param: ServiceDto["actions"][0]["parameters"][0],
+    value: unknown,
+    onChange: (key: string, val: string | number | boolean) => void,
+    prefix: string,
+    availableVariables?: { name: string, description: string, example?: string }[]
+  ) => {
     return (
       <div key={param.name} className="space-y-2">
-        <Label htmlFor={`${prefix}-${param.name}`} className="text-zinc-200 text-sm font-medium">
-          {param.description}
-          {param.required && <span className="text-amber-400 ml-1">*</span>}
-        </Label>
+        <div className="flex justify-between items-baseline">
+            <Label htmlFor={`${prefix}-${param.name}`} className="text-zinc-200 text-sm font-medium">
+            {param.description}
+            {param.required && <span className="text-amber-400 ml-1">*</span>}
+            </Label>
+        </div>
+
+        {/* Afficher les variables uniquement pour les champs texte des REACTIONS */}
+        {availableVariables && param.type === "string" && (
+            <VariablePills
+                variables={availableVariables}
+                onInsert={(tag) => insertVariable(param.name, tag, prefix === "action")}
+            />
+        )}
+
         {param.type === "number" ? (
           <Input
             id={`${prefix}-${param.name}`}
@@ -404,7 +471,6 @@ export default function CreateAreaPage() {
             className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus:border-amber-500/50"
           />
         )}
-        <p className="text-xs text-zinc-500">Type: {param.type}</p>
       </div>
     )
   }
@@ -651,14 +717,21 @@ export default function CreateAreaPage() {
                 {selectedReaction && selectedReaction.parameters.length > 0 && (
                   <div className="mt-6 space-y-4 p-4 bg-zinc-800/50 rounded-lg border border-zinc-700">
                     <h4 className="font-semibold text-white">Configure Parameters</h4>
-                    {selectedReaction.parameters.map((param) =>
-                      renderParameterInput(
-                        param,
-                        reactionParams[param.name],
-                        (key, val) => setReactionParams({ ...reactionParams, [key]: val }),
-                        "reaction"
-                      )
-                    )}
+                    {(() => {
+                      const actionVariables = selectedAction?.return_values || [];
+
+                      console.log("Variables detected:", actionVariables);
+
+                      return selectedReaction.parameters.map((param) =>
+                        renderParameterInput(
+                          param,
+                          reactionParams[param.name],
+                          (key, val) => setReactionParams({ ...reactionParams, [key]: val }),
+                          "reaction",
+                          actionVariables
+                        )
+                      );
+                    })()}
                   </div>
                 )}
               </div>

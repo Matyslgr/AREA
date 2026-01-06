@@ -95,7 +95,7 @@ export default function AccountSetup() {
   const handleLinkService = async (provider: string) => {
     try {
       const { url } = await api.get<{ url: string }>(
-        `/auth/oauth/authorize/${provider}?mode=connect`
+        `/auth/oauth/authorize/${provider}?mode=connect&redirect=${encodeURIComponent(window.location.origin + "/auth/callback")}`
       )
 
       window.location.href = url
