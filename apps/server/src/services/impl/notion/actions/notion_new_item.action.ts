@@ -19,6 +19,11 @@ export const NotionNewItemAction: IAction<NotionParams, NotionState> = {
     { name: 'database_id', description: 'Database ID', type: 'string', required: true }
   ],
   state: { lastCreatedTime: new Date().toISOString() },
+  return_values: [
+    { name: 'id', description: 'ID of the new item', example: 'some-unique-id' },
+    { name: 'url', description: 'URL of the new item', example: 'https://www.notion.so/some-unique-id' },
+    { name: 'title', description: 'Title of the new item', example: 'New Notion Page' }
+  ],
   scopes: [],
 
   check: async (user: UserWithAccounts, params: NotionParams, previousState?: NotionState) => {
@@ -50,7 +55,7 @@ export const NotionNewItemAction: IAction<NotionParams, NotionState> = {
           data: {
             id: latest.id,
             url: latest.url,
-            title: "New Notion Page"
+            title: latest.properties?.title?.title[0]?.plain_text || 'No Title'
           }
         };
       }

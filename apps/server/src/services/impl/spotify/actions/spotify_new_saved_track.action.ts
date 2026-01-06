@@ -13,6 +13,12 @@ export const SpotifyNewSavedTrackAction: IAction<any, SpotifyState> = {
   description: 'Triggers when you like a new song.',
   parameters: [],
   state: { lastTrackId: '' },
+  return_values: [
+    { name: 'track_name', description: 'Name of the track', example: 'Song Title' },
+    { name: 'artist', description: 'Artist of the track', example: 'Artist Name' },
+    { name: 'link', description: 'Link to the track on Spotify', example: 'https://open.spotify.com/track/...' },
+    { name: 'uri', description: 'Spotify URI of the track', example: 'spotify:track:...' }
+  ],
   scopes: ['user-library-read'],
 
   check: async (user: UserWithAccounts, _params, previousState?: SpotifyState) => {
