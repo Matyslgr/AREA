@@ -9,7 +9,7 @@ export default function SigninPage() {
       const source = 'web';
 
       const { url } = await api.get<{ url: string }>(
-        `/auth/oauth/authorize/${provider}?mode=login&source=${source}`
+        `/auth/oauth/authorize/${provider}?mode=login&source=${source}&redirect=${encodeURIComponent(window.location.origin + "/auth/callback")}`
       )
 
       window.location.href = url

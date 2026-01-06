@@ -21,6 +21,12 @@ export const GithubNewStarAction: IAction<GithubStarParams, GithubStarState> = {
     { name: 'repo', description: 'Repository Name', type: 'string', required: true }
   ],
   state: { lastCount: 0 },
+  return_values: [
+    { name: 'repo', description: 'Repository Name', example: 'my-repo'},
+    { name: 'owner', description: 'Repository Owner', example: 'octocat'},
+    { name: 'stars', description: 'Current Star Count', example: '42' },
+    { name: 'link', description: 'Link to the Repository', example: 'https://github.com/octocat/my-repo' }
+  ],
   scopes: ['repo'],
 
   check: async (user: UserWithAccounts, params: GithubStarParams, previousState?: GithubStarState) => {

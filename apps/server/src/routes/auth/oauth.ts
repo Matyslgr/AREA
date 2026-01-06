@@ -122,34 +122,30 @@ export async function oauthRoutes(fastify: FastifyInstance) {
   fastify.get<{ Querystring: CallbackQuery }>('/oauth/callback', async (request, reply) => {
     const { code, state, error } = request.query;
 
-    const MOBILE_REDIRECT_BASE = 'area://oauth-callback';
-    const WEB_REDIRECT_BASE = 'http://localhost:8081';
-
     const doRedirect = (target: string, params: Record<string, string>) => {
       const query = new URLSearchParams(params).toString();
        return reply.redirect(`${target}?${query}`);
     };
 
+    const stateJson = Buffer.from(state, 'base64url').toString('utf-8');
+    const stateData = JSON.parse(stateJson);
+    const { provider, source, mode, redirect } = stateData;
+
+    const isMobile = source === 'mobile';
+
+    let targetRedirect = '';
+
+    if (redirect) {
+      targetRedirect = redirect; // Will be "exp://..." for dev
+    } else {
+      console.error('No redirect URL provided in state, falling back to defaults');
+      targetRedirect = source === 'mobile' ? 'area://oauth-callback' : 'http://localhost:8081/auth/callback';
+    }
+
+    console.log('OAuth Callback State Data:', stateData);
+    console.log('Is Mobile:', isMobile);
+
     try {
-      // Decode the state to know who is calling (Web or Mobile) and which Provider
-      const stateJson = Buffer.from(state, 'base64url').toString('utf-8');
-      const stateData = JSON.parse(stateJson);
-      const { provider, source, mode, redirect } = stateData;
-
-      const isMobile = source === 'mobile';
-
-      let targetRedirect = '';
-
-      if (redirect) {
-        targetRedirect = redirect; // Will be "exp://..." for dev
-      } else {
-        console.error('No redirect URL provided in state, falling back to defaults');
-        targetRedirect = source === 'mobile' ? 'area://oauth-callback' : 'http://localhost:8081/auth/callback';
-      }
-
-      console.log('OAuth Callback State Data:', stateData);
-      console.log('Is Mobile:', isMobile);
-
       if (mode === 'login') {
         // Perform the logic internally (Exchange code -> token)
         const result = await authManager.loginWithOAuth(provider, code);
@@ -191,9 +187,9 @@ export async function oauthRoutes(fastify: FastifyInstance) {
       request.log.error(err);
       const isMobileGuess = state && state.includes('mobile');
       if (isMobileGuess) {
-        return reply.redirect(`${MOBILE_REDIRECT_BASE}?error=auth_failed`);
+        return reply.redirect(`${targetRedirect}?error=auth_failed`);
       }
-      return reply.redirect(`${WEB_REDIRECT_BASE}/signin?error=auth_failed`);
+      return reply.redirect(`${targetRedirect}/signin?error=auth_failed`);
     }
   });
 

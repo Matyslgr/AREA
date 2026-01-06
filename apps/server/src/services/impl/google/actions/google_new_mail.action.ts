@@ -21,6 +21,12 @@ export const GoogleNewMailAction: IAction<GoogleNewMailParams, GoogleNewMailStat
   state: {
     lastMessageId: ''
   },
+  return_values: [
+    { name: 'subject', description: 'Subject of the email', example: 'Meeting Reminder' },
+    { name: 'from', description: 'Sender email address', example: 'example@example.com' },
+    { name: 'snippet', description: 'Short preview of the content', example: 'Don\'t forget our meeting tomorrow at 10am...' },
+    { name: 'link', description: 'Direct link to the email', example: 'https://mail.google.com/mail/u/0/#inbox/12345' }
+  ],
   scopes: ['https://www.googleapis.com/auth/gmail.readonly'],
 
   check: async (user: UserWithAccounts, params: GoogleNewMailParams, previousState?: GoogleNewMailState) => {

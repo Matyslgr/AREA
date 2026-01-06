@@ -31,7 +31,7 @@ export default function SignupPage() {
 
       const encodedScope = encodeURIComponent(scope)
       const { url } = await api.get<{ url: string }>(
-        `/auth/oauth/authorize/${provider}?scope=${encodedScope}&mode=login`
+        `/auth/oauth/authorize/${provider}?scope=${encodedScope}&mode=login&redirect=${encodeURIComponent(window.location.origin + "/auth/callback")}`
       )
 
       window.location.href = url
