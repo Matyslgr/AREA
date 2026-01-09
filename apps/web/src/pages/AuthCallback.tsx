@@ -24,16 +24,15 @@ export const AuthCallback = () => {
     }
     console.log("OAuth Callback Params:", { token, isLinked, isNewUser });
 
-    // Case 1: LOGIN
     if (token) {
         localStorage.setItem(STORAGE_KEYS.TOKEN, token);
         api.get<{ id: string, username: string, email: string }>('/auth/me').then(user => {
           console.log("User logged in:", user.username);
           localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
           if (isNewUser) {
-            navigate('/account-setup');
+            window.location.href = '/account-setup';
           } else {
-            navigate('/dashboard');
+            window.location.href = '/dashboard';
           }
         }).catch(err => {
           console.error("Failed to fetch user data:", err);
@@ -42,14 +41,13 @@ export const AuthCallback = () => {
         return;
     }
 
-    // Case 2: LINK ACCOUNT
     if (isLinked) {
       const redirectTo = localStorage.getItem('oauth-redirect');
       if (redirectTo) {
         localStorage.removeItem('oauth-redirect');
-        navigate(redirectTo);
+        window.location.href = redirectTo;
       } else {
-        navigate('/account-setup');
+        window.location.href = '/account-setup';
       }
       return;
     }
