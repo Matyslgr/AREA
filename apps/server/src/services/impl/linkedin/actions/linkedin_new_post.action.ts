@@ -18,7 +18,7 @@ export const LinkedInNewPostAction: IAction<{}, LinkedInPostState> = {
     { name: 'urn', description: 'Unique Resource Name (ID) of the post' },
     { name: 'link', description: 'Direct link to the post (reconstructed)' }
   ],
-  scopes: ['r_member_social', 'profile', 'openid'],
+  scopes: ['profile', 'openid'],
 
   check: async (user: UserWithAccounts, _params: {}, previousState?: LinkedInPostState) => {
     try {

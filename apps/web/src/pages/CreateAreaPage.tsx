@@ -90,7 +90,6 @@ const VariablePills = ({
             className="text-xs bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-1 rounded-md hover:bg-indigo-500/30 transition-colors flex items-center gap-1"
             title={v.description}
           >
-            <span>⚡</span>
             {v.name}
           </button>
         ))}
@@ -287,10 +286,8 @@ export default function CreateAreaPage() {
 
       saveFormState()
 
-      localStorage.setItem('oauth-redirect', '/areas/create')
-
       const { url } = await api.get<{ url: string }>(
-        `/auth/oauth/authorize/${serviceId}?mode=connect&redirect=${encodeURIComponent(window.location.origin + "/auth/callback")}`
+        `/auth/oauth/authorize/${serviceId}?mode=connect&redirect=${encodeURIComponent(window.location.origin + "/areas/create")}`
       )
 
       window.location.href = url
@@ -306,14 +303,12 @@ export default function CreateAreaPage() {
 
       saveFormState()
 
-      localStorage.setItem('oauth-redirect', '/areas/create')
-
       console.log("Requesting additional permissions for scopes:", modalScopes)
 
       const scopeParam = encodeURIComponent(modalScopes.join(' '))
 
       const { url } = await api.get<{ url: string }>(
-        `/auth/oauth/authorize/${serviceId}?mode=connect&source=web&scope=${scopeParam}&redirect=${encodeURIComponent(window.location.origin + "/auth/callback")}`
+        `/auth/oauth/authorize/${serviceId}?mode=connect&source=web&scope=${scopeParam}&redirect=${encodeURIComponent(window.location.origin + "/areas/create")}`
       )
 
       window.location.href = url

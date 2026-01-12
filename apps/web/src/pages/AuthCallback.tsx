@@ -8,6 +8,17 @@ export const AuthCallback = () => {
   const called = useRef(false);
   const [searchParams] = useSearchParams();
 
+  const decodeState = (state: string) => {
+    try {
+      const binaryString = atob(state);
+      const utf8String = new TextDecoder().decode(new Uint8Array(binaryString.split('').map(c => c.charCodeAt(0))));
+      return JSON.parse(utf8String);
+    } catch (err) {
+      console.error("Failed to decode state:", err);
+      return null;
+    }
+  };
+
   useEffect(() => {
     if (called.current) return;
     called.current = true;
@@ -16,9 +27,17 @@ export const AuthCallback = () => {
     const token = searchParams.get('token');
     const isLinked = searchParams.get('linked') === 'true';
     const isNewUser = searchParams.get('isNewUser') === 'true';
+    const state = searchParams.get('state');
 
     if (error) {
       console.error("OAuth Error:", error);
+      if (state) {
+        const stateData = decodeState(state);
+        if (stateData?.redirect) {
+          navigate(`${stateData.redirect}?error=${error}`);
+          return;
+        }
+      }
       navigate(`/signin?error=${error}`);
       return;
     }
@@ -42,13 +61,15 @@ export const AuthCallback = () => {
     }
 
     if (isLinked) {
-      const redirectTo = localStorage.getItem('oauth-redirect');
-      if (redirectTo) {
-        localStorage.removeItem('oauth-redirect');
-        window.location.href = redirectTo;
-      } else {
-        window.location.href = '/account-setup';
+      if (state) {
+        const stateData = decodeState(state);
+        if (stateData) {
+          const redirectTo = stateData.redirect || '/account-setup';
+          window.location.href = redirectTo;
+          return;
+        }
       }
+      window.location.href = '/account-setup';
       return;
     }
 
