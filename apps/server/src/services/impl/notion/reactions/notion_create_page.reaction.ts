@@ -1,6 +1,6 @@
 import { AxiosAdapter } from '@area/shared';
 import { IReaction } from '../../../../interfaces/service.interface';
-import { getAccessToken } from '../../../../utils/token.utils';
+import { getNotionAccessToken } from '../../../../utils/token.utils';
 import { UserWithAccounts } from '../../../../types/user.types';
 
 interface NotionCreatePageParams {
@@ -21,7 +21,7 @@ export const NotionCreatePageReaction: IReaction<NotionCreatePageParams> = {
   scopes: [],
 
   execute: async (user: UserWithAccounts, params: NotionCreatePageParams) => {
-    const token = getAccessToken(user, 'notion');
+    const token = getNotionAccessToken(user);
     const http = new AxiosAdapter();
 
     // Notion is tricky: we need to map the "title" to the correct property name.

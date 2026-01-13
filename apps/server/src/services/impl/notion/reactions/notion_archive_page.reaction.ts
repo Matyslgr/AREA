@@ -1,6 +1,6 @@
 import { AxiosAdapter } from '@area/shared';
 import { IReaction } from '../../../../interfaces/service.interface';
-import { getAccessToken } from '../../../../utils/token.utils';
+import { getNotionAccessToken } from '../../../../utils/token.utils';
 import { UserWithAccounts } from '../../../../types/user.types';
 
 interface NotionArchiveParams {
@@ -9,15 +9,15 @@ interface NotionArchiveParams {
 
 export const NotionArchivePageReaction: IReaction<NotionArchiveParams> = {
   id: 'NOTION_ARCHIVE_PAGE',
-  name: 'Archive Page',
-  description: 'Archives (deletes) a page from Notion.',
+  name: 'Archive Database Page',
+  description: 'Archives a page from a Notion database (does not work with workspace-level pages).',
   parameters: [
-    { name: 'page_id', description: 'ID of the page to archive', type: 'string', required: true }
+    { name: 'page_id', description: 'ID of the database page to archive', type: 'string', required: true }
   ],
   scopes: [],
 
   execute: async (user: UserWithAccounts, params: NotionArchiveParams) => {
-    const token = getAccessToken(user, 'notion');
+    const token = getNotionAccessToken(user);
     const http = new AxiosAdapter();
 
     await http.patch(`https://api.notion.com/v1/pages/${params.page_id}`,

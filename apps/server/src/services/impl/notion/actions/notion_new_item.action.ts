@@ -1,6 +1,6 @@
 import { AxiosAdapter } from '@area/shared';
 import { IAction } from '../../../../interfaces/service.interface';
-import { getAccessToken } from '../../../../utils/token.utils';
+import { getNotionAccessToken } from '../../../../utils/token.utils';
 import { UserWithAccounts } from '../../../../types/user.types';
 
 interface NotionParams {
@@ -28,7 +28,7 @@ export const NotionNewItemAction: IAction<NotionParams, NotionState> = {
 
   check: async (user: UserWithAccounts, params: NotionParams, previousState?: NotionState) => {
     try {
-      const token = getAccessToken(user, 'notion');
+      const token = getNotionAccessToken(user);
       const http = new AxiosAdapter();
       const lastTime = previousState?.lastCreatedTime || new Date().toISOString();
 
