@@ -19,7 +19,7 @@ interface LinkedInUserResponse {
 export class LinkedinProvider implements IOAuthProvider {
   name = 'linkedin';
   authorizationUrl = 'https://www.linkedin.com/oauth/v2/authorization';
-  defaultScopes = ['openid', 'profile', 'email'];
+  defaultScopes = ['openid', 'profile', 'email', 'w_member_social'];
 
   private httpClient: IHttpClient;
 
