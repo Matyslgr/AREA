@@ -64,7 +64,8 @@ export async function oauthRoutes(fastify: FastifyInstance) {
             where: { user_id: decoded.id, provider: providerName }
           });
           if (account && account.scope) {
-            finalScopeList.push(...account.scope.split(' '));
+            const accountScopes = account.scope.split(/[\s,]+/).filter(s => s.length > 0);
+            finalScopeList.push(...accountScopes);
           }
         } catch (error) {
           // Handle token verification error if needed

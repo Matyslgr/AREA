@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Trash2, Power, PowerOff } from "lucide-react";
+import { ArrowLeft, Trash2, Power, PowerOff, Zap, Workflow } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -184,7 +184,7 @@ export default function AreaDetailsPage() {
             <CardHeader>
               <div className="flex items-center gap-3 mb-2">
                 <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
-                  <span className="text-black font-bold text-lg">A</span>
+                  <Zap className="h-6 w-6 text-black" />
                 </div>
                 <div>
                   <CardTitle className="text-2xl text-white">Action</CardTitle>
@@ -240,7 +240,7 @@ export default function AreaDetailsPage() {
             <CardHeader>
               <div className="flex items-center gap-3 mb-2">
                 <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">R</span>
+                  <Workflow className="h-6 w-6 text-white" />
                 </div>
                 <div>
                   <CardTitle className="text-2xl text-white">

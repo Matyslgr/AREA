@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useSearchParams } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -100,6 +100,7 @@ const VariablePills = ({
 
 export default function CreateAreaPage() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [currentStep, setCurrentStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -124,6 +125,16 @@ export default function CreateAreaPage() {
   useEffect(() => {
     fetchServices()
     fetchLinkedAccounts()
+  }, [])
+
+  useEffect(() => {
+    const linked = searchParams.get('linked')
+    if (linked === 'true') {
+      fetchLinkedAccounts()
+      const newParams = new URLSearchParams(searchParams)
+      newParams.delete('linked')
+      setSearchParams(newParams, { replace: true })
+    }
   }, [])
 
   // Effect to restore saved form state from localStorage

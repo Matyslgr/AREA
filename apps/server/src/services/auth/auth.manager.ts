@@ -17,12 +17,16 @@ export class AuthManager {
    * Helper to upsert an OAuth account for a user
    */
   private async upsertAccount(userId: string, provider: string, oauthUser: any, tokens: any) {
+    const normalizedScope = tokens.scope
+      ? tokens.scope.split(/[\s,]+/).filter((s: string) => s.length > 0).join(' ')
+      : undefined;
+
     const data = {
       provider_account_id: oauthUser.id,
       access_token: this.encryptionService.encrypt(tokens.access_token),
       refresh_token: tokens.refresh_token ? this.encryptionService.encrypt(tokens.refresh_token) : undefined,
       expires_at: new Date(Date.now() + (tokens.expires_in || 3600) * 1000),
-      scope: tokens.scope
+      scope: normalizedScope
     };
 
     const existing = await prisma.account.findFirst({
@@ -197,7 +201,7 @@ export class AuthManager {
         provider: acc.provider,
         provider_account_id: acc.provider_account_id,
         expires_at: acc.expires_at,
-        scopes: acc.scope ? acc.scope.split(' ') : []
+        scopes: acc.scope ? acc.scope.split(/[\s,]+/).filter(s => s.length > 0) : []
       }))
     };
   }
