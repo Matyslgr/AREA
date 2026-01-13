@@ -222,6 +222,7 @@ export default function CreateAreaPage() {
   const handleServiceSelect = (service: ServiceDto, type: "action" | "reaction") => {
     const account = getServiceAccount(service.id)
 
+    
     console.log("Service OAuth requirement:", service.is_oauth, "Account found:", !!account)
     if (service.is_oauth && !account) {
       console.log("Service account not linked for:", service.name)

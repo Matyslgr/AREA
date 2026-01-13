@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Trash2, Power, PowerOff, Zap, Workflow } from "lucide-react";
+import { ArrowLeft, Trash2, Power, PowerOff, Zap, Workflow, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -149,6 +149,14 @@ export default function AreaDetailsPage() {
             </div>
 
             <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => navigate(`/areas/${area.id}/edit`)}
+                className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white"
+              >
+                <Pencil className="h-4 w-4 mr-2" />
+                Edit
+              </Button>
               <Button
                 variant="outline"
                 onClick={handleToggleActive}
