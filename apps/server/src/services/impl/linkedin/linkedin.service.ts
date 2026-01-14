@@ -1,5 +1,7 @@
 import { IService } from '../../../interfaces/service.interface';
-import { LinkedInNewPostAction } from './actions/linkedin_new_post.action';
+import { LinkedInProfilePictureChangedAction } from './actions/linkedin_profile_picture_changed.action';
+import { LinkedInProfileNameChangedAction } from './actions/linkedin_profile_name_changed.action';
+import { LinkedInProfileUpdatedAction } from './actions/linkedin_profile_updated.action';
 import { LinkedInPostReaction } from './reactions/linkedin_post.reaction';
 import { LinkedInShareLinkReaction } from './reactions/linkedin_share_link.reaction';
 
@@ -10,7 +12,9 @@ export const LinkedInService: IService = {
   description: 'Integration with LinkedIn social network.',
   is_oauth: true,
   actions: [
-    LinkedInNewPostAction
+    LinkedInProfilePictureChangedAction,
+    LinkedInProfileNameChangedAction,
+    LinkedInProfileUpdatedAction
   ],
   reactions: [
     LinkedInPostReaction,

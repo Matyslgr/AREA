@@ -12,6 +12,7 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import CreateAreaPage from './pages/CreateAreaPage'
 import AreaDetailsPage from './pages/AreaDetailsPage'
+import EditAreaPage from './pages/EditAreaPage'
 
 
 function App() {
@@ -38,6 +39,7 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/areas/create" element={<CreateAreaPage />} />
             <Route path="/areas/:id" element={<AreaDetailsPage />} />
+            <Route path="/areas/:id/edit" element={<EditAreaPage />} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>

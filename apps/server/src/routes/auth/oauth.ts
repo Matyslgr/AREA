@@ -64,7 +64,8 @@ export async function oauthRoutes(fastify: FastifyInstance) {
             where: { user_id: decoded.id, provider: providerName }
           });
           if (account && account.scope) {
-            finalScopeList.push(...account.scope.split(' '));
+            const accountScopes = account.scope.split(/[\s,]+/).filter(s => s.length > 0);
+            finalScopeList.push(...accountScopes);
           }
         } catch (error) {
           // Handle token verification error if needed
@@ -133,6 +134,18 @@ export async function oauthRoutes(fastify: FastifyInstance) {
 
     const isMobile = source === 'mobile';
 
+    if (error) {
+      request.log.error(`OAuth provider error: ${error}`);
+      let targetRedirect = redirect || (source === 'mobile' ? 'area://oauth-callback' : 'http://localhost:8081/auth/callback');
+      if (isMobile) {
+        return reply.redirect(`${targetRedirect}?error=oauth_provider_error`);
+      }
+      return doRedirect(targetRedirect, {
+        error: 'oauth_provider_error',
+        state: state
+      });
+    }
+
     let targetRedirect = '';
 
     if (redirect) {
@@ -189,7 +202,10 @@ export async function oauthRoutes(fastify: FastifyInstance) {
       if (isMobileGuess) {
         return reply.redirect(`${targetRedirect}?error=auth_failed`);
       }
-      return reply.redirect(`${targetRedirect}/signin?error=auth_failed`);
+      return doRedirect(targetRedirect, {
+        error: 'auth_failed',
+        state: state
+      });
     }
   });
 

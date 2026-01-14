@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useSearchParams } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -90,7 +90,6 @@ const VariablePills = ({
             className="text-xs bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-1 rounded-md hover:bg-indigo-500/30 transition-colors flex items-center gap-1"
             title={v.description}
           >
-            <span>⚡</span>
             {v.name}
           </button>
         ))}
@@ -101,6 +100,7 @@ const VariablePills = ({
 
 export default function CreateAreaPage() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [currentStep, setCurrentStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -125,6 +125,16 @@ export default function CreateAreaPage() {
   useEffect(() => {
     fetchServices()
     fetchLinkedAccounts()
+  }, [])
+
+  useEffect(() => {
+    const linked = searchParams.get('linked')
+    if (linked === 'true') {
+      fetchLinkedAccounts()
+      const newParams = new URLSearchParams(searchParams)
+      newParams.delete('linked')
+      setSearchParams(newParams, { replace: true })
+    }
   }, [])
 
   // Effect to restore saved form state from localStorage
@@ -212,6 +222,7 @@ export default function CreateAreaPage() {
   const handleServiceSelect = (service: ServiceDto, type: "action" | "reaction") => {
     const account = getServiceAccount(service.id)
 
+    
     console.log("Service OAuth requirement:", service.is_oauth, "Account found:", !!account)
     if (service.is_oauth && !account) {
       console.log("Service account not linked for:", service.name)
@@ -287,10 +298,8 @@ export default function CreateAreaPage() {
 
       saveFormState()
 
-      localStorage.setItem('oauth-redirect', '/areas/create')
-
       const { url } = await api.get<{ url: string }>(
-        `/auth/oauth/authorize/${serviceId}?mode=connect&redirect=${encodeURIComponent(window.location.origin + "/auth/callback")}`
+        `/auth/oauth/authorize/${serviceId}?mode=connect&redirect=${encodeURIComponent(window.location.origin + "/areas/create")}`
       )
 
       window.location.href = url
@@ -306,14 +315,12 @@ export default function CreateAreaPage() {
 
       saveFormState()
 
-      localStorage.setItem('oauth-redirect', '/areas/create')
-
       console.log("Requesting additional permissions for scopes:", modalScopes)
 
       const scopeParam = encodeURIComponent(modalScopes.join(' '))
 
       const { url } = await api.get<{ url: string }>(
-        `/auth/oauth/authorize/${serviceId}?mode=connect&source=web&scope=${scopeParam}&redirect=${encodeURIComponent(window.location.origin + "/auth/callback")}`
+        `/auth/oauth/authorize/${serviceId}?mode=connect&source=web&scope=${scopeParam}&redirect=${encodeURIComponent(window.location.origin + "/areas/create")}`
       )
 
       window.location.href = url

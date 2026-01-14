@@ -8,6 +8,17 @@ export const AuthCallback = () => {
   const called = useRef(false);
   const [searchParams] = useSearchParams();
 
+  const decodeState = (state: string) => {
+    try {
+      const binaryString = atob(state);
+      const utf8String = new TextDecoder().decode(new Uint8Array(binaryString.split('').map(c => c.charCodeAt(0))));
+      return JSON.parse(utf8String);
+    } catch (err) {
+      console.error("Failed to decode state:", err);
+      return null;
+    }
+  };
+
   useEffect(() => {
     if (called.current) return;
     called.current = true;
@@ -16,24 +27,31 @@ export const AuthCallback = () => {
     const token = searchParams.get('token');
     const isLinked = searchParams.get('linked') === 'true';
     const isNewUser = searchParams.get('isNewUser') === 'true';
+    const state = searchParams.get('state');
 
     if (error) {
       console.error("OAuth Error:", error);
+      if (state) {
+        const stateData = decodeState(state);
+        if (stateData?.redirect) {
+          navigate(`${stateData.redirect}?error=${error}`);
+          return;
+        }
+      }
       navigate(`/signin?error=${error}`);
       return;
     }
     console.log("OAuth Callback Params:", { token, isLinked, isNewUser });
 
-    // Case 1: LOGIN
     if (token) {
         localStorage.setItem(STORAGE_KEYS.TOKEN, token);
         api.get<{ id: string, username: string, email: string }>('/auth/me').then(user => {
           console.log("User logged in:", user.username);
           localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
           if (isNewUser) {
-            navigate('/account-setup');
+            window.location.href = '/account-setup';
           } else {
-            navigate('/dashboard');
+            window.location.href = '/dashboard';
           }
         }).catch(err => {
           console.error("Failed to fetch user data:", err);
@@ -42,15 +60,16 @@ export const AuthCallback = () => {
         return;
     }
 
-    // Case 2: LINK ACCOUNT
     if (isLinked) {
-      const redirectTo = localStorage.getItem('oauth-redirect');
-      if (redirectTo) {
-        localStorage.removeItem('oauth-redirect');
-        navigate(redirectTo);
-      } else {
-        navigate('/account-setup');
+      if (state) {
+        const stateData = decodeState(state);
+        if (stateData) {
+          const redirectTo = stateData.redirect || '/account-setup';
+          window.location.href = redirectTo;
+          return;
+        }
       }
+      window.location.href = '/account-setup';
       return;
     }
 

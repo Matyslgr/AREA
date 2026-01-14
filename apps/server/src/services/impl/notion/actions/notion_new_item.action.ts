@@ -1,6 +1,6 @@
 import { AxiosAdapter } from '@area/shared';
 import { IAction } from '../../../../interfaces/service.interface';
-import { getAccessToken } from '../../../../utils/token.utils';
+import { getNotionAccessToken } from '../../../../utils/token.utils';
 import { UserWithAccounts } from '../../../../types/user.types';
 
 interface NotionParams {
@@ -28,28 +28,50 @@ export const NotionNewItemAction: IAction<NotionParams, NotionState> = {
 
   check: async (user: UserWithAccounts, params: NotionParams, previousState?: NotionState) => {
     try {
-      const token = getAccessToken(user, 'notion');
+      console.log('[Notion] Checking for new items in database:', params.database_id);
+      const token = getNotionAccessToken(user);
       const http = new AxiosAdapter();
-      const lastTime = previousState?.lastCreatedTime || new Date().toISOString();
+      const isFirstRun = !previousState;
+      const lastTime = previousState?.lastCreatedTime;
+      console.log('[Notion] Is first run:', isFirstRun, 'Last created time:', lastTime);
 
-      const response = await http.post<any>(`https://api.notion.com/v1/databases/${params.database_id}/query`, {
-        filter: {
+      const queryBody: any = {
+        sorts: [{ timestamp: "created_time", direction: "descending" }]
+      };
+
+      if (lastTime) {
+        queryBody.filter = {
           timestamp: "created_time",
           created_time: {
             after: lastTime
           }
-        },
-        sorts: [{ timestamp: "created_time", direction: "descending" }]
-      }, {
+        };
+        console.log('[Notion] Using filter for items created after:', lastTime);
+      } else {
+        console.log('[Notion] First run - fetching all items to establish baseline');
+      }
+
+      const response = await http.post<any>(`https://api.notion.com/v1/databases/${params.database_id}/query`, queryBody, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Notion-Version': '2022-06-28'
         }
       });
 
+      console.log('[Notion] Query response:', response.results?.length || 0, 'items');
       const results = response.results;
       if (results && results.length > 0) {
         const latest = results[0];
+
+        if (isFirstRun) {
+          console.log('[Notion] First run - establishing baseline with latest creation time:', latest.created_time);
+          return {
+            save: { lastCreatedTime: latest.created_time },
+            data: null
+          };
+        }
+
+        console.log('[Notion] New item detected:', latest.id);
         return {
           save: { lastCreatedTime: latest.created_time },
           data: {
@@ -59,7 +81,11 @@ export const NotionNewItemAction: IAction<NotionParams, NotionState> = {
           }
         };
       }
+      console.log('[Notion] No new items found');
       return null;
-    } catch (e) { return null; }
+    } catch (e) {
+      console.error('[Notion] Error in check:', e);
+      return null;
+    }
   }
 };
