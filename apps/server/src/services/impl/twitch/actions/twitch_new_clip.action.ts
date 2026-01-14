@@ -1,7 +1,7 @@
 // apps/server/src/services/impl/twitch/actions/twitch_new_clip.action.ts
 import { AxiosAdapter } from '@area/shared';
 import { IAction } from '../../../../interfaces/service.interface';
-import { getAccessToken } from '../../../../utils/token.utils';
+import { getAccessTokenWithRefresh } from '../../../../utils/token.utils';
 import { UserWithAccounts } from '../../../../types/user.types';
 
 interface TwitchClipParams {
@@ -29,7 +29,7 @@ export const TwitchNewClipAction: IAction<TwitchClipParams, TwitchClipState> = {
 
   check: async (user: UserWithAccounts, params: TwitchClipParams, previousState?: TwitchClipState) => {
     try {
-      const token = getAccessToken(user, 'twitch');
+      const token = await getAccessTokenWithRefresh(user, 'twitch');
       const clientId = process.env.TWITCH_CLIENT_ID || '';
       const http = new AxiosAdapter();
 

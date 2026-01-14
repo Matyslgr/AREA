@@ -1,6 +1,6 @@
 import { AxiosAdapter } from '@area/shared';
 import { IAction } from '../../../../interfaces/service.interface';
-import { getAccessToken } from '../../../../utils/token.utils';
+import { getAccessTokenWithRefresh } from '../../../../utils/token.utils';
 import { UserWithAccounts } from '../../../../types/user.types';
 
 interface SpotifyState {
@@ -23,7 +23,7 @@ export const SpotifyNewSavedTrackAction: IAction<any, SpotifyState> = {
 
   check: async (user: UserWithAccounts, _params, previousState?: SpotifyState) => {
     try {
-      const token = getAccessToken(user, 'spotify');
+      const token = await getAccessTokenWithRefresh(user, 'spotify');
       const http = new AxiosAdapter();
 
       const data = await http.get<any>('https://api.spotify.com/v1/me/tracks?limit=1', {

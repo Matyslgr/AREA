@@ -1,6 +1,6 @@
 import { AxiosAdapter } from '@area/shared';
 import { IReaction } from '../../../../interfaces/service.interface';
-import { getAccessToken } from '../../../../utils/token.utils';
+import { getAccessTokenWithRefresh } from '../../../../utils/token.utils';
 import { UserWithAccounts } from '../../../../types/user.types';
 
 interface TwitchMsgParams {
@@ -19,7 +19,7 @@ export const TwitchSendMessageReaction: IReaction<TwitchMsgParams> = {
   scopes: ['user:write:chat'],
 
   execute: async (user: UserWithAccounts, params: TwitchMsgParams) => {
-    const token = getAccessToken(user, 'twitch');
+    const token = await getAccessTokenWithRefresh(user, 'twitch');
     const clientId = process.env.TWITCH_CLIENT_ID || '';
     const http = new AxiosAdapter();
 
