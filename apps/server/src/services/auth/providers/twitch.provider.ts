@@ -90,4 +90,30 @@ export class TwitchProvider implements IOAuthProvider {
   getAuthUrlParameters(): Record<string, string> {
     return {};
   }
+
+  async refreshAccessToken(refreshToken: string): Promise<OAuthTokens> {
+    const url = 'https://id.twitch.tv/oauth2/token';
+
+    const payload = {
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken,
+      client_id: process.env.TWITCH_CLIENT_ID,
+      client_secret: process.env.TWITCH_CLIENT_SECRET,
+    };
+
+    try {
+      const data = await this.httpClient.post<TwitchTokenResponse>(url, payload);
+
+      console.log('Twitch Token Refresh Response:', data);
+      return {
+        access_token: data.access_token,
+        refresh_token: data.refresh_token,
+        expires_in: data.expires_in,
+        scope: Array.isArray(data.scope) ? data.scope.join(' ') : data.scope,
+      };
+    } catch (error: any) {
+      console.error('Twitch Token Refresh Error:', error.response?.data || error.message);
+      throw new Error('Failed to refresh Twitch token');
+    }
+  }
 }

@@ -1,7 +1,7 @@
 // apps/server/src/services/impl/twitch/actions/twitch_game_changed.action.ts
 import { AxiosAdapter } from '@area/shared';
 import { IAction } from '../../../../interfaces/service.interface';
-import { getAccessToken } from '../../../../utils/token.utils';
+import { getAccessTokenWithRefresh } from '../../../../utils/token.utils';
 import { UserWithAccounts } from '../../../../types/user.types';
 
 interface TwitchGameParams {
@@ -29,7 +29,7 @@ export const TwitchGameChangedAction: IAction<TwitchGameParams, TwitchGameState>
 
   check: async (user: UserWithAccounts, params: TwitchGameParams, previousState?: TwitchGameState) => {
     try {
-      const token = getAccessToken(user, 'twitch');
+      const token = await getAccessTokenWithRefresh(user, 'twitch');
       const clientId = process.env.TWITCH_CLIENT_ID || '';
       const http = new AxiosAdapter();
 
