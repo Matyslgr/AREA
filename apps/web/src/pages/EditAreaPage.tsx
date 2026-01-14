@@ -101,9 +101,11 @@ export default function EditAreaPage() {
       })
 
       navigate(`/areas/${id}`)
-    } catch (err: any) {
+    } catch (err) {
       console.error("Failed to update area:", err)
-      setError(err.response?.data?.error || "Failed to update AREA")
+      if (err instanceof Error) {
+        setError("Failed to update AREA")
+      }
     } finally {
       setSaving(false)
     }
