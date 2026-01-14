@@ -26,6 +26,11 @@ export const TwitchSendMessageReaction: IReaction<TwitchMsgParams> = {
     const data = await http.get<any>('https://api.twitch.tv/helix/users', {
       headers: { Authorization: `Bearer ${token}`, 'Client-Id': clientId }
     });
+
+    if (!data.data || !Array.isArray(data.data) || data.data.length === 0) {
+      throw new Error('Failed to get current Twitch user information');
+    }
+
     const senderId = data.data[0].id;
 
     let broadcasterId = senderId;
@@ -33,7 +38,7 @@ export const TwitchSendMessageReaction: IReaction<TwitchMsgParams> = {
         const targetRes = await http.get<any>(`https://api.twitch.tv/helix/users?login=${params.channel_name}`, {
             headers: { Authorization: `Bearer ${token}`, 'Client-Id': clientId }
         });
-        if (targetRes.data.data.length > 0) {
+        if (targetRes.data && Array.isArray(targetRes.data.data) && targetRes.data.data.length > 0) {
             broadcasterId = targetRes.data.data[0].id;
         } else {
             throw new Error(`Twitch channel ${params.channel_name} not found`);

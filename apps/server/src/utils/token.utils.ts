@@ -34,8 +34,10 @@ export const getNotionAccessToken = (
 
   try {
     const decoded = JSON.parse(Buffer.from(compositeToken, 'base64').toString('utf-8'));
+    console.log('[Token] Notion token extracted, starts with:', decoded.real_token?.substring(0, 10));
     return decoded.real_token;
   } catch (error) {
+    console.error('[Token] Failed to extract Notion token:', error);
     throw new Error('Failed to extract Notion token from composite token');
   }
 };
