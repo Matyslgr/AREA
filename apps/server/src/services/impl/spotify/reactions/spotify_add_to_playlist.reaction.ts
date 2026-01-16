@@ -1,6 +1,6 @@
 import { AxiosAdapter } from '@area/shared';
 import { IReaction } from '../../../../interfaces/service.interface';
-import { getAccessToken } from '../../../../utils/token.utils';
+import { getAccessTokenWithRefresh } from '../../../../utils/token.utils';
 import { UserWithAccounts } from '../../../../types/user.types';
 
 interface SpotifyPlaylistParams {
@@ -19,7 +19,7 @@ export const SpotifyAddToPlaylistReaction: IReaction<SpotifyPlaylistParams> = {
   scopes: ['playlist-modify-public', 'playlist-modify-private'],
 
   execute: async (user: UserWithAccounts, params: SpotifyPlaylistParams) => {
-    const token = getAccessToken(user, 'spotify');
+    const token = await getAccessTokenWithRefresh(user, 'spotify');
     const http = new AxiosAdapter();
     const url = `https://api.spotify.com/v1/playlists/${params.playlist_id}/tracks`;
 

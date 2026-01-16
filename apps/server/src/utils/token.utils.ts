@@ -70,6 +70,16 @@ export const getAccessTokenWithRefresh = async (
         const googleProvider = new GoogleProvider();
         const decryptedRefreshToken = encryptionService.decrypt(account.refresh_token);
         newTokens = await googleProvider.refreshAccessToken(decryptedRefreshToken);
+      } else if (provider === 'twitch') {
+        const { TwitchProvider } = await import('../services/auth/providers/twitch.provider');
+        const twitchProvider = new TwitchProvider();
+        const decryptedRefreshToken = encryptionService.decrypt(account.refresh_token);
+        newTokens = await twitchProvider.refreshAccessToken(decryptedRefreshToken);
+      } else if (provider === 'spotify') {
+        const { SpotifyProvider } = await import('../services/auth/providers/spotify.provider');
+        const spotifyProvider = new SpotifyProvider();
+        const decryptedRefreshToken = encryptionService.decrypt(account.refresh_token);
+        newTokens = await spotifyProvider.refreshAccessToken(decryptedRefreshToken);
       } else {
         throw new Error(`Token refresh not implemented for ${provider}`);
       }
