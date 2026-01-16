@@ -188,9 +188,10 @@ export async function oauthRoutes(fastify: FastifyInstance) {
 
         console.log('OAuth account linked successfully');
 
-        // Redirect back indicating success
+        // Redirect back indicating success, include state so frontend can decode redirect
         return doRedirect(targetRedirect, {
           linked: 'true',
+          state: state
         });
       } else {
         throw new Error('Invalid mode in state');
