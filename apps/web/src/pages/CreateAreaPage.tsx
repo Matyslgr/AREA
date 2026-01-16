@@ -380,6 +380,11 @@ export default function CreateAreaPage() {
     setCurrentStep((prev) => Math.min(prev + 1, 4))
   }
 
+  const handleCancel = () => {
+    localStorage.removeItem(STORAGE_KEY_FORM)
+    navigate("/dashboard")
+  }
+
   const handleBack = () => {
     console.log("Back button clicked! Current step:", currentStep)
     setError("")
@@ -828,7 +833,7 @@ export default function CreateAreaPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => navigate("/dashboard")}
+                  onClick={handleCancel}
                   className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300"
                 >
                   Cancel

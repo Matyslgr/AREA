@@ -2,6 +2,7 @@ import '@fastify/jwt';
 import { FastifyInstance } from 'fastify';
 import { AuthManager } from '../../services/auth/auth.manager';
 import { getAccountSchema, updateAccountSchema, getLinkedAccountSchema, unlinkAccountSchema } from './account.schema';
+import { prisma } from '../../lib/prisma';
 
 interface UpdateAccountBody {
   email?: string;
@@ -36,6 +37,46 @@ export async function accountRoutes(fastify: FastifyInstance) {
   });
 
   fastify.put<{ Body: UpdateAccountBody }>('/account', {
+    schema: updateAccountSchema,
+    onRequest: [fastify.authenticate]
+  }, async (request, reply) => {
+    const userId = request.user.id;
+
+    if (!userId) {
+        request.log.error('JWT Payload is missing ID');
+        return reply.status(401).send({ error: 'Invalid Token' });
+    }
+
+    const updates = request.body;
+
+    try {
+      const updatedUser = await authManager.updateAccount(userId, updates);
+
+      return reply.send({
+        message: 'Account updated successfully',
+        user: updatedUser
+      });
+
+    } catch (error: any) {
+      request.log.error(error);
+
+      if (error.message.includes('Current password required')) {
+        return reply.status(400).send({ error: error.message });
+      }
+
+      if (error.message.includes('Current password is incorrect')) {
+        return reply.status(400).send({ error: error.message });
+      }
+
+      if (error.message.includes('Unique constraint')) {
+        return reply.status(409).send({ error: 'Email already in use' });
+      }
+
+      return reply.status(500).send({ error: 'Failed to update account' });
+    }
+  });
+
+  fastify.patch<{ Body: UpdateAccountBody }>('/account', {
     schema: updateAccountSchema,
     onRequest: [fastify.authenticate]
   }, async (request, reply) => {
@@ -148,6 +189,26 @@ export async function accountRoutes(fastify: FastifyInstance) {
       }
       if (error.message.includes('Cannot unlink last authentication method')) {
         return reply.status(400).send({ error: error.message });
+      }
+      return reply.status(500).send({ error: 'Failed to unlink account' });
+    }
+  });
+
+  fastify.delete<{ Params: { id: string } }>('/account/:id', {
+    onRequest: [fastify.authenticate]
+  }, async (request, reply) => {
+    const { id } = request.params;
+
+    try {
+      await prisma.account.delete({
+        where: { id }
+      });
+
+      return reply.send({ message: 'Account unlinked successfully' });
+    } catch (error: any) {
+      request.log.error(error);
+      if (error.code === 'P2025') {
+        return reply.status(404).send({ error: 'Account not found' });
       }
       return reply.status(500).send({ error: 'Failed to unlink account' });
     }
