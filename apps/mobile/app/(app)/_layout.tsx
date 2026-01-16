@@ -1,15 +1,15 @@
 import { Stack } from 'expo-router';
-import { useColorScheme } from 'nativewind';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function AppLayout() {
-  const { colorScheme } = useColorScheme();
+  const { isDark } = useTheme();
 
   return (
     <Stack
       screenOptions={{
         headerShown: false,
         contentStyle: {
-          backgroundColor: colorScheme === 'dark' ? 'hsl(240, 10%, 3.9%)' : 'hsl(0, 0%, 100%)',
+          backgroundColor: isDark ? 'hsl(240, 10%, 4%)' : 'hsl(0, 0%, 100%)',
         },
         animation: 'slide_from_right',
       }}

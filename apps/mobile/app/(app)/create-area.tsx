@@ -6,8 +6,8 @@ import { Text } from '@/components/ui/text';
 import { cn } from '@/lib/utils';
 import { authApi, areasApi, servicesApi, Service, ServiceAction, ServiceReaction } from '@/lib/api';
 import { useOAuth } from '@/lib/oauth';
+import { useTheme } from '@/contexts/ThemeContext';
 import { router } from 'expo-router';
-import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
   ActivityIndicator,
@@ -80,7 +80,7 @@ const STEPS = [
 ];
 
 export default function CreateAreaScreen() {
-  const { colorScheme } = useColorScheme();
+  const { isDark } = useTheme();
   const { startOAuth, loading: oauthLoading } = useOAuth();
 
   const [currentStep, setCurrentStep] = React.useState(1);
@@ -381,8 +381,8 @@ export default function CreateAreaScreen() {
                 currentStep > step.number
                   ? 'bg-green-500'
                   : currentStep === step.number
-                  ? 'bg-primary'
-                  : 'bg-muted'
+                    ? 'bg-primary'
+                    : 'bg-muted'
               )}
             >
               {currentStep > step.number ? (
@@ -448,7 +448,7 @@ export default function CreateAreaScreen() {
                     className="w-10 h-10 mb-2"
                     tintColor={
                       getServiceTint(service.id)
-                        ? colorScheme === 'dark'
+                        ? isDark
                           ? 'white'
                           : 'black'
                         : undefined
@@ -490,7 +490,7 @@ export default function CreateAreaScreen() {
                     className="w-10 h-10 mb-2"
                     tintColor={
                       getServiceTint(service.id)
-                        ? colorScheme === 'dark'
+                        ? isDark
                           ? 'white'
                           : 'black'
                         : undefined
@@ -522,7 +522,7 @@ export default function CreateAreaScreen() {
               className="w-10 h-10"
               tintColor={
                 getServiceTint(selectedActionService.id)
-                  ? colorScheme === 'dark'
+                  ? isDark
                     ? 'white'
                     : 'black'
                   : undefined
@@ -588,7 +588,7 @@ export default function CreateAreaScreen() {
               className="w-10 h-10"
               tintColor={
                 getServiceTint(selectedReactionService.id)
-                  ? colorScheme === 'dark'
+                  ? isDark
                     ? 'white'
                     : 'black'
                   : undefined

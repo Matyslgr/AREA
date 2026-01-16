@@ -7,8 +7,8 @@ import { cn } from '@/lib/utils';
 import { authApi, AccountDetails } from '@/lib/api';
 import { useOAuth } from '@/lib/oauth';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { router } from 'expo-router';
-import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { ActivityIndicator, Alert, Image, Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -59,7 +59,7 @@ const SERVICES = [
 ];
 
 export default function AccountSetupScreen() {
-  const { colorScheme } = useColorScheme();
+  const { isDark } = useTheme();
   const { updatePassword } = useAuth();
   const { startOAuth, loading: oauthLoading } = useOAuth();
 
@@ -250,7 +250,7 @@ export default function AccountSetupScreen() {
                             resizeMode="contain"
                             tintColor={Platform.select({
                               native: service.useTint
-                                ? colorScheme === 'dark'
+                                ? isDark
                                   ? 'white'
                                   : 'black'
                                 : undefined,

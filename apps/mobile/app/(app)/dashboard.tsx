@@ -1,11 +1,12 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Text } from '@/components/ui/text';
+import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { cn } from '@/lib/utils';
 import { Area, areasApi, authApi, OAuthAccount } from '@/lib/api';
 import { router } from 'expo-router';
-import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
   ActivityIndicator,
@@ -61,7 +62,7 @@ const ALL_PROVIDERS = ['google', 'github', 'spotify', 'notion', 'linkedin', 'twi
 
 export default function DashboardScreen() {
   const { user, signOut } = useAuth();
-  const { colorScheme, setColorScheme } = useColorScheme();
+  const { isDark } = useTheme();
 
   const [connectedAccounts, setConnectedAccounts] = React.useState<OAuthAccount[]>([]);
   const [areas, setAreas] = React.useState<Area[]>([]);
@@ -115,10 +116,6 @@ export default function DashboardScreen() {
     }
   }
 
-  function toggleTheme() {
-    setColorScheme(colorScheme === 'dark' ? 'light' : 'dark');
-  }
-
   async function onLogout() {
     await signOut();
   }
@@ -153,12 +150,6 @@ export default function DashboardScreen() {
               </Text>
             </View>
             <View className="flex-row gap-2">
-              <Pressable
-                onPress={toggleTheme}
-                className="bg-secondary h-10 w-10 items-center justify-center rounded-full"
-              >
-                <Text>{colorScheme === 'dark' ? '☀️' : '🌙'}</Text>
-              </Pressable>
               <Pressable
                 onPress={onLogout}
                 className="bg-secondary h-10 w-10 items-center justify-center rounded-full"
@@ -211,6 +202,9 @@ export default function DashboardScreen() {
             </CardContent>
           </Card>
 
+          {/* Theme Switcher */}
+          <ThemeSwitcher />
+
           {/* Connected Services */}
           <View className="mb-6">
             <Text className="text-foreground mb-3 font-semibold">Connected Services</Text>
@@ -226,7 +220,7 @@ export default function DashboardScreen() {
                       icon={config.icon}
                       useTint={config.useTint}
                       connected={isConnected}
-                      colorScheme={colorScheme}
+                      isDark={isDark}
                     />
                   );
                 })}
@@ -318,8 +312,8 @@ export default function DashboardScreen() {
             </View>
           )}
         </View>
-      </ScrollView>
-    </SafeAreaView>
+      </ScrollView >
+    </SafeAreaView >
   );
 }
 
@@ -328,13 +322,13 @@ function ServiceCard({
   icon,
   useTint,
   connected,
-  colorScheme,
+  isDark,
 }: {
   name: string;
   icon: ImageSourcePropType;
   useTint: boolean;
   connected: boolean;
-  colorScheme: 'light' | 'dark' | undefined;
+  isDark: boolean;
 }) {
   return (
     <Pressable
@@ -348,7 +342,7 @@ function ServiceCard({
         source={icon}
         className={cn('h-8 w-8', useTint && Platform.select({ web: 'dark:invert' }))}
         tintColor={Platform.select({
-          native: useTint ? (colorScheme === 'dark' ? 'white' : 'black') : undefined,
+          native: useTint ? (isDark ? 'white' : 'black') : undefined,
         })}
       />
       <Text className="text-foreground mt-1 text-xs">{name}</Text>

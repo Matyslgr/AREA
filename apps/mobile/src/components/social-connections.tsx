@@ -2,8 +2,8 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useOAuth } from '@/lib/oauth';
 import { setToken, setStoredUser } from '@/lib/api';
+import { useTheme } from '@/contexts/ThemeContext';
 import { router } from 'expo-router';
-import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { Alert, Image, Platform, View } from 'react-native';
 
@@ -51,7 +51,7 @@ interface SocialConnectionsProps {
 }
 
 export function SocialConnections({ mode = 'login' }: SocialConnectionsProps) {
-  const { colorScheme } = useColorScheme();
+  const { isDark } = useTheme();
   const { startOAuth, loading } = useOAuth();
 
   async function handleOAuthPress(provider: string) {
@@ -86,7 +86,7 @@ export function SocialConnections({ mode = 'login' }: SocialConnectionsProps) {
             <Image
               className={cn('size-4', strategy.useTint && Platform.select({ web: 'dark:invert' }))}
               tintColor={Platform.select({
-                native: strategy.useTint ? (colorScheme === 'dark' ? 'white' : 'black') : undefined,
+                native: strategy.useTint ? (isDark ? 'white' : 'black') : undefined,
               })}
               source={strategy.source}
             />
