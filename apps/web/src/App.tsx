@@ -13,6 +13,7 @@ import ResetPasswordPage from './pages/ResetPasswordPage'
 import CreateAreaPage from './pages/CreateAreaPage'
 import AreaDetailsPage from './pages/AreaDetailsPage'
 import EditAreaPage from './pages/EditAreaPage'
+import SettingsPage from './pages/SettingsPage'
 
 
 function App() {
@@ -37,6 +38,7 @@ function App() {
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/account-setup" element={<AccountSetup />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/settings" element={<SettingsPage />} />
             <Route path="/areas/create" element={<CreateAreaPage />} />
             <Route path="/areas/:id" element={<AreaDetailsPage />} />
             <Route path="/areas/:id/edit" element={<EditAreaPage />} />

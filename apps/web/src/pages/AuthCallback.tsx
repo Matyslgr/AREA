@@ -61,14 +61,17 @@ export const AuthCallback = () => {
     }
 
     if (isLinked) {
+      console.log("Service linked successfully, state:", state);
       if (state) {
         const stateData = decodeState(state);
-        if (stateData) {
-          const redirectTo = stateData.redirect || '/account-setup';
-          window.location.href = redirectTo;
+        console.log("Decoded state data:", stateData);
+        if (stateData && stateData.redirect) {
+          console.log("Redirecting to:", stateData.redirect);
+          window.location.href = stateData.redirect;
           return;
         }
       }
+      console.log("No redirect found, falling back to /account-setup");
       window.location.href = '/account-setup';
       return;
     }
