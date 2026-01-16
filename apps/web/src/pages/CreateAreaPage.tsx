@@ -148,7 +148,8 @@ export default function CreateAreaPage() {
     try {
       const saved: SavedState = JSON.parse(savedJson)
 
-      // Restore simple fields setAreaName(saved.areaName)
+      // Restore simple fields
+      setAreaName(saved.areaName)
       setCurrentStep(saved.step)
       setActionParams(saved.actionParams || {})
       setReactionParams(saved.reactionParams || {})
@@ -180,6 +181,15 @@ export default function CreateAreaPage() {
       console.error("Failed to parse saved form state", e)
     }
   }, [services]) // Depend on services to ensure they are loaded first
+
+  // Auto-save form state with debounce to avoid excessive localStorage writes
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      saveFormState()
+    }, 500) // Wait 500ms after last change before saving
+
+    return () => clearTimeout(debounceTimer)
+  }, [areaName, currentStep, selectedActionService, selectedReactionService, selectedAction, selectedReaction, actionParams, reactionParams])
 
   const fetchServices = async () => {
     try {
@@ -222,7 +232,7 @@ export default function CreateAreaPage() {
   const handleServiceSelect = (service: ServiceDto, type: "action" | "reaction") => {
     const account = getServiceAccount(service.id)
 
-    
+
     console.log("Service OAuth requirement:", service.is_oauth, "Account found:", !!account)
     if (service.is_oauth && !account) {
       console.log("Service account not linked for:", service.name)
@@ -236,8 +246,12 @@ export default function CreateAreaPage() {
 
     if (type === "action") {
       setSelectedActionService(service)
+      setSelectedAction(null)
+      setActionParams({})
     } else {
       setSelectedReactionService(service)
+      setSelectedReaction(null)
+      setReactionParams({})
     }
   }
 
