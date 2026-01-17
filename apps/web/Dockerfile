@@ -6,6 +6,7 @@ ENV VITE_API_URL=${VITE_API_URL}
 
 COPY package.json turbo.json ./
 COPY package-lock.json* ./
+
 COPY apps/server ./apps/server
 COPY apps/web ./apps/web
 COPY apps/mobile ./apps/mobile
@@ -16,14 +17,14 @@ RUN npm install
 RUN npm run build --workspace=@area/shared
 RUN npm run build --workspace=web
 
-FROM node:20-alpine AS runner
-WORKDIR /app
+FROM nginx:alpine AS runner
 
-COPY --from=builder /app/apps/web/dist ./dist
-COPY apps/web/package.json ./package.json
+RUN rm /etc/nginx/conf.d/default.conf
 
-RUN npm install -g serve
+COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
+
+COPY --from=builder /app/apps/web/dist /usr/share/nginx/html
 
 EXPOSE 8081
 
-CMD ["serve", "-s", "dist", "-l", "8081"]
+CMD ["nginx", "-g", "daemon off;"]
