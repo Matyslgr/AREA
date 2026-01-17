@@ -242,6 +242,7 @@ export interface Service {
   name: string;
   actions: ServiceAction[];
   reactions: ServiceReaction[];
+  is_oauth: boolean;
 }
 
 export const areasApi = {
