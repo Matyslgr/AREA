@@ -4,24 +4,26 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { Link } from 'expo-router';
 import * as React from 'react';
 import { ServerConfigModal } from '@/components/server-config-modal';
-import { getApiUrl } from '@/lib/api';
+import { ServerInfoModal } from '@/components/server-info-modal';
+import { resetApiUrl, getApiUrl } from '@/lib/api';
+import * as Updates from 'expo-updates';
 import {
   Dimensions,
   Image,
   Platform,
   ScrollView,
   View,
+  ActivityIndicator,
+  TouchableOpacity
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { cn } from '@/lib/utils';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-// Import local assets
 const heroDiscord = require('../assets/yt_discord_hero.png');
 const heroYoutube = require('../assets/yt_gmail_hero.png');
 
-// Feature images
 const featureImages = [
   require('../assets/feature1.jpeg'),
   require('../assets/feature2.jpeg'),
@@ -30,44 +32,13 @@ const featureImages = [
   require('../assets/feature5.jpeg'),
 ];
 
-// Services data with local icons
 const SERVICES = [
-  {
-    id: 'google',
-    name: 'Google',
-    icon: require('../assets/google.png'),
-    useTint: false,
-  },
-  {
-    id: 'github',
-    name: 'GitHub',
-    icon: require('../assets/github.png'),
-    useTint: true,
-  },
-  {
-    id: 'spotify',
-    name: 'Spotify',
-    icon: require('../assets/spotify.png'),
-    useTint: false,
-  },
-  {
-    id: 'notion',
-    name: 'Notion',
-    icon: require('../assets/notion.png'),
-    useTint: true,
-  },
-  {
-    id: 'linkedin',
-    name: 'LinkedIn',
-    icon: require('../assets/linkedin.png'),
-    useTint: false,
-  },
-  {
-    id: 'twitch',
-    name: 'Twitch',
-    icon: require('../assets/twitch.png'),
-    useTint: false,
-  },
+  { id: 'google', name: 'Google', icon: require('../assets/google.png'), useTint: false },
+  { id: 'github', name: 'GitHub', icon: require('../assets/github.png'), useTint: true },
+  { id: 'spotify', name: 'Spotify', icon: require('../assets/spotify.png'), useTint: false },
+  { id: 'notion', name: 'Notion', icon: require('../assets/notion.png'), useTint: true },
+  { id: 'linkedin', name: 'LinkedIn', icon: require('../assets/linkedin.png'), useTint: false },
+  { id: 'twitch', name: 'Twitch', icon: require('../assets/twitch.png'), useTint: false },
 ];
 
 export default function HomePage() {
@@ -75,35 +46,75 @@ export default function HomePage() {
   const [activeFeature, setActiveFeature] = React.useState(0);
 
   const [isConfiguring, setIsConfiguring] = React.useState(false);
+  const [showServerInfo, setShowServerInfo] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(true);
+
+  const [currentUrl, setCurrentUrl] = React.useState<string>('');
 
   React.useEffect(() => {
     async function checkServerConfig() {
-      const url = await getApiUrl();
-      // We consider "http://localhost:8080" as not configured for physical mobile
-      if (!url || url === 'http://localhost:8080') {
-        setIsConfiguring(true);
+      try {
+        const url = await getApiUrl();
+        setCurrentUrl(url || '');
+        console.log('[HomePage] Current Server URL:', url);
+
+        if (!url || (url.includes('localhost') && Platform.OS !== 'web')) {
+          setIsConfiguring(true);
+        }
+      } catch (error) {
+        console.error('Failed to check server config', error);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     }
     checkServerConfig();
   }, []);
 
-  if (isLoading) return null; // Or a Spinner/Loader
+  const handleReset = async () => {
+    setShowServerInfo(false);
+    await resetApiUrl();
+    setIsConfiguring(true);
+    await Updates.reloadAsync();
+  };
+
+  if (isLoading) {
+    return (
+      <View className="flex-1 items-center justify-center bg-background">
+        <ActivityIndicator size="large" color="#f59e0b" />
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView className="bg-background flex-1">
       <ServerConfigModal
         visible={isConfiguring}
-        onSave={() => setIsConfiguring(false)}
+        onSave={() => {
+          setIsConfiguring(false);
+          // Mettre à jour l'URL affichée
+          getApiUrl().then(url => setCurrentUrl(url || ''));
+        }}
       />
-      <ScrollView
-        contentContainerStyle={{ flexGrow: 1 }}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Hero Section */}
-        <View className="px-6 pt-8 pb-6">
-          {/* Logo */}
+
+      <ServerInfoModal
+        visible={showServerInfo}
+        currentUrl={currentUrl}
+        onClose={() => setShowServerInfo(false)}
+        onReset={handleReset}
+      />
+
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
+        <View className="px-6 pt-4 pb-6 relative">
+
+          <View className="absolute top-4 right-6 z-10">
+            <TouchableOpacity
+              onPress={() => setShowServerInfo(true)}
+              className="h-10 w-10 bg-card border border-border items-center justify-center rounded-full shadow-sm active:opacity-70"
+            >
+              <Text className="text-lg">⚙️</Text>
+            </TouchableOpacity>
+          </View>
+
           <View className="items-center mb-4">
             <View className="bg-primary/10 h-20 w-20 items-center justify-center rounded-3xl mb-4">
               <Text className="text-primary text-4xl font-bold">A</Text>

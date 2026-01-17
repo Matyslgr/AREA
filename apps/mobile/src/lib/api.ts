@@ -18,6 +18,14 @@ export async function getApiUrl(): Promise<string> {
   return 'http://localhost:8080';
 }
 
+export const resetApiUrl = async () => {
+  try {
+    await SecureStore.deleteItemAsync(API_URL_KEY);
+  } catch (error) {
+    console.error('Error resetting server URL:', error);
+  }
+};
+
 /**
  * Saves a new API URL (e.g., your static ngrok URL)
  */
@@ -242,6 +250,7 @@ export interface Service {
   name: string;
   actions: ServiceAction[];
   reactions: ServiceReaction[];
+  is_oauth: boolean;
 }
 
 export const areasApi = {

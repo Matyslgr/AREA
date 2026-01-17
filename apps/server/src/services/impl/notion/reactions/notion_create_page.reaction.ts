@@ -24,14 +24,28 @@ export const NotionCreatePageReaction: IReaction<NotionCreatePageParams> = {
     const token = getNotionAccessToken(user);
     const http = new AxiosAdapter();
 
-    // Notion is tricky: we need to map the "title" to the correct property name.
-    // By default, in 99% of databases, the primary key is named "Name".
-    // A robust solution would fetch the schema first, but for MVP we assume "Name".
+    const headers = {
+      Authorization: `Bearer ${token}`,
+      'Notion-Version': '2022-06-28',
+      'Content-Type': 'application/json'
+    };
+
+    const dbInfo = await http.get<any>(`https://api.notion.com/v1/databases/${params.database_id}`, {
+      headers: headers
+    });
+
+    const titleKey = Object.keys(dbInfo.properties).find(
+      key => dbInfo.properties[key].type === 'title'
+    );
+
+    if (!titleKey) {
+      throw new Error(`Database ${params.database_id} has no 'title' property. This is unexpected.`);
+    }
 
     const body: any = {
       parent: { database_id: params.database_id },
       properties: {
-        "Name": { // Assumes the title column is named "Name"
+        [titleKey]: {
           title: [
             {
               text: {
@@ -64,11 +78,7 @@ export const NotionCreatePageReaction: IReaction<NotionCreatePageParams> = {
     }
 
     await http.post('https://api.notion.com/v1/pages', body, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Notion-Version': '2022-06-28',
-        'Content-Type': 'application/json'
-      }
+      headers: headers
     });
   }
 };

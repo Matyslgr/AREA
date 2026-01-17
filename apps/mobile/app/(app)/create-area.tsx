@@ -13,6 +13,7 @@ import * as React from 'react';
 import * as SecureStore from 'expo-secure-store';
 import * as WebBrowser from 'expo-web-browser';
 import { makeRedirectUri } from 'expo-auth-session';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   ActivityIndicator,
   Alert,
@@ -83,6 +84,19 @@ const STEPS = [
   { number: 4, title: 'Review', description: 'Confirm your automation' },
 ];
 
+const STORAGE_KEY_FORM = 'area-creation-state';
+
+interface SavedState {
+  step: number;
+  areaName: string;
+  actionServiceId?: string;
+  reactionServiceId?: string;
+  actionId?: string;
+  reactionId?: string;
+  actionParams: Record<string, unknown>;
+  reactionParams: Record<string, unknown>;
+}
+
 export default function CreateAreaScreen() {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
@@ -113,6 +127,74 @@ export default function CreateAreaScreen() {
     fetchServices();
     fetchLinkedAccounts();
   }, []);
+
+  // Effect to restore saved form state
+  React.useEffect(() => {
+    const restoreState = async () => {
+      // Only restore if services are loaded
+      if (services.length === 0) return;
+
+      try {
+        const savedJson = await AsyncStorage.getItem(STORAGE_KEY_FORM);
+        if (!savedJson) return;
+
+        const saved: SavedState = JSON.parse(savedJson);
+        console.log('[CreateArea] Restoring state:', saved);
+
+        // Restore simple fields
+        setAreaName(saved.areaName);
+        setCurrentStep(saved.step);
+        setActionParams(saved.actionParams || {});
+        setReactionParams(saved.reactionParams || {});
+
+        // Restore complex objects (mapping ID -> Object)
+        if (saved.actionServiceId) {
+          const s = services.find((x) => x.id === saved.actionServiceId);
+          if (s) {
+            setSelectedActionService(s);
+            if (saved.actionId) {
+              const a = s.actions.find((x) => x.id === saved.actionId);
+              setSelectedAction(a || null);
+            }
+          }
+        }
+
+        if (saved.reactionServiceId) {
+          const s = services.find((x) => x.id === saved.reactionServiceId);
+          if (s) {
+            setSelectedReactionService(s);
+            if (saved.reactionId) {
+              const r = s.reactions.find((x) => x.id === saved.reactionId);
+              setSelectedReaction(r || null);
+            }
+          }
+        }
+      } catch (e) {
+        console.error('[CreateArea] Failed to parse saved form state', e);
+      }
+    };
+
+    restoreState();
+  }, [services]); // Depend on services so we can map IDs to objects
+
+  const saveFormState = async () => {
+    try {
+      const state: SavedState = {
+        step: currentStep,
+        areaName,
+        actionServiceId: selectedActionService?.id,
+        reactionServiceId: selectedReactionService?.id,
+        actionId: selectedAction?.id,
+        reactionId: selectedReaction?.id,
+        actionParams,
+        reactionParams,
+      };
+      await AsyncStorage.setItem(STORAGE_KEY_FORM, JSON.stringify(state));
+      console.log('[CreateArea] State saved to AsyncStorage');
+    } catch (e) {
+      console.error('[CreateArea] Failed to save state', e);
+    }
+  };
 
   const fetchServices = async () => {
     try {
@@ -171,7 +253,7 @@ export default function CreateAreaScreen() {
   const handleServiceSelect = (service: Service, type: 'action' | 'reaction') => {
     const account = getServiceAccount(service.id);
 
-    if (service.id !== 'timer' && !account) {
+    if (service.is_oauth && !account) {
       setModalService(service.name);
       setModalType(type);
       setShowAccountModal(true);
@@ -192,7 +274,7 @@ export default function CreateAreaScreen() {
   const handleActionSelect = (action: ServiceAction) => {
     const account = getServiceAccount(selectedActionService!.id);
 
-    if (selectedActionService!.id !== 'timer' && action.scopes && action.scopes.length > 0) {
+    if (selectedActionService!.is_oauth && action.scopes && action.scopes.length > 0) {
       if (!account || !hasRequiredScopes(selectedActionService!.id, action.scopes)) {
         setModalService(selectedActionService!.name);
         setModalScopes(action.scopes);
@@ -209,7 +291,7 @@ export default function CreateAreaScreen() {
   const handleReactionSelect = (reaction: ServiceReaction) => {
     const account = getServiceAccount(selectedReactionService!.id);
 
-    if (selectedReactionService!.id !== 'timer' && reaction.scopes && reaction.scopes.length > 0) {
+    if (selectedReactionService!.is_oauth && reaction.scopes && reaction.scopes.length > 0) {
       if (!account || !hasRequiredScopes(selectedReactionService!.id, reaction.scopes)) {
         setModalService(selectedReactionService!.name);
         setModalScopes(reaction.scopes);
@@ -224,6 +306,7 @@ export default function CreateAreaScreen() {
   };
 
   const handleLinkAccount = async () => {
+    await saveFormState();
     setShowAccountModal(false);
     const serviceId = services.find((s) => s.name === modalService)?.id;
     if (!serviceId) return;
@@ -238,17 +321,23 @@ export default function CreateAreaScreen() {
   };
 
   const handleRequestPermissions = async () => {
+    await saveFormState();
     setShowPermissionModal(false);
     const serviceId = services.find((s) => s.name === modalService)?.id;
     if (!serviceId) return;
 
     SecureStore.setItemAsync('oauth-redirect', '/(app)/create-area');
 
-    const scopeParam = encodeURIComponent(modalScopes.join(' '))
+    const scopeParam = encodeURIComponent(modalScopes.join(' '));
+
+    const redirectUri = makeRedirectUri({
+      scheme: 'area',
+      path: 'oauth-callback'
+    });
 
     const response = await api.get<{ url: string }>(
-      `/auth/oauth/authorize/${serviceId}?mode=connect&source=mobile&scope=${scopeParam}`
-    )
+      `/auth/oauth/authorize/${serviceId}?mode=connect&source=mobile&scope=${scopeParam}&redirect=${encodeURIComponent(redirectUri)}`
+    );
 
     if (!response.data) {
       console.error('[CreateArea] Failed to get OAuth URL for additional scopes');
@@ -256,11 +345,6 @@ export default function CreateAreaScreen() {
     }
 
     const url = response.data.url;
-
-    const redirectUri = makeRedirectUri({
-      scheme: 'area',
-      path: 'oauth-callback'
-    });
 
     console.log('[CreateArea] Redirecting to OAuth URL for additional scopes:', url);
     const result = await WebBrowser.openAuthSessionAsync(
@@ -350,6 +434,8 @@ export default function CreateAreaScreen() {
         setError(createError);
         return;
       }
+
+      await AsyncStorage.removeItem(STORAGE_KEY_FORM);
 
       Alert.alert('Success', 'Your AREA has been created successfully!', [
         { text: 'OK', onPress: () => router.replace('/(app)/dashboard') },
@@ -463,7 +549,7 @@ export default function CreateAreaScreen() {
           {services
             .filter((s) => s.actions.length > 0)
             .map((service) => {
-              const isLinked = getServiceAccount(service.id) || service.id === 'timer';
+              const isLinked = getServiceAccount(service.id) || !service.is_oauth;
               const isSelected = selectedActionService?.id === service.id;
               return (
                 <Pressable
@@ -505,7 +591,7 @@ export default function CreateAreaScreen() {
           {services
             .filter((s) => s.reactions.length > 0)
             .map((service) => {
-              const isLinked = getServiceAccount(service.id) || service.id === 'timer';
+              const isLinked = getServiceAccount(service.id) || !service.is_oauth;
               const isSelected = selectedReactionService?.id === service.id;
               return (
                 <Pressable
@@ -857,7 +943,10 @@ export default function CreateAreaScreen() {
                   </Button>
                   <Button
                     variant="outline"
-                    onPress={() => router.back()}
+                    onPress={async () => {
+                      await AsyncStorage.removeItem(STORAGE_KEY_FORM);
+                      router.back();
+                    }}
                     className="border-red-300 dark:border-red-800"
                   >
                     <Text className="text-red-600 dark:text-red-400">Cancel</Text>
