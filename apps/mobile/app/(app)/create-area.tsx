@@ -377,16 +377,19 @@ export default function CreateAreaScreen() {
     return (
       <View key={param.name} className="mb-4">
         <Label className="mb-2">
-          {param.description}
-          {param.required && <Text className="text-red-500"> *</Text>}
+          <Text style={{ color: colors.foreground }}>
+            {param.description}
+            {param.required && <Text className="text-red-500"> *</Text>}
+          </Text>
         </Label>
         {param.type === 'boolean' ? (
           <View className="flex-row items-center gap-2">
             <Switch
               value={value === true || value === 'true'}
               onValueChange={(val) => onChange(param.name, val)}
+              trackColor={{ false: colors.muted, true: colors.primary }}
             />
-            <Text className="text-muted-foreground">{value ? 'Yes' : 'No'}</Text>
+            <Text style={{ color: colors.mutedForeground }}>{value ? 'Yes' : 'No'}</Text>
           </View>
         ) : (
           <Input
@@ -396,7 +399,7 @@ export default function CreateAreaScreen() {
             keyboardType={param.type === 'number' ? 'numeric' : 'default'}
           />
         )}
-        <Text className="text-xs text-muted-foreground mt-1">Type: {param.type}</Text>
+        <Text className="text-xs mt-1" style={{ color: colors.mutedForeground }}>Type: {param.type}</Text>
       </View>
     );
   };
@@ -408,37 +411,43 @@ export default function CreateAreaScreen() {
           <View className="items-center flex-1">
             <View
               className={cn(
-                'w-10 h-10 rounded-full items-center justify-center',
-                currentStep > step.number
-                  ? 'bg-green-500'
-                  : currentStep === step.number
-                    ? 'bg-primary'
-                    : 'bg-muted'
+                'w-10 h-10 rounded-full items-center justify-center'
               )}
+              style={{
+                backgroundColor: currentStep > step.number
+                  ? '#22c55e'
+                  : currentStep === step.number
+                    ? colors.primary
+                    : colors.muted
+              }}
             >
               {currentStep > step.number ? (
                 <Text className="text-white font-bold">✓</Text>
               ) : (
                 <Text
                   className={cn(
-                    'font-semibold',
-                    currentStep === step.number ? 'text-primary-foreground' : 'text-muted-foreground'
+                    'font-semibold'
                   )}
+                  style={{
+                    color: currentStep === step.number ? colors.primaryForeground : colors.mutedForeground
+                  }}
                 >
                   {step.number}
                 </Text>
               )}
             </View>
-            <Text className="text-xs text-center mt-1 text-foreground" numberOfLines={1}>
+            <Text className="text-xs text-center mt-1" style={{ color: colors.foreground }} numberOfLines={1}>
               {step.title}
             </Text>
           </View>
           {index < STEPS.length - 1 && (
             <View
               className={cn(
-                'h-1 flex-1 mx-1',
-                currentStep > step.number ? 'bg-green-500' : 'bg-muted'
+                'h-1 flex-1 mx-1'
               )}
+              style={{
+                backgroundColor: currentStep > step.number ? '#22c55e' : colors.muted
+              }}
             />
           )}
         </React.Fragment>
@@ -458,7 +467,7 @@ export default function CreateAreaScreen() {
       </View>
 
       <View>
-        <Text className="text-base font-semibold mb-3">Action Service (Trigger)</Text>
+        <Text className="text-base font-semibold mb-3" style={{ color: colors.foreground }}>Action Service (Trigger)</Text>
         <View className="flex-row flex-wrap gap-3">
           {services
             .filter((s) => s.actions.length > 0)
@@ -470,9 +479,12 @@ export default function CreateAreaScreen() {
                   key={service.id}
                   onPress={() => handleServiceSelect(service, 'action')}
                   className={cn(
-                    'w-[30%] p-3 rounded-lg border-2 items-center',
-                    isSelected ? 'border-primary bg-primary/10' : 'border-border bg-card'
+                    'w-[30%] p-3 rounded-lg border-2 items-center'
                   )}
+                  style={{
+                    backgroundColor: isSelected ? (isDark ? 'rgba(124, 58, 237, 0.2)' : 'rgba(124, 58, 237, 0.1)') : colors.card,
+                    borderColor: isSelected ? colors.primary : colors.border
+                  }}
                 >
                   <Image
                     source={getServiceIcon(service.id)}
@@ -485,12 +497,15 @@ export default function CreateAreaScreen() {
                         : undefined
                     }
                   />
-                  <Text className="text-sm font-medium text-center" numberOfLines={1}>
+                  <Text className="text-sm font-medium text-center" style={{ color: colors.foreground }} numberOfLines={1}>
                     {service.name}
                   </Text>
                   {!isLinked && (
-                    <View className="absolute top-1 right-1 bg-orange-100 dark:bg-orange-900 px-1.5 py-0.5 rounded">
-                      <Text className="text-xs text-orange-600 dark:text-orange-300">Link</Text>
+                    <View
+                      className="absolute top-1 right-1 px-1.5 py-0.5 rounded"
+                      style={{ backgroundColor: isDark ? 'rgba(234, 88, 12, 0.2)' : 'rgba(255, 237, 213, 1)' }}
+                    >
+                      <Text style={{ fontSize: 10, color: isDark ? '#fb923c' : '#ea580c' }}>Link</Text>
                     </View>
                   )}
                 </Pressable>
@@ -500,7 +515,7 @@ export default function CreateAreaScreen() {
       </View>
 
       <View>
-        <Text className="text-base font-semibold mb-3">Reaction Service (Response)</Text>
+        <Text className="text-base font-semibold mb-3" style={{ color: colors.foreground }}>Reaction Service (Response)</Text>
         <View className="flex-row flex-wrap gap-3">
           {services
             .filter((s) => s.reactions.length > 0)
@@ -512,9 +527,12 @@ export default function CreateAreaScreen() {
                   key={service.id}
                   onPress={() => handleServiceSelect(service, 'reaction')}
                   className={cn(
-                    'w-[30%] p-3 rounded-lg border-2 items-center',
-                    isSelected ? 'border-primary bg-primary/10' : 'border-border bg-card'
+                    'w-[30%] p-3 rounded-lg border-2 items-center'
                   )}
+                  style={{
+                    backgroundColor: isSelected ? (isDark ? 'rgba(124, 58, 237, 0.2)' : 'rgba(124, 58, 237, 0.1)') : colors.card,
+                    borderColor: isSelected ? colors.primary : colors.border
+                  }}
                 >
                   <Image
                     source={getServiceIcon(service.id)}
@@ -527,12 +545,15 @@ export default function CreateAreaScreen() {
                         : undefined
                     }
                   />
-                  <Text className="text-sm font-medium text-center" numberOfLines={1}>
+                  <Text className="text-sm font-medium text-center" style={{ color: colors.foreground }} numberOfLines={1}>
                     {service.name}
                   </Text>
                   {!isLinked && (
-                    <View className="absolute top-1 right-1 bg-orange-100 dark:bg-orange-900 px-1.5 py-0.5 rounded">
-                      <Text className="text-xs text-orange-600 dark:text-orange-300">Link</Text>
+                    <View
+                      className="absolute top-1 right-1 px-1.5 py-0.5 rounded"
+                      style={{ backgroundColor: isDark ? 'rgba(234, 88, 12, 0.2)' : 'rgba(255, 237, 213, 1)' }}
+                    >
+                      <Text style={{ fontSize: 10, color: isDark ? '#fb923c' : '#ea580c' }}>Link</Text>
                     </View>
                   )}
                 </Pressable>
@@ -547,7 +568,10 @@ export default function CreateAreaScreen() {
     <View className="gap-4">
       {selectedActionService && (
         <>
-          <View className="flex-row items-center gap-3 p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
+          <View
+            className="flex-row items-center gap-3 p-4 rounded-lg"
+            style={{ backgroundColor: isDark ? 'rgba(30, 64, 175, 0.2)' : 'rgba(239, 246, 255, 1)' }}
+          >
             <Image
               source={getServiceIcon(selectedActionService.id)}
               className="w-10 h-10"
@@ -560,8 +584,8 @@ export default function CreateAreaScreen() {
               }
             />
             <View>
-              <Text className="font-semibold">{selectedActionService.name} Actions</Text>
-              <Text className="text-sm text-muted-foreground">Choose what triggers this automation</Text>
+              <Text className="font-semibold" style={{ color: colors.foreground }}>{selectedActionService.name} Actions</Text>
+              <Text className="text-sm" style={{ color: colors.mutedForeground }}>Choose what triggers this automation</Text>
             </View>
           </View>
 
@@ -570,17 +594,16 @@ export default function CreateAreaScreen() {
               <Pressable
                 key={action.id}
                 onPress={() => handleActionSelect(action)}
-                className={cn(
-                  'p-4 rounded-lg border-2',
-                  selectedAction?.id === action.id
-                    ? 'border-primary bg-primary/10'
-                    : 'border-border bg-card'
-                )}
+                className={cn('p-4 rounded-lg border-2')}
+                style={{
+                  backgroundColor: selectedAction?.id === action.id ? (isDark ? 'rgba(124, 58, 237, 0.2)' : 'rgba(124, 58, 237, 0.1)') : colors.card,
+                  borderColor: selectedAction?.id === action.id ? colors.primary : colors.border
+                }}
               >
                 <View className="flex-row items-start justify-between">
                   <View className="flex-1">
-                    <Text className="font-semibold">{action.name}</Text>
-                    <Text className="text-sm text-muted-foreground mt-1">{action.description}</Text>
+                    <Text className="font-semibold" style={{ color: colors.foreground }}>{action.name}</Text>
+                    <Text className="text-sm mt-1" style={{ color: colors.mutedForeground }}>{action.description}</Text>
                   </View>
                   {selectedAction?.id === action.id && (
                     <View className="bg-green-500 px-2 py-1 rounded">
@@ -593,8 +616,14 @@ export default function CreateAreaScreen() {
           </View>
 
           {selectedAction && selectedAction.parameters.length > 0 && (
-            <View className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-              <Text className="font-semibold mb-4">Configure Parameters</Text>
+            <View
+              className="mt-4 p-4 rounded-lg border"
+              style={{
+                backgroundColor: isDark ? 'rgba(30, 64, 175, 0.1)' : 'rgba(239, 246, 255, 1)',
+                borderColor: isDark ? 'rgba(30, 64, 175, 0.3)' : 'rgba(191, 219, 254, 1)'
+              }}
+            >
+              <Text className="font-semibold mb-4" style={{ color: colors.foreground }}>Configure Parameters</Text>
               {selectedAction.parameters.map((param) =>
                 renderParameterInput(
                   param,
@@ -613,7 +642,10 @@ export default function CreateAreaScreen() {
     <View className="gap-4">
       {selectedReactionService && (
         <>
-          <View className="flex-row items-center gap-3 p-4 bg-orange-50 dark:bg-orange-900/30 rounded-lg">
+          <View
+            className="flex-row items-center gap-3 p-4 rounded-lg"
+            style={{ backgroundColor: isDark ? 'rgba(154, 52, 18, 0.2)' : 'rgba(255, 247, 237, 1)' }}
+          >
             <Image
               source={getServiceIcon(selectedReactionService.id)}
               className="w-10 h-10"
@@ -626,8 +658,8 @@ export default function CreateAreaScreen() {
               }
             />
             <View>
-              <Text className="font-semibold">{selectedReactionService.name} Reactions</Text>
-              <Text className="text-sm text-muted-foreground">Choose what happens when triggered</Text>
+              <Text className="font-semibold" style={{ color: colors.foreground }}>{selectedReactionService.name} Reactions</Text>
+              <Text className="text-sm" style={{ color: colors.mutedForeground }}>Choose what happens when triggered</Text>
             </View>
           </View>
 
@@ -636,17 +668,16 @@ export default function CreateAreaScreen() {
               <Pressable
                 key={reaction.id}
                 onPress={() => handleReactionSelect(reaction)}
-                className={cn(
-                  'p-4 rounded-lg border-2',
-                  selectedReaction?.id === reaction.id
-                    ? 'border-primary bg-primary/10'
-                    : 'border-border bg-card'
-                )}
+                className={cn('p-4 rounded-lg border-2')}
+                style={{
+                  backgroundColor: selectedReaction?.id === reaction.id ? (isDark ? 'rgba(124, 58, 237, 0.2)' : 'rgba(124, 58, 237, 0.1)') : colors.card,
+                  borderColor: selectedReaction?.id === reaction.id ? colors.primary : colors.border
+                }}
               >
                 <View className="flex-row items-start justify-between">
                   <View className="flex-1">
-                    <Text className="font-semibold">{reaction.name}</Text>
-                    <Text className="text-sm text-muted-foreground mt-1">{reaction.description}</Text>
+                    <Text className="font-semibold" style={{ color: colors.foreground }}>{reaction.name}</Text>
+                    <Text className="text-sm mt-1" style={{ color: colors.mutedForeground }}>{reaction.description}</Text>
                   </View>
                   {selectedReaction?.id === reaction.id && (
                     <View className="bg-green-500 px-2 py-1 rounded">
@@ -659,8 +690,14 @@ export default function CreateAreaScreen() {
           </View>
 
           {selectedReaction && selectedReaction.parameters.length > 0 && (
-            <View className="mt-4 p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
-              <Text className="font-semibold mb-4">Configure Parameters</Text>
+            <View
+              className="mt-4 p-4 rounded-lg border"
+              style={{
+                backgroundColor: isDark ? 'rgba(154, 52, 18, 0.1)' : 'rgba(255, 247, 237, 1)',
+                borderColor: isDark ? 'rgba(154, 52, 18, 0.3)' : 'rgba(255, 187, 153, 1)'
+              }}
+            >
+              <Text className="font-semibold mb-4" style={{ color: colors.foreground }}>Configure Parameters</Text>
               {selectedReaction.parameters.map((param) =>
                 renderParameterInput(
                   param,
@@ -677,18 +714,21 @@ export default function CreateAreaScreen() {
 
   const renderStep4 = () => (
     <View className="gap-6">
-      <View className="p-6 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg">
-        <Text className="text-xl font-bold mb-4">{areaName}</Text>
+      <View
+        className="p-6 rounded-lg"
+        style={{ backgroundColor: isDark ? 'rgba(124, 58, 237, 0.1)' : 'rgba(245, 243, 255, 1)' }}
+      >
+        <Text className="text-xl font-bold mb-4" style={{ color: colors.foreground }}>{areaName}</Text>
 
         <View className="gap-3">
-          <View className="p-3 bg-card rounded-lg">
-            <Text className="text-sm font-semibold text-muted-foreground">WHEN</Text>
-            <Text className="font-semibold">{selectedAction?.name}</Text>
-            <Text className="text-sm text-muted-foreground">{selectedAction?.description}</Text>
+          <View className="p-3 rounded-lg" style={{ backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }}>
+            <Text className="text-sm font-semibold" style={{ color: colors.mutedForeground }}>WHEN</Text>
+            <Text className="font-semibold" style={{ color: colors.foreground }}>{selectedAction?.name}</Text>
+            <Text className="text-sm" style={{ color: colors.mutedForeground }}>{selectedAction?.description}</Text>
             {Object.keys(actionParams).length > 0 && (
               <View className="mt-2">
                 {Object.entries(actionParams).map(([key, value]) => (
-                  <Text key={key} className="text-xs text-muted-foreground">
+                  <Text key={key} className="text-xs" style={{ color: colors.mutedForeground }}>
                     <Text className="font-medium">{key}:</Text> {String(value)}
                   </Text>
                 ))}
@@ -696,14 +736,14 @@ export default function CreateAreaScreen() {
             )}
           </View>
 
-          <View className="p-3 bg-card rounded-lg">
-            <Text className="text-sm font-semibold text-muted-foreground">THEN</Text>
-            <Text className="font-semibold">{selectedReaction?.name}</Text>
-            <Text className="text-sm text-muted-foreground">{selectedReaction?.description}</Text>
+          <View className="p-3 rounded-lg" style={{ backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }}>
+            <Text className="text-sm font-semibold" style={{ color: colors.mutedForeground }}>THEN</Text>
+            <Text className="font-semibold" style={{ color: colors.foreground }}>{selectedReaction?.name}</Text>
+            <Text className="text-sm" style={{ color: colors.mutedForeground }}>{selectedReaction?.description}</Text>
             {Object.keys(reactionParams).length > 0 && (
               <View className="mt-2">
                 {Object.entries(reactionParams).map(([key, value]) => (
-                  <Text key={key} className="text-xs text-muted-foreground">
+                  <Text key={key} className="text-xs" style={{ color: colors.mutedForeground }}>
                     <Text className="font-medium">{key}:</Text> {String(value)}
                   </Text>
                 ))}
@@ -713,9 +753,15 @@ export default function CreateAreaScreen() {
         </View>
       </View>
 
-      <View className="flex-row items-center gap-2 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+      <View
+        className="flex-row items-center gap-2 p-4 border rounded-lg"
+        style={{
+          backgroundColor: isDark ? 'rgba(71, 65, 12, 0.2)' : 'rgba(254, 252, 232, 1)',
+          borderColor: isDark ? 'rgba(71, 65, 12, 0.5)' : 'rgba(254, 240, 138, 1)'
+        }}
+      >
         <Text className="text-2xl">✓</Text>
-        <Text className="text-sm text-yellow-800 dark:text-yellow-200 flex-1">
+        <Text className="text-sm flex-1" style={{ color: isDark ? '#fef08a' : '#854d0e' }}>
           Your AREA will be created as <Text className="font-bold">active</Text> and will start working immediately.
         </Text>
       </View>
@@ -730,12 +776,12 @@ export default function CreateAreaScreen() {
       onRequestClose={() => setShowAccountModal(false)}
     >
       <View className="flex-1 bg-black/50 justify-center items-center p-4">
-        <View className="bg-card w-full max-w-md rounded-xl p-6">
-          <Text className="text-xl font-bold mb-2">Link Your {modalService} Account</Text>
-          <Text className="text-muted-foreground mb-4">
+        <View className="w-full max-w-md rounded-xl p-6" style={{ backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }}>
+          <Text className="text-xl font-bold mb-2" style={{ color: colors.foreground }}>Link Your {modalService} Account</Text>
+          <Text className="text-muted-foreground mb-4" style={{ color: colors.mutedForeground }}>
             You need to link your {modalService} account to use this service in your AREAs.
           </Text>
-          <Text className="text-sm text-muted-foreground mb-6">
+          <Text className="text-sm mb-6" style={{ color: colors.mutedForeground }}>
             Linking your account allows AREA to perform actions on your behalf using {modalService}.
             You'll be redirected to {modalService} to authorize the connection.
           </Text>
@@ -744,11 +790,12 @@ export default function CreateAreaScreen() {
               variant="outline"
               className="flex-1"
               onPress={() => setShowAccountModal(false)}
+              style={{ borderColor: colors.border }}
             >
-              <Text>Cancel</Text>
+              <Text style={{ color: colors.foreground }}>Cancel</Text>
             </Button>
             <Button className="flex-1" onPress={handleLinkAccount} disabled={oauthLoading}>
-              <Text className="text-primary-foreground">
+              <Text style={{ color: colors.primaryForeground }}>
                 {oauthLoading ? 'Linking...' : 'Link Account'}
               </Text>
             </Button>
@@ -766,16 +813,16 @@ export default function CreateAreaScreen() {
       onRequestClose={() => setShowPermissionModal(false)}
     >
       <View className="flex-1 bg-black/50 justify-center items-center p-4">
-        <View className="bg-card w-full max-w-md rounded-xl p-6">
-          <Text className="text-xl font-bold mb-2">Additional Permissions Required</Text>
-          <Text className="text-muted-foreground mb-4">
+        <View className="w-full max-w-md rounded-xl p-6" style={{ backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }}>
+          <Text className="text-xl font-bold mb-2" style={{ color: colors.foreground }}>Additional Permissions Required</Text>
+          <Text className="text-muted-foreground mb-4" style={{ color: colors.mutedForeground }}>
             This {modalType} requires additional permissions from your {modalService} account.
           </Text>
-          <Text className="text-sm text-muted-foreground mb-2">The following permissions are needed:</Text>
+          <Text className="text-sm mb-2" style={{ color: colors.mutedForeground }}>The following permissions are needed:</Text>
           <View className="mb-6">
             {modalScopes.map((scope) => (
-              <View key={scope} className="bg-muted p-2 rounded mb-1">
-                <Text className="text-xs font-mono text-muted-foreground">{scope}</Text>
+              <View key={scope} className="p-2 rounded mb-1" style={{ backgroundColor: colors.muted }}>
+                <Text className="text-xs font-mono" style={{ color: colors.mutedForeground }}>{scope}</Text>
               </View>
             ))}
           </View>
@@ -784,11 +831,12 @@ export default function CreateAreaScreen() {
               variant="outline"
               className="flex-1"
               onPress={() => setShowPermissionModal(false)}
+              style={{ borderColor: colors.border }}
             >
-              <Text>Cancel</Text>
+              <Text style={{ color: colors.foreground }}>Cancel</Text>
             </Button>
             <Button className="flex-1" onPress={handleRequestPermissions} disabled={oauthLoading}>
-              <Text className="text-primary-foreground">
+              <Text style={{ color: colors.primaryForeground }}>
                 {oauthLoading ? 'Requesting...' : 'Grant Permissions'}
               </Text>
             </Button>
