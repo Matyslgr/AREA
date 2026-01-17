@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Text } from '@/components/ui/text';
-import { cn } from '@/lib/utils';
+import { getColors } from '@/lib/theme-colors';
 import { authApi, AccountDetails } from '@/lib/api';
 import { useOAuth } from '@/lib/oauth';
 import { useAuth } from '@/contexts/AuthContext';
@@ -60,6 +60,7 @@ const SERVICES = [
 
 export default function AccountSetupScreen() {
   const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const { updatePassword } = useAuth();
   const { startOAuth, loading: oauthLoading } = useOAuth();
 
@@ -151,23 +152,26 @@ export default function AccountSetupScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView className="bg-background flex-1 items-center justify-center">
-        <ActivityIndicator size="large" />
-        <Text className="text-muted-foreground mt-4">Loading account details...</Text>
+      <SafeAreaView
+        className="flex-1 items-center justify-center"
+        style={{ backgroundColor: colors.background }}
+      >
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={{ color: colors.mutedForeground, marginTop: 16 }}>Loading account details...</Text>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView className="bg-background flex-1">
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-        <View className="flex-1 px-6 py-8">
+    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }} style={{ backgroundColor: colors.background }}>
+        <View className="flex-1 px-6 py-8" style={{ backgroundColor: colors.background }}>
           {/* Header */}
           <View className="mb-6">
-            <Text variant="h3" className="text-foreground mb-2 text-center">
+            <Text variant="h3" style={{ color: colors.foreground, marginBottom: 8, textAlign: 'center' }}>
               Set up your account
             </Text>
-            <Text className="text-muted-foreground text-center">
+            <Text style={{ color: colors.mutedForeground, textAlign: 'center' }}>
               {accountDetails?.hasPassword
                 ? 'Connect your favorite services to start creating automations'
                 : 'Create a password and connect your services'
@@ -177,16 +181,16 @@ export default function AccountSetupScreen() {
 
           {/* Password Setup Section (if no password) */}
           {!accountDetails?.hasPassword && (
-            <Card className="border-border mb-6">
+            <Card className="mb-6" style={{ backgroundColor: colors.card, borderColor: colors.border }}>
               <CardHeader>
-                <CardTitle className="text-lg">Set up your password</CardTitle>
-                <CardDescription>
+                <CardTitle style={{ color: colors.foreground, fontSize: 18 }}>Set up your password</CardTitle>
+                <CardDescription style={{ color: colors.mutedForeground }}>
                   Create a password to secure your account
                 </CardDescription>
               </CardHeader>
               <CardContent className="gap-4">
                 <View className="gap-1.5">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password" style={{ color: colors.foreground }}>Password</Label>
                   <Input
                     id="password"
                     secureTextEntry
@@ -195,10 +199,12 @@ export default function AccountSetupScreen() {
                     onChangeText={setPassword}
                     returnKeyType="next"
                     onSubmitEditing={() => confirmPasswordRef.current?.focus()}
+                    style={{ color: colors.foreground, backgroundColor: colors.input, borderColor: colors.border }}
+                    placeholderTextColor={colors.mutedForeground}
                   />
                 </View>
                 <View className="gap-1.5">
-                  <Label htmlFor="confirmPassword">Confirm Password</Label>
+                  <Label htmlFor="confirmPassword" style={{ color: colors.foreground }}>Confirm Password</Label>
                   <Input
                     ref={confirmPasswordRef}
                     id="confirmPassword"
@@ -208,16 +214,18 @@ export default function AccountSetupScreen() {
                     onChangeText={setConfirmPassword}
                     returnKeyType="done"
                     onSubmitEditing={handleSetPassword}
+                    style={{ color: colors.foreground, backgroundColor: colors.input, borderColor: colors.border }}
+                    placeholderTextColor={colors.mutedForeground}
                   />
                 </View>
                 {passwordError ? (
-                  <Text className="text-destructive text-sm">{passwordError}</Text>
+                  <Text style={{ color: colors.destructive, fontSize: 14 }}>{passwordError}</Text>
                 ) : null}
                 <Button
                   onPress={handleSetPassword}
                   disabled={passwordLoading || !password || !confirmPassword}
                 >
-                  <Text className="text-primary-foreground font-semibold">
+                  <Text style={{ color: colors.primaryForeground, fontWeight: '600' }}>
                     {passwordLoading ? 'Setting Password...' : 'Set Password'}
                   </Text>
                 </Button>
@@ -227,26 +235,26 @@ export default function AccountSetupScreen() {
 
           {/* Services Section */}
           <View className="mb-6">
-            <Text className="text-foreground font-semibold mb-3">Link your services</Text>
+            <Text style={{ color: colors.foreground, fontWeight: '600', marginBottom: 12 }}>Link your services</Text>
             <View className="gap-3">
               {SERVICES.map((service) => {
                 const isLinked = isServiceLinked(service.id);
                 const isConnecting = connectingService === service.id;
 
                 return (
-                  <Card key={service.id} className="border-border">
+                  <Card key={service.id} style={{ backgroundColor: colors.card, borderColor: colors.border }}>
                     <Pressable
                       onPress={() => !isLinked && !isConnecting && handleLinkService(service.id)}
                       disabled={isLinked || isConnecting || oauthLoading}
                     >
                       <CardContent className="flex-row items-center gap-4 py-4">
-                        <View className="bg-muted h-12 w-12 items-center justify-center rounded-xl">
+                        <View
+                          className="h-12 w-12 items-center justify-center rounded-xl"
+                          style={{ backgroundColor: colors.muted }}
+                        >
                           <Image
                             source={service.icon}
-                            className={cn(
-                              'h-6 w-6',
-                              service.useTint && Platform.select({ web: 'dark:invert' })
-                            )}
+                            className="h-6 w-6"
                             resizeMode="contain"
                             tintColor={Platform.select({
                               native: service.useTint
@@ -258,24 +266,24 @@ export default function AccountSetupScreen() {
                           />
                         </View>
                         <View className="flex-1">
-                          <Text className="text-foreground font-semibold">{service.name}</Text>
-                          <Text className="text-muted-foreground text-sm">{service.description}</Text>
+                          <Text style={{ color: colors.foreground, fontWeight: '600' }}>{service.name}</Text>
+                          <Text style={{ color: colors.mutedForeground, fontSize: 14 }}>{service.description}</Text>
                         </View>
                         <View>
                           {isLinked ? (
-                            <View className="bg-green-500/10 rounded-full px-3 py-1">
-                              <Text className="text-green-500 text-xs font-medium">Connected</Text>
+                            <View style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)', borderRadius: 9999, paddingHorizontal: 12, paddingVertical: 4 }}>
+                              <Text style={{ color: '#22c55e', fontSize: 12, fontWeight: '500' }}>Connected</Text>
                             </View>
                           ) : isConnecting ? (
-                            <View className="bg-muted rounded-full px-3 py-1 flex-row items-center">
-                              <ActivityIndicator size="small" className="mr-1" />
-                              <Text className="text-muted-foreground text-xs font-medium">
+                            <View style={{ backgroundColor: colors.muted, borderRadius: 9999, paddingHorizontal: 12, paddingVertical: 4, flexDirection: 'row', alignItems: 'center' }}>
+                              <ActivityIndicator size="small" color={colors.primary} style={{ marginRight: 4 }} />
+                              <Text style={{ color: colors.mutedForeground, fontSize: 12, fontWeight: '500' }}>
                                 Connecting...
                               </Text>
                             </View>
                           ) : (
-                            <View className="bg-secondary rounded-full px-3 py-1">
-                              <Text className="text-secondary-foreground text-xs font-medium">
+                            <View style={{ backgroundColor: colors.secondary, borderRadius: 9999, paddingHorizontal: 12, paddingVertical: 4 }}>
+                              <Text style={{ color: colors.secondaryForeground, fontSize: 12, fontWeight: '500' }}>
                                 Connect
                               </Text>
                             </View>
@@ -291,11 +299,11 @@ export default function AccountSetupScreen() {
 
           {/* Footer */}
           <View className="mt-auto gap-4">
-            <Text className="text-muted-foreground text-center text-sm">
+            <Text style={{ color: colors.mutedForeground, textAlign: 'center', fontSize: 14 }}>
               You can link your accounts later at any time in your account settings
             </Text>
             <Button onPress={onContinue} size="lg" className="w-full">
-              <Text className="text-primary-foreground font-semibold">
+              <Text style={{ color: colors.primaryForeground, fontWeight: '600' }}>
                 Continue to Dashboard
               </Text>
             </Button>

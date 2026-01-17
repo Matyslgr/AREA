@@ -4,7 +4,7 @@ import { Text } from '@/components/ui/text';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { cn } from '@/lib/utils';
+import { getColors } from '@/lib/theme-colors';
 import { Area, areasApi, authApi, OAuthAccount } from '@/lib/api';
 import { router } from 'expo-router';
 import * as React from 'react';
@@ -78,6 +78,7 @@ const getServiceFromAction = (actionName: string): string => {
 export default function DashboardScreen() {
   const { user, signOut } = useAuth();
   const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   // --- STATE ---
   const [areas, setAreas] = React.useState<Area[]>([]);
@@ -160,34 +161,47 @@ export default function DashboardScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView className="bg-background flex-1 items-center justify-center">
-        <ActivityIndicator size="large" />
-        <Text className="text-muted-foreground mt-4">Loading your areas...</Text>
+      <SafeAreaView
+        className="flex-1 items-center justify-center"
+        style={{ backgroundColor: colors.background }}
+      >
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={{ color: colors.mutedForeground, marginTop: 16 }}>Loading your areas...</Text>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView className="bg-background flex-1">
+    <SafeAreaView
+      className="flex-1"
+      style={{ backgroundColor: colors.background }}
+    >
       <ScrollView
         contentContainerStyle={{ flexGrow: 1 }}
+        style={{ backgroundColor: colors.background }}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
         }
       >
-        <View className="flex-1 px-6 py-6">
+        <View className="flex-1 px-6 py-6" style={{ backgroundColor: colors.background }}>
           {/* Header */}
           <View className="mb-6 flex-row items-center justify-between">
             <View>
-              <Text className="text-muted-foreground text-sm">Welcome back,</Text>
-              <Text className="text-foreground text-xl font-bold">
+              <Text style={{ color: colors.mutedForeground, fontSize: 14 }}>Welcome back,</Text>
+              <Text style={{ color: colors.foreground, fontSize: 20, fontWeight: 'bold' }}>
                 {user?.username || 'User'}
               </Text>
             </View>
             <View className="flex-row gap-2">
               <Pressable
                 onPress={onLogout}
-                className="bg-secondary h-10 w-10 items-center justify-center rounded-full"
+                className="h-10 w-10 items-center justify-center rounded-full"
+                style={{ backgroundColor: colors.secondary }}
               >
                 <Text>👋</Text>
               </Pressable>
@@ -196,55 +210,60 @@ export default function DashboardScreen() {
 
           {/* Stats Cards */}
           <View className="mb-6 flex-row gap-3">
-            <Card className="border-border flex-1 bg-card">
+            <Card className="flex-1" style={{ backgroundColor: colors.card, borderColor: colors.border }}>
               <CardContent className="items-center py-4">
-                <Text className="text-primary text-2xl font-bold">{areas.length}</Text>
-                <Text className="text-muted-foreground text-xs text-center">Total AREAs</Text>
-                <Text className="text-muted-foreground text-[10px] mt-1">{activeAreasCount} active</Text>
+                <Text style={{ color: colors.primary, fontSize: 24, fontWeight: 'bold' }}>{areas.length}</Text>
+                <Text style={{ color: colors.mutedForeground, fontSize: 12, textAlign: 'center' }}>Total AREAs</Text>
+                <Text style={{ color: colors.mutedForeground, fontSize: 10, marginTop: 4 }}>{activeAreasCount} active</Text>
               </CardContent>
             </Card>
 
-            <Card className="border-border flex-1 bg-card">
+            <Card className="flex-1" style={{ backgroundColor: colors.card, borderColor: colors.border }}>
               <CardContent className="items-center py-4">
-                <Text className="text-green-500 text-2xl font-bold">{activePercentage}%</Text>
-                <Text className="text-muted-foreground text-xs text-center">Active Rate</Text>
-                <Text className="text-muted-foreground text-[10px] mt-1">% of total</Text>
+                <Text style={{ color: '#22c55e', fontSize: 24, fontWeight: 'bold' }}>{activePercentage}%</Text>
+                <Text style={{ color: colors.mutedForeground, fontSize: 12, textAlign: 'center' }}>Active Rate</Text>
+                <Text style={{ color: colors.mutedForeground, fontSize: 10, marginTop: 4 }}>% of total</Text>
               </CardContent>
             </Card>
 
-            <Card className="border-border flex-1 bg-card">
+            <Card className="flex-1" style={{ backgroundColor: colors.card, borderColor: colors.border }}>
               <CardContent className="items-center py-4">
-                <Text className="text-orange-500 text-2xl font-bold">{totalReactions}</Text>
-                <Text className="text-muted-foreground text-xs text-center">Reactions</Text>
-                <Text className="text-muted-foreground text-[10px] mt-1">Total</Text>
+                <Text style={{ color: '#f97316', fontSize: 24, fontWeight: 'bold' }}>{totalReactions}</Text>
+                <Text style={{ color: colors.mutedForeground, fontSize: 12, textAlign: 'center' }}>Reactions</Text>
+                <Text style={{ color: colors.mutedForeground, fontSize: 10, marginTop: 4 }}>Total</Text>
               </CardContent>
             </Card>
           </View>
 
           {/* Search & Quick Actions */}
           <View className="mb-6 gap-3">
-            <View className="flex-row items-center gap-2 bg-secondary/50 rounded-xl px-4 py-3 border border-border">
-              <Text className="text-muted-foreground">🔍</Text>
+            <View
+              className="flex-row items-center gap-2 rounded-xl px-4 py-3"
+              style={{ backgroundColor: colors.secondary, borderColor: colors.border, borderWidth: 1 }}
+            >
+              <Text style={{ color: colors.mutedForeground }}>🔍</Text>
               <TextInput
                 placeholder="Search areas..."
-                placeholderTextColor="#9ca3af"
+                placeholderTextColor={colors.mutedForeground}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
-                className="flex-1 text-foreground"
+                className="flex-1"
+                style={{ color: colors.foreground }}
               />
             </View>
 
-            <Card className="border-border">
+            <Card style={{ backgroundColor: colors.card, borderColor: colors.border }}>
               <CardContent className="flex-row gap-3 py-4">
                 <Button variant="default" className="flex-1" onPress={() => router.push('/(app)/create-area')}>
-                  <Text className="text-primary-foreground text-sm">+ New AREA</Text>
+                  <Text style={{ color: colors.primaryForeground, fontSize: 14 }}>+ New AREA</Text>
                 </Button>
                 <Button
                   variant="outline"
                   className="flex-1"
                   onPress={() => router.push('/(app)/account-setup')}
+                  style={{ borderColor: colors.border }}
                 >
-                  <Text className="text-sm">Connect Service</Text>
+                  <Text style={{ color: colors.foreground, fontSize: 14 }}>Connect Service</Text>
                 </Button>
               </CardContent>
             </Card>
@@ -255,7 +274,7 @@ export default function DashboardScreen() {
 
           {/* Connected Services */}
           <View className="mb-6">
-            <Text className="text-foreground mb-3 font-semibold">Connected Services</Text>
+            <Text style={{ color: colors.foreground, fontWeight: '600', marginBottom: 12 }}>Connected Services</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View className="flex-row gap-3">
                 {ALL_PROVIDERS.map((provider) => {
@@ -269,14 +288,16 @@ export default function DashboardScreen() {
                       useTint={config.useTint}
                       connected={isConnected}
                       isDark={isDark}
+                      colors={colors}
                     />
                   );
                 })}
                 <Pressable
                   onPress={() => router.push('/(app)/account-setup')}
-                  className="border-border bg-muted/50 h-20 w-20 items-center justify-center rounded-2xl border border-dashed"
+                  className="h-20 w-20 items-center justify-center rounded-2xl border-dashed"
+                  style={{ backgroundColor: colors.muted, borderColor: colors.border, borderWidth: 1 }}
                 >
-                  <Text className="text-muted-foreground text-2xl">+</Text>
+                  <Text style={{ color: colors.mutedForeground, fontSize: 24 }}>+</Text>
                 </Pressable>
               </View>
             </ScrollView>
@@ -284,16 +305,16 @@ export default function DashboardScreen() {
 
           {/* Areas List */}
           <View className="mb-6">
-            <Text className="text-foreground font-semibold mb-3">Your Automation Workflows</Text>
+            <Text style={{ color: colors.foreground, fontWeight: '600', marginBottom: 12 }}>Your Automation Workflows</Text>
 
             {filteredAreas.length === 0 ? (
-              <Card className="border-border bg-card">
+              <Card style={{ backgroundColor: colors.card, borderColor: colors.border }}>
                 <CardContent className="items-center py-8">
-                  <Text className="text-muted-foreground mb-2 text-4xl">⚡</Text>
-                  <Text className="text-foreground mb-1 font-medium">
+                  <Text style={{ color: colors.mutedForeground, marginBottom: 8, fontSize: 32 }}>⚡</Text>
+                  <Text style={{ color: colors.foreground, marginBottom: 4, fontWeight: '500' }}>
                     {searchQuery ? "No matching areas" : "No areas yet"}
                   </Text>
-                  <Text className="text-muted-foreground text-center text-sm px-4">
+                  <Text style={{ color: colors.mutedForeground, textAlign: 'center', fontSize: 14, paddingHorizontal: 16 }}>
                     {searchQuery
                       ? `No areas matching "${searchQuery}"`
                       : "Create your first automation to get started with AREA"
@@ -309,6 +330,7 @@ export default function DashboardScreen() {
                     area={area}
                     toggling={togglingArea === area.id}
                     onToggle={() => toggleArea(area.id, area.is_active)}
+                    colors={colors}
                   />
                 ))}
               </View>
@@ -326,31 +348,39 @@ function ServiceCard({
   useTint,
   connected,
   isDark,
+  colors,
 }: {
   name: string;
   icon: ImageSourcePropType;
   useTint: boolean;
   connected: boolean;
   isDark: boolean;
+  colors: ReturnType<typeof getColors>;
 }) {
   return (
     <Pressable
       onPress={() => router.push('/(app)/account-setup')}
-      className={cn(
-        'border-border h-20 w-20 items-center justify-center rounded-2xl border',
-        connected ? 'bg-card' : 'bg-muted/50 opacity-50'
-      )}
+      className="h-20 w-20 items-center justify-center rounded-2xl"
+      style={{
+        backgroundColor: connected ? colors.card : colors.muted,
+        borderColor: colors.border,
+        borderWidth: 1,
+        opacity: connected ? 1 : 0.5,
+      }}
     >
       <Image
         source={icon}
-        className={cn('h-8 w-8', useTint && Platform.select({ web: 'dark:invert' }))}
+        className="h-8 w-8"
         tintColor={Platform.select({
           native: useTint ? (isDark ? 'white' : 'black') : undefined,
         })}
       />
-      <Text className="text-foreground mt-1 text-xs">{name}</Text>
+      <Text style={{ color: colors.foreground, marginTop: 4, fontSize: 12 }}>{name}</Text>
       {connected && (
-        <View className="bg-green-500 absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-white dark:border-zinc-900" />
+        <View
+          className="absolute -right-1 -top-1 h-3 w-3 rounded-full"
+          style={{ backgroundColor: '#22c55e', borderWidth: 2, borderColor: colors.background }}
+        />
       )}
     </Pressable>
   );
@@ -360,10 +390,12 @@ function AreaCard({
   area,
   toggling,
   onToggle,
+  colors,
 }: {
   area: Area;
   toggling: boolean;
   onToggle: () => void;
+  colors: ReturnType<typeof getColors>;
 }) {
   // Get unique services for iconography
   const getUniqueServices = (area: Area): string[] => {
@@ -378,39 +410,40 @@ function AreaCard({
   const uniqueServices = getUniqueServices(area);
 
   return (
-    <Card className="border-border bg-card">
+    <Card style={{ backgroundColor: colors.card, borderColor: colors.border }}>
       <CardContent className="py-4 space-y-3">
         {/* Header: Name and Status */}
         <View className="flex-row justify-between items-start">
           <View className="flex-1 mr-2">
-            <Text className="text-foreground font-bold text-lg" numberOfLines={1}>
+            <Text style={{ color: colors.foreground, fontWeight: 'bold', fontSize: 18 }} numberOfLines={1}>
               {area.name}
             </Text>
-            <Text className="text-muted-foreground text-xs mt-1" numberOfLines={1}>
+            <Text style={{ color: colors.mutedForeground, fontSize: 12, marginTop: 4 }} numberOfLines={1}>
               {area.action.name.split('.').pop()?.replace(/_/g, " ")}
             </Text>
           </View>
 
           <View className="flex-row items-center gap-3">
             <View
-              className={cn(
-                'rounded-full px-2 py-1 border',
-                area.is_active
-                  ? 'bg-green-500/10 border-green-500/20'
-                  : 'bg-zinc-500/10 border-zinc-500/20'
-              )}
+              className="rounded-full px-2 py-1"
+              style={{
+                backgroundColor: area.is_active ? 'rgba(34, 197, 94, 0.1)' : 'rgba(113, 113, 122, 0.1)',
+                borderColor: area.is_active ? 'rgba(34, 197, 94, 0.2)' : 'rgba(113, 113, 122, 0.2)',
+                borderWidth: 1,
+              }}
             >
               <Text
-                className={cn(
-                  'text-xs font-medium',
-                  area.is_active ? 'text-green-500' : 'text-zinc-500'
-                )}
+                style={{
+                  fontSize: 12,
+                  fontWeight: '500',
+                  color: area.is_active ? '#22c55e' : '#71717a',
+                }}
               >
                 {area.is_active ? 'Active' : 'Paused'}
               </Text>
             </View>
             {toggling ? (
-              <ActivityIndicator size="small" />
+              <ActivityIndicator size="small" color={colors.primary} />
             ) : (
               <Switch
                 value={area.is_active}
@@ -427,7 +460,8 @@ function AreaCard({
           {uniqueServices.map((service) => (
             <View
               key={service}
-              className="h-8 w-8 rounded-lg bg-secondary flex items-center justify-center overflow-hidden border border-border"
+              className="h-8 w-8 rounded-lg flex items-center justify-center overflow-hidden"
+              style={{ backgroundColor: colors.secondary, borderColor: colors.border, borderWidth: 1 }}
             >
               <Image
                 source={SERVICE_CONFIG[service]?.icon || require('../../assets/google.png')}
@@ -439,12 +473,15 @@ function AreaCard({
         </View>
 
         {/* Footer: Reactions count and Date */}
-        <View className="flex-row justify-between items-center border-t border-border pt-3 mt-1">
-          <Text className="text-muted-foreground text-xs font-medium">
+        <View
+          className="flex-row justify-between items-center pt-3 mt-1"
+          style={{ borderTopWidth: 1, borderTopColor: colors.border }}
+        >
+          <Text style={{ color: colors.mutedForeground, fontSize: 12, fontWeight: '500' }}>
             {area.reactions.length} reaction{area.reactions.length !== 1 ? "s" : ""}
           </Text>
           {area.last_executed_at && (
-            <Text className="text-muted-foreground text-[10px]">
+            <Text style={{ color: colors.mutedForeground, fontSize: 10 }}>
               Last run: {new Date(area.last_executed_at).toLocaleDateString()}
             </Text>
           )}

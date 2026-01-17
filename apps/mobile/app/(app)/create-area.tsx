@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Text } from '@/components/ui/text';
 import { cn } from '@/lib/utils';
+import { getColors } from '@/lib/theme-colors';
 import { api, authApi, areasApi, servicesApi, Service, ServiceAction, ServiceReaction } from '@/lib/api';
 import { useOAuth } from '@/lib/oauth';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -84,6 +85,7 @@ const STEPS = [
 
 export default function CreateAreaScreen() {
   const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const { startOAuth, loading: oauthLoading } = useOAuth();
 
   const [currentStep, setCurrentStep] = React.useState(1);
@@ -797,18 +799,18 @@ export default function CreateAreaScreen() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
       >
-        <ScrollView className="flex-1" contentContainerClassName="p-4">
+        <ScrollView className="flex-1" contentContainerClassName="p-4" style={{ backgroundColor: colors.background }}>
           {/* Header */}
           <View className="flex-row items-center justify-between mb-6">
             <Pressable onPress={() => router.back()} className="p-2">
-              <Text className="text-2xl">←</Text>
+              <Text style={{ fontSize: 24, color: colors.foreground }}>←</Text>
             </Pressable>
-            <Text className="text-xl font-bold">Create AREA</Text>
+            <Text style={{ fontSize: 20, fontWeight: 'bold', color: colors.foreground }}>Create AREA</Text>
             <View className="w-10" />
           </View>
 
@@ -816,17 +818,20 @@ export default function CreateAreaScreen() {
           {renderStepper()}
 
           {/* Main Card */}
-          <Card>
+          <Card style={{ backgroundColor: colors.card, borderColor: colors.border }}>
             <CardHeader>
-              <CardTitle>{STEPS[currentStep - 1].title}</CardTitle>
-              <CardDescription>{STEPS[currentStep - 1].description}</CardDescription>
+              <CardTitle style={{ color: colors.foreground }}>{STEPS[currentStep - 1].title}</CardTitle>
+              <CardDescription style={{ color: colors.mutedForeground }}>{STEPS[currentStep - 1].description}</CardDescription>
             </CardHeader>
             <CardContent>
               {/* Error Message */}
               {error ? (
-                <View className="flex-row items-center gap-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3 rounded-lg mb-4">
-                  <Text className="text-red-600 dark:text-red-400">⚠</Text>
-                  <Text className="text-sm font-medium text-red-800 dark:text-red-200 flex-1">{error}</Text>
+                <View
+                  className="flex-row items-center gap-2 p-3 rounded-lg mb-4"
+                  style={{ backgroundColor: isDark ? 'rgba(220, 38, 38, 0.2)' : 'rgba(254, 226, 226, 1)', borderColor: isDark ? 'rgba(220, 38, 38, 0.5)' : 'rgba(254, 202, 202, 1)', borderWidth: 1 }}
+                >
+                  <Text style={{ color: isDark ? '#f87171' : '#dc2626' }}>⚠</Text>
+                  <Text style={{ fontSize: 14, fontWeight: '500', color: isDark ? '#fecaca' : '#991b1b', flex: 1 }}>{error}</Text>
                 </View>
               ) : null}
 
@@ -837,14 +842,18 @@ export default function CreateAreaScreen() {
               {currentStep === 4 && renderStep4()}
 
               {/* Navigation */}
-              <View className="flex-row items-center justify-between pt-6 mt-6 border-t border-border">
+              <View
+                className="flex-row items-center justify-between pt-6 mt-6"
+                style={{ borderTopWidth: 1, borderTopColor: colors.border }}
+              >
                 <View className="flex-row gap-2">
                   <Button
                     variant="outline"
                     onPress={handleBack}
                     disabled={currentStep === 1}
+                    style={{ borderColor: colors.border }}
                   >
-                    <Text className={currentStep === 1 ? 'text-muted-foreground' : ''}>← Back</Text>
+                    <Text style={{ color: currentStep === 1 ? colors.mutedForeground : colors.foreground }}>← Back</Text>
                   </Button>
                   <Button
                     variant="outline"

@@ -1,20 +1,22 @@
 import '@/assets/global.css';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
+import { getColors } from '@/lib/theme-colors';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View } from 'react-native';
 
 function RootLayoutContent() {
   const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   return (
-    <View className="flex-1 bg-background">
+    <View className="flex-1" style={{ backgroundColor: colors.background }}>
       <Stack
         screenOptions={{
           headerShown: false,
           contentStyle: {
-            backgroundColor: isDark ? 'hsl(240, 10%, 4%)' : 'hsl(0, 0%, 100%)',
+            backgroundColor: colors.background,
           },
           animation: 'fade',
         }}

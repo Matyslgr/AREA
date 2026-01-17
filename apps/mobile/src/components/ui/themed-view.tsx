@@ -4,6 +4,7 @@ import { SafeAreaView, SafeAreaViewProps } from 'react-native-safe-area-context'
 import { useTheme } from '@/contexts/ThemeContext';
 import { vars } from 'nativewind';
 import { cn } from '@/lib/utils';
+import { getColors } from '@/lib/theme-colors';
 
 // Define CSS variables for light and dark themes
 const lightTheme = vars({
@@ -70,11 +71,12 @@ interface ThemedViewProps extends ViewProps {
  */
 export function ThemedView({ children, className, style, ...props }: ThemedViewProps) {
   const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   return (
     <View
-      className={cn('flex-1 bg-background', className)}
-      style={[isDark ? darkTheme : lightTheme, style]}
+      className={cn('flex-1', className)}
+      style={[isDark ? darkTheme : lightTheme, { backgroundColor: colors.background }, style]}
       {...props}
     >
       {children}
@@ -92,11 +94,12 @@ interface ThemedSafeAreaViewProps extends SafeAreaViewProps {
  */
 export function ThemedSafeAreaView({ children, className, style, ...props }: ThemedSafeAreaViewProps) {
   const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   return (
     <SafeAreaView
-      className={cn('flex-1 bg-background', className)}
-      style={[isDark ? darkTheme : lightTheme, style]}
+      className={cn('flex-1', className)}
+      style={[isDark ? darkTheme : lightTheme, { backgroundColor: colors.background }, style]}
       {...props}
     >
       {children}
