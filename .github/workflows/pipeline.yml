@@ -43,6 +43,7 @@ jobs:
 
       - name: 📱 Generate Android APK (Release)
         run: |
+          export GRADLE_OPTS="-Xmx4g -XX:MaxMetaspaceSize=1g"
           cd apps/mobile
           npx expo prebuild --platform android
           cd android
