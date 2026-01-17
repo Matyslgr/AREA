@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Link } from 'expo-router';
-import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { ServerConfigModal } from '@/components/server-config-modal';
 import { ServerInfoModal } from '@/components/server-info-modal';
@@ -42,7 +42,7 @@ const SERVICES = [
 ];
 
 export default function HomePage() {
-  const { colorScheme } = useColorScheme();
+  const { isDark } = useTheme();
   const [activeFeature, setActiveFeature] = React.useState(0);
 
   const [isConfiguring, setIsConfiguring] = React.useState(false);
@@ -238,7 +238,7 @@ export default function HomePage() {
                     resizeMode="contain"
                     tintColor={Platform.select({
                       native: service.useTint
-                        ? colorScheme === 'dark'
+                        ? isDark
                           ? 'white'
                           : 'black'
                         : undefined,
@@ -266,6 +266,6 @@ export default function HomePage() {
           </Text>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </SafeAreaView >
   );
 }

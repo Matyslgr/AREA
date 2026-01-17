@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Text } from '@/components/ui/text';
+import { ThemedSafeAreaView } from '@/components/ui/themed-view';
 import { SocialConnections } from '@/components/social-connections';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link, router } from 'expo-router';
@@ -22,7 +23,6 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function SignUpScreen() {
   const { signUp } = useAuth();
@@ -57,7 +57,7 @@ export default function SignUpScreen() {
   }
 
   return (
-    <SafeAreaView className="bg-background flex-1">
+    <ThemedSafeAreaView>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
@@ -143,6 +143,6 @@ export default function SignUpScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </ThemedSafeAreaView>
   );
 }

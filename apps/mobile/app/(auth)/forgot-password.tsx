@@ -13,7 +13,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Link, router } from 'expo-router';
 import * as React from 'react';
 import { Pressable, View, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ForgotPasswordScreen() {
   const { forgotPassword } = useAuth();
@@ -135,8 +134,8 @@ export default function ForgotPasswordScreen() {
               </CardContent>
             </Card>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        </ScrollView >
+      </KeyboardAvoidingView >
+    </SafeAreaView >
   );
 }

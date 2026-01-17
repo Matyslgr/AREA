@@ -1,18 +1,21 @@
 import { Stack } from 'expo-router';
-import { useColorScheme } from 'nativewind';
+import { useTheme } from '@/contexts/ThemeContext';
+import { getColors } from '@/lib/theme-colors';
+import { View } from 'react-native';
 
 export default function AuthLayout() {
-  const { colorScheme } = useColorScheme();
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-        contentStyle: {
-          backgroundColor: colorScheme === 'dark' ? 'hsl(240, 10%, 3.9%)' : 'hsl(0, 0%, 100%)',
-        },
-        animation: 'slide_from_right',
-      }}
-    />
+    <View className="flex-1" style={{ backgroundColor: colors.background }}>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: colors.background },
+          animation: 'slide_from_right',
+        }}
+      />
+    </View>
   );
 }
