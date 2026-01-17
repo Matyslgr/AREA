@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button"
 import { useNavigate, useLocation } from "react-router-dom"
 import { useState, useEffect } from "react"
-import { Menu, X, LogOut, Zap } from "lucide-react"
+import { Menu, X, LogOut, Zap, Settings } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 
 export default function Navbar() {
@@ -61,6 +61,15 @@ export default function Navbar() {
                     onClick={() => navigate("/areas/create")}
                   >
                     Create AREA
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-zinc-400 hover:text-white hover:bg-zinc-800"
+                    onClick={() => navigate("/settings")}
+                    aria-label="Settings"
+                  >
+                    <Settings className="h-5 w-5" />
                   </Button>
                   <Button
                     variant="ghost"
@@ -139,6 +148,17 @@ export default function Navbar() {
                   }}
                 >
                   Create AREA
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="justify-start text-zinc-400 hover:text-white hover:bg-zinc-800 py-6"
+                  onClick={() => {
+                    navigate("/settings")
+                    setIsMenuOpen(false)
+                  }}
+                >
+                  <Settings className="h-5 w-5 mr-2" />
+                  Settings
                 </Button>
                 <Button
                   variant="ghost"

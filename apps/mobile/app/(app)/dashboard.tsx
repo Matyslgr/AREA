@@ -17,11 +17,13 @@ import {
   RefreshControl,
   ScrollView,
   Switch,
+  TextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-// Service configuration with local assets
+// --- SERVICE UTILS ---
+
 const SERVICE_CONFIG: Record<
   string,
   { name: string; icon: ImageSourcePropType; useTint: boolean }
@@ -60,16 +62,33 @@ const SERVICE_CONFIG: Record<
 
 const ALL_PROVIDERS = ['google', 'github', 'spotify', 'notion', 'linkedin', 'twitch'];
 
+const getServiceFromAction = (actionName: string): string => {
+  const name = actionName.toLowerCase();
+  if (name.includes("github")) return "github";
+  if (name.includes("google") || name.includes("gmail")) return "google";
+  if (name.includes("discord")) return "discord";
+  if (name.includes("spotify")) return "spotify";
+  if (name.includes("twitch")) return "twitch";
+  if (name.includes("notion")) return "notion";
+  if (name.includes("linkedin")) return "linkedin";
+  if (name.includes("timer")) return "timer";
+  return "unknown";
+};
+
 export default function DashboardScreen() {
   const { user, signOut } = useAuth();
   const { isDark } = useTheme();
 
-  const [connectedAccounts, setConnectedAccounts] = React.useState<OAuthAccount[]>([]);
+  // --- STATE ---
   const [areas, setAreas] = React.useState<Area[]>([]);
+  const [connectedAccounts, setConnectedAccounts] = React.useState<OAuthAccount[]>([]);
+  const [filteredAreas, setFilteredAreas] = React.useState<Area[]>([]);
+  const [searchQuery, setSearchQuery] = React.useState("");
   const [loading, setLoading] = React.useState(true);
   const [refreshing, setRefreshing] = React.useState(false);
   const [togglingArea, setTogglingArea] = React.useState<string | null>(null);
 
+  // --- FETCH LOGIC ---
   const fetchData = React.useCallback(async () => {
     try {
       const [accountsRes, areasRes] = await Promise.all([
@@ -94,6 +113,19 @@ export default function DashboardScreen() {
   React.useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // --- FILTERING EFFECT ---
+  React.useEffect(() => {
+    if (searchQuery.trim() === "") {
+      setFilteredAreas(areas);
+    } else {
+      setFilteredAreas(
+        areas.filter((area) =>
+          area.name.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      );
+    }
+  }, [searchQuery, areas]);
 
   const onRefresh = React.useCallback(() => {
     setRefreshing(true);
@@ -120,14 +152,17 @@ export default function DashboardScreen() {
     await signOut();
   }
 
+  // --- CALCULATED STATS ---
   const connectedProviders = new Set(connectedAccounts.map((a) => a.provider));
-  const activeAreas = areas.filter((a) => a.is_active).length;
+  const activeAreasCount = areas.filter(area => area.is_active).length;
+  const totalReactions = areas.reduce((sum, area) => sum + (area.reactions?.length || 0), 0);
+  const activePercentage = areas.length > 0 ? Math.round((activeAreasCount / areas.length) * 100) : 0;
 
   if (loading) {
     return (
       <SafeAreaView className="bg-background flex-1 items-center justify-center">
         <ActivityIndicator size="large" />
-        <Text className="text-muted-foreground mt-4">Loading dashboard...</Text>
+        <Text className="text-muted-foreground mt-4">Loading your areas...</Text>
       </SafeAreaView>
     );
   }
@@ -161,46 +196,59 @@ export default function DashboardScreen() {
 
           {/* Stats Cards */}
           <View className="mb-6 flex-row gap-3">
-            <Card className="border-border flex-1">
+            <Card className="border-border flex-1 bg-card">
               <CardContent className="items-center py-4">
                 <Text className="text-primary text-2xl font-bold">{areas.length}</Text>
-                <Text className="text-muted-foreground text-xs">Total AREAs</Text>
+                <Text className="text-muted-foreground text-xs text-center">Total AREAs</Text>
+                <Text className="text-muted-foreground text-[10px] mt-1">{activeAreasCount} active</Text>
               </CardContent>
             </Card>
-            <Card className="border-border flex-1">
+
+            <Card className="border-border flex-1 bg-card">
               <CardContent className="items-center py-4">
-                <Text className="text-green-500 text-2xl font-bold">{activeAreas}</Text>
-                <Text className="text-muted-foreground text-xs">Active</Text>
+                <Text className="text-green-500 text-2xl font-bold">{activePercentage}%</Text>
+                <Text className="text-muted-foreground text-xs text-center">Active Rate</Text>
+                <Text className="text-muted-foreground text-[10px] mt-1">% of total</Text>
               </CardContent>
             </Card>
-            <Card className="border-border flex-1">
+
+            <Card className="border-border flex-1 bg-card">
               <CardContent className="items-center py-4">
-                <Text className="text-primary text-2xl font-bold">
-                  {connectedAccounts.length}
-                </Text>
-                <Text className="text-muted-foreground text-xs">Services</Text>
+                <Text className="text-orange-500 text-2xl font-bold">{totalReactions}</Text>
+                <Text className="text-muted-foreground text-xs text-center">Reactions</Text>
+                <Text className="text-muted-foreground text-[10px] mt-1">Total</Text>
               </CardContent>
             </Card>
           </View>
 
-          {/* Quick Actions */}
-          <Card className="border-border mb-6">
-            <CardHeader>
-              <CardTitle className="text-lg">Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="flex-row gap-3">
-              <Button variant="default" className="flex-1" onPress={() => router.push('/(app)/create-area')}>
-                <Text className="text-primary-foreground text-sm">+ New AREA</Text>
-              </Button>
-              <Button
-                variant="outline"
-                className="flex-1"
-                onPress={() => router.push('/(app)/account-setup')}
-              >
-                <Text className="text-sm">+ Connect Service</Text>
-              </Button>
-            </CardContent>
-          </Card>
+          {/* Search & Quick Actions */}
+          <View className="mb-6 gap-3">
+            <View className="flex-row items-center gap-2 bg-secondary/50 rounded-xl px-4 py-3 border border-border">
+              <Text className="text-muted-foreground">🔍</Text>
+              <TextInput
+                placeholder="Search areas..."
+                placeholderTextColor="#9ca3af"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                className="flex-1 text-foreground"
+              />
+            </View>
+
+            <Card className="border-border">
+              <CardContent className="flex-row gap-3 py-4">
+                <Button variant="default" className="flex-1" onPress={() => router.push('/(app)/create-area')}>
+                  <Text className="text-primary-foreground text-sm">+ New AREA</Text>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onPress={() => router.push('/(app)/account-setup')}
+                >
+                  <Text className="text-sm">Connect Service</Text>
+                </Button>
+              </CardContent>
+            </Card>
+          </View>
 
           {/* Theme Switcher */}
           <ThemeSwitcher />
@@ -234,33 +282,28 @@ export default function DashboardScreen() {
             </ScrollView>
           </View>
 
-          {/* AREAs List */}
+          {/* Areas List */}
           <View className="mb-6">
-            <View className="mb-3 flex-row items-center justify-between">
-              <Text className="text-foreground font-semibold">Your AREAs</Text>
-              {areas.length > 0 && (
-                <Pressable>
-                  <Text className="text-primary text-sm">View all</Text>
-                </Pressable>
-              )}
-            </View>
+            <Text className="text-foreground font-semibold mb-3">Your Automation Workflows</Text>
 
-            {areas.length === 0 ? (
-              <Card className="border-border">
+            {filteredAreas.length === 0 ? (
+              <Card className="border-border bg-card">
                 <CardContent className="items-center py-8">
-                  <Text className="text-muted-foreground mb-2 text-4xl">🔗</Text>
-                  <Text className="text-foreground mb-1 font-medium">No AREAs yet</Text>
-                  <Text className="text-muted-foreground text-center text-sm">
-                    Create your first automation to connect your services
+                  <Text className="text-muted-foreground mb-2 text-4xl">⚡</Text>
+                  <Text className="text-foreground mb-1 font-medium">
+                    {searchQuery ? "No matching areas" : "No areas yet"}
                   </Text>
-                  <Button variant="default" className="mt-4" onPress={() => router.push('/(app)/create-area')}>
-                    <Text className="text-primary-foreground text-sm">Create AREA</Text>
-                  </Button>
+                  <Text className="text-muted-foreground text-center text-sm px-4">
+                    {searchQuery
+                      ? `No areas matching "${searchQuery}"`
+                      : "Create your first automation to get started with AREA"
+                    }
+                  </Text>
                 </CardContent>
               </Card>
             ) : (
               <View className="gap-3">
-                {areas.slice(0, 5).map((area) => (
+                {filteredAreas.map((area) => (
                   <AreaCard
                     key={area.id}
                     area={area}
@@ -271,46 +314,6 @@ export default function DashboardScreen() {
               </View>
             )}
           </View>
-
-          {/* Recent Activity */}
-          {areas.some((a) => a.last_executed_at) && (
-            <View>
-              <Text className="text-foreground mb-3 font-semibold">Recent Activity</Text>
-              <Card className="border-border">
-                <CardContent className="py-4">
-                  {areas
-                    .filter((a) => a.last_executed_at)
-                    .sort(
-                      (a, b) =>
-                        new Date(b.last_executed_at!).getTime() -
-                        new Date(a.last_executed_at!).getTime()
-                    )
-                    .slice(0, 3)
-                    .map((area) => (
-                      <View
-                        key={area.id}
-                        className="border-border flex-row items-center justify-between border-b py-2 last:border-b-0"
-                      >
-                        <View className="flex-1">
-                          <Text className="text-foreground text-sm font-medium">
-                            {area.name}
-                          </Text>
-                          <Text className="text-muted-foreground text-xs">
-                            {formatRelativeTime(area.last_executed_at!)}
-                          </Text>
-                        </View>
-                        <View
-                          className={cn(
-                            'h-2 w-2 rounded-full',
-                            area.error_log ? 'bg-red-500' : 'bg-green-500'
-                          )}
-                        />
-                      </View>
-                    ))}
-                </CardContent>
-              </Card>
-            </View>
-          )}
         </View>
       </ScrollView >
     </SafeAreaView >
@@ -362,66 +365,91 @@ function AreaCard({
   toggling: boolean;
   onToggle: () => void;
 }) {
-  const actionService = area.action.name.split('.')[0];
-  const reactionServices = area.reactions.map((r) => r.name.split('.')[0]);
+  // Get unique services for iconography
+  const getUniqueServices = (area: Area): string[] => {
+    const services = new Set<string>();
+    services.add(getServiceFromAction(area.action.name));
+    area.reactions.forEach((reaction) => {
+      services.add(getServiceFromAction(reaction.name));
+    });
+    return Array.from(services).filter((s) => s !== "unknown");
+  };
+
+  const uniqueServices = getUniqueServices(area);
 
   return (
-    <Card className="border-border">
-      <CardContent className="flex-row items-center justify-between py-4">
-        <View className="flex-1 pr-4">
-          <Text className="text-foreground font-medium">{area.name}</Text>
-          <Text className="text-muted-foreground text-xs">
-            {actionService} → {reactionServices.join(', ')}
-          </Text>
-          {area.error_log && (
-            <Text className="text-red-500 mt-1 text-xs" numberOfLines={1}>
-              Error: {area.error_log}
+    <Card className="border-border bg-card">
+      <CardContent className="py-4 space-y-3">
+        {/* Header: Name and Status */}
+        <View className="flex-row justify-between items-start">
+          <View className="flex-1 mr-2">
+            <Text className="text-foreground font-bold text-lg" numberOfLines={1}>
+              {area.name}
             </Text>
-          )}
-        </View>
-        <View className="flex-row items-center gap-3">
-          <View
-            className={cn(
-              'rounded-full px-2 py-1',
-              area.is_active ? 'bg-green-500/10' : 'bg-muted'
-            )}
-          >
-            <Text
-              className={cn(
-                'text-xs font-medium',
-                area.is_active ? 'text-green-500' : 'text-muted-foreground'
-              )}
-            >
-              {area.is_active ? 'Active' : 'Paused'}
+            <Text className="text-muted-foreground text-xs mt-1" numberOfLines={1}>
+              {area.action.name.split('.').pop()?.replace(/_/g, " ")}
             </Text>
           </View>
-          {toggling ? (
-            <ActivityIndicator size="small" />
-          ) : (
-            <Switch
-              value={area.is_active}
-              onValueChange={onToggle}
-              trackColor={{ false: '#767577', true: '#22c55e' }}
-              thumbColor={area.is_active ? '#fff' : '#f4f3f4'}
-            />
+
+          <View className="flex-row items-center gap-3">
+            <View
+              className={cn(
+                'rounded-full px-2 py-1 border',
+                area.is_active
+                  ? 'bg-green-500/10 border-green-500/20'
+                  : 'bg-zinc-500/10 border-zinc-500/20'
+              )}
+            >
+              <Text
+                className={cn(
+                  'text-xs font-medium',
+                  area.is_active ? 'text-green-500' : 'text-zinc-500'
+                )}
+              >
+                {area.is_active ? 'Active' : 'Paused'}
+              </Text>
+            </View>
+            {toggling ? (
+              <ActivityIndicator size="small" />
+            ) : (
+              <Switch
+                value={area.is_active}
+                onValueChange={onToggle}
+                trackColor={{ false: '#767577', true: '#22c55e' }}
+                thumbColor={area.is_active ? '#fff' : '#f4f3f4'}
+              />
+            )}
+          </View>
+        </View>
+
+        {/* Icons Row */}
+        <View className="flex-row flex-wrap gap-2">
+          {uniqueServices.map((service) => (
+            <View
+              key={service}
+              className="h-8 w-8 rounded-lg bg-secondary flex items-center justify-center overflow-hidden border border-border"
+            >
+              <Image
+                source={SERVICE_CONFIG[service]?.icon || require('../../assets/google.png')}
+                className="h-5 w-5"
+                resizeMode="contain"
+              />
+            </View>
+          ))}
+        </View>
+
+        {/* Footer: Reactions count and Date */}
+        <View className="flex-row justify-between items-center border-t border-border pt-3 mt-1">
+          <Text className="text-muted-foreground text-xs font-medium">
+            {area.reactions.length} reaction{area.reactions.length !== 1 ? "s" : ""}
+          </Text>
+          {area.last_executed_at && (
+            <Text className="text-muted-foreground text-[10px]">
+              Last run: {new Date(area.last_executed_at).toLocaleDateString()}
+            </Text>
           )}
         </View>
       </CardContent>
     </Card>
   );
-}
-
-function formatRelativeTime(dateString: string): string {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-
-  if (diffMins < 1) return 'Just now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return date.toLocaleDateString();
 }

@@ -42,7 +42,10 @@ export const LinkedInPostReaction: IReaction<LinkedInPostParams> = {
         "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"
       }
     }, {
-      headers: { Authorization: `Bearer ${token}` }
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'X-Restli-Protocol-Version': '2.0.0'
+      }
     });
   }
 };

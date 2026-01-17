@@ -4,11 +4,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Text } from '@/components/ui/text';
 import { cn } from '@/lib/utils';
-import { authApi, areasApi, servicesApi, Service, ServiceAction, ServiceReaction } from '@/lib/api';
+import { api, authApi, areasApi, servicesApi, Service, ServiceAction, ServiceReaction } from '@/lib/api';
 import { useOAuth } from '@/lib/oauth';
 import { useTheme } from '@/contexts/ThemeContext';
 import { router } from 'expo-router';
 import * as React from 'react';
+import * as SecureStore from 'expo-secure-store';
+import * as WebBrowser from 'expo-web-browser';
+import { makeRedirectUri } from 'expo-auth-session';
 import {
   ActivityIndicator,
   Alert,
@@ -152,7 +155,7 @@ export default function CreateAreaScreen() {
 
   const getServiceAccount = (serviceId: string) => {
     const account = linkedAccounts.find((acc) => acc.service.toLowerCase() === serviceId.toLowerCase());
-    console.log(`[CreateArea] getServiceAccount(${serviceId}):`, account ? `Found: ${account.service}` : 'Not found', 'Available:', linkedAccounts.map(a => a.service));
+    // console.log(`[CreateArea] getServiceAccount(${serviceId}):`, account ? `Found: ${account.service}` : 'Not found', 'Available:', linkedAccounts.map(a => a.service));
     return account;
   };
 
@@ -237,13 +240,39 @@ export default function CreateAreaScreen() {
     const serviceId = services.find((s) => s.name === modalService)?.id;
     if (!serviceId) return;
 
-    // For now, just re-initiate OAuth which should request all scopes
-    const result = await startOAuth(serviceId, 'connect');
-    if (result.success) {
+    SecureStore.setItemAsync('oauth-redirect', '/(app)/create-area');
+
+    const scopeParam = encodeURIComponent(modalScopes.join(' '))
+
+    const response = await api.get<{ url: string }>(
+      `/auth/oauth/authorize/${serviceId}?mode=connect&source=mobile&scope=${scopeParam}`
+    )
+
+    if (!response.data) {
+      console.error('[CreateArea] Failed to get OAuth URL for additional scopes');
+      return;
+    }
+
+    const url = response.data.url;
+
+    const redirectUri = makeRedirectUri({
+      scheme: 'area',
+      path: 'oauth-callback'
+    });
+
+    console.log('[CreateArea] Redirecting to OAuth URL for additional scopes:', url);
+    const result = await WebBrowser.openAuthSessionAsync(
+      url,
+      redirectUri
+    );
+
+    console.log('WebBrowser result:', result);
+
+    if (result.type === 'success') {
       Alert.alert('Success', `Additional permissions granted for ${modalService}!`);
       await fetchLinkedAccounts();
     } else {
-      Alert.alert('Error', result.error || 'Failed to get permissions');
+      Alert.alert('Error', result.type || 'Failed to get permissions');
     }
   };
 

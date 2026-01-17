@@ -1,18 +1,23 @@
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { SigninForm } from "@/components/signin-form"
 import { api } from "@/lib/api"
 import { Zap } from "lucide-react"
 
 export default function SigninPage() {
+  const navigate = useNavigate()
+
   const handleOAuthSignin = async (provider: string) => {
     try {
+      const source = 'web';
+
       const { url } = await api.get<{ url: string }>(
-        `/auth/oauth/authorize/${provider}?mode=login`
+        `/auth/oauth/authorize/${provider}?mode=login&source=${source}&redirect=${encodeURIComponent(window.location.origin + "/auth/callback")}`
       )
 
       window.location.href = url
     } catch (err) {
       console.error(`Failed to start OAuth with ${provider}:`, err)
+      navigate('/signin?error=oauth_init_failed', { replace: true })
     }
   }
 

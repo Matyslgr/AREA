@@ -37,5 +37,9 @@
     "expo": "~54.0.31",
     "react": "19.1.0",
     "react-native": "0.81.5"
+  },
+  "dependencies": {
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
   }
 }

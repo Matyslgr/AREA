@@ -1,5 +1,6 @@
 import * as React from 'react';
 import * as WebBrowser from 'expo-web-browser';
+import { makeRedirectUri } from 'expo-auth-session';
 import { authApi } from './api';
 
 // Ensure the browser session is completed when the app comes back to the foreground
@@ -9,19 +10,22 @@ export interface OAuthResult {
   success: boolean;
   error?: string;
   token?: string;
-  user?: { id: string; email: string; username: string };
   isNewUser?: boolean;
 }
-
-// Mobile OAuth callback uses deep link scheme, not HTTP URL
-const MOBILE_REDIRECT_URI = 'area://auth/callback';
 
 export async function initiateOAuth(
   provider: string,
   mode: 'login' | 'connect' = 'login'
 ): Promise<OAuthResult> {
   try {
-    const { data: urlData, error: urlError } = await authApi.getOAuthUrl(provider, mode);
+    const redirectUri = makeRedirectUri({
+      scheme: 'area',
+      path: 'oauth-callback'
+    });
+
+    console.log('Mobile expects redirect to:', redirectUri);
+
+    const { data: urlData, error: urlError } = await authApi.getOAuthUrl(provider, mode, redirectUri);
 
     if (urlError || !urlData?.url) {
       return { success: false, error: urlError || 'Failed to get OAuth URL' };
@@ -31,7 +35,7 @@ export async function initiateOAuth(
 
     const result = await WebBrowser.openAuthSessionAsync(
       urlData.url,
-      MOBILE_REDIRECT_URI
+      redirectUri
     );
 
     console.log('WebBrowser result:', result);
@@ -44,61 +48,33 @@ export async function initiateOAuth(
     }
 
     const url = new URL(result.url);
-    const code = url.searchParams.get('code');
-    const state = url.searchParams.get('state');
+    const token = url.searchParams.get('token');
+    const isNewUser = url.searchParams.get('isNewUser') === 'true';
     const error = url.searchParams.get('error');
+    const linked = url.searchParams.get('linked') === 'true';
 
     if (error) {
       return { success: false, error: `OAuth error: ${error}` };
     }
 
-    if (!code) {
-      return { success: false, error: 'No authorization code received' };
-    }
-
-    let stateData: { provider?: string; mode?: string } = {};
-    if (state) {
-      try {
-        const base64 = state.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonString = atob(base64);
-        stateData = JSON.parse(jsonString);
-      } catch (e) {
-        console.warn('Failed to parse state:', e);
+    if (mode === 'login') {
+      if (token) {
+        return { success: true, token, isNewUser };
+      } else {
+        return { success: false, error: 'No token received from OAuth provider' };
       }
-    }
-
-    const actualProvider = stateData.provider || provider;
-    const actualMode = stateData.mode || mode;
-
-    console.log(`Processing OAuth | Provider: ${actualProvider} | Mode: ${actualMode}`);
-
-    if (actualMode === 'login' || mode === 'login') {
-      const { data: authData, error: authError } = await authApi.oauthLogin(actualProvider, code);
-
-      if (authError || !authData) {
-        return { success: false, error: authError || 'OAuth login failed' };
+    } else if (mode === 'connect') {
+      if (linked) {
+        return { success: true };
+      } else {
+        return { success: false, error: 'Failed to link OAuth account' };
       }
-
-      return {
-        success: true,
-        token: authData.token,
-        user: authData.user,
-      };
     } else {
-      const { data: linkData, error: linkError } = await authApi.oauthLink(actualProvider, code);
-
-      if (linkError) {
-        return { success: false, error: linkError };
-      }
-
-      return { success: true };
+      return { success: false, error: 'Invalid OAuth mode' };
     }
-  } catch (error) {
-    console.error('OAuth error:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'An unexpected error occurred',
-    };
+  } catch (err: any) {
+    console.error('OAuth initiation error:', err);
+    return { success: false, error: 'An unexpected error occurred during OAuth' };
   }
 }
 

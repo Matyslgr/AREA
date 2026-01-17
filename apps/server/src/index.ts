@@ -10,6 +10,7 @@ import authPlugin from './plugins/auth';
 import { registerServices } from './services';
 
 // Routes
+import { meRoute } from './routes/auth/me';
 import { oauthRoutes } from './routes/auth/oauth';
 import { signupRoute } from './routes/auth/signup';
 import { signinRoute } from './routes/auth/signin';
@@ -30,7 +31,7 @@ const server = Fastify({
 const main = async () => {
   try {
     // 1. Plugins
-    await server.register(cors, { 
+    await server.register(cors, {
       origin: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS']
     });
@@ -45,11 +46,25 @@ const main = async () => {
 
     // Public Routes
     server.get('/about.json', async (req) => {
+      const rawServices = serviceManager.getAllServices();
+
+      const services = rawServices.map((service) => ({
+        name: service.id,
+        actions: service.actions.map((action) => ({
+          name: action.id,
+          description: action.description
+        })),
+        reactions: service.reactions.map((reaction) => ({
+          name: reaction.id,
+          description: reaction.description
+        }))
+      }));
+
       return {
         client: { host: req.ip },
         server: {
           current_time: Math.floor(Date.now() / 1000),
-          services: serviceManager.getAllServices()
+          services: services
         }
       };
     });
@@ -61,6 +76,7 @@ const main = async () => {
         await api.register(accountRoutes, { prefix: '/auth' });
         await api.register(signupRoute, { prefix: '/auth' });
         await api.register(signinRoute, { prefix: '/auth' });
+        await api.register(meRoute, { prefix: '/auth' });
         api.route(forgotPasswordRoute);
         api.route(resetPasswordRoute);
 

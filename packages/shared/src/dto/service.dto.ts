@@ -8,12 +8,19 @@ export interface ServiceDto {
   reactions: ServiceReactionDto[];
 }
 
+export interface ServiceActionValueDto {
+    name: string;
+    description: string;
+    example?: string;
+}
+
 export interface ServiceActionDto {
   id: string;
   name: string;
   description: string;
   parameters: ParameterDto[];
   scopes?: string[];
+  return_values?: ServiceActionValueDto[];
 }
 
 export interface ServiceReactionDto {

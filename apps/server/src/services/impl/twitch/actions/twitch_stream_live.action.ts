@@ -1,6 +1,6 @@
 import { AxiosAdapter } from '@area/shared';
 import { IAction } from '../../../../interfaces/service.interface';
-import { getAccessToken } from '../../../../utils/token.utils';
+import { getAccessTokenWithRefresh } from '../../../../utils/token.utils';
 import { UserWithAccounts } from '../../../../types/user.types';
 
 interface TwitchLiveParams {
@@ -19,11 +19,17 @@ export const TwitchStreamLiveAction: IAction<TwitchLiveParams, TwitchLiveState> 
     { name: 'streamer_login', description: 'Streamer Username', type: 'string', required: true }
   ],
   state: { isLive: false },
+  return_values: [
+    { name: 'streamer', description: 'Streamer Username', example: 'some_streamer' },
+    { name: 'title', description: 'Stream Title', example: 'Playing some games!' },
+    { name: 'game', description: 'Game being played', example: 'Fortnite' },
+    { name: 'link', description: 'Link to the stream', example: 'https://twitch.tv/some_streamer' }
+  ],
   scopes: ['user:read:email'],
 
   check: async (user: UserWithAccounts, params: TwitchLiveParams, previousState?: TwitchLiveState) => {
     try {
-      const token = getAccessToken(user, 'twitch');
+      const token = await getAccessTokenWithRefresh(user, 'twitch');
       const clientId = process.env.TWITCH_CLIENT_ID || '';
       const http = new AxiosAdapter();
 

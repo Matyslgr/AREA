@@ -23,12 +23,36 @@ const actionObject = {
     scopes: {
       type: 'array',
       items: { type: 'string' }
+    },
+    return_values: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          name: { type: 'string' },
+          description: { type: 'string' },
+          example: { type: 'string' }
+        }
+      }
     }
   }
 };
 
 const reactionObject = {
-  ...actionObject
+  type: 'object',
+  properties: {
+    id: { type: 'string' },
+    name: { type: 'string' },
+    description: { type: 'string' },
+    parameters: {
+      type: 'array',
+      items: parameterObject
+    },
+    scopes: {
+      type: 'array',
+      items: { type: 'string' }
+    }
+  }
 };
 
 const serviceObject = {

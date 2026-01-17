@@ -17,6 +17,14 @@ interface OAuthLinkBody {
 interface AuthorizeQuery {
   scope?: string;
   mode?: 'login' | 'connect';
+  source?: 'web' | 'mobile';
+  redirect: string;
+}
+
+interface CallbackQuery {
+  code: string;
+  state: string;
+  error?: string;
 }
 
 export async function oauthRoutes(fastify: FastifyInstance) {
@@ -26,7 +34,7 @@ export async function oauthRoutes(fastify: FastifyInstance) {
     schema: getAuthUrlSchema
   }, async (request, reply) => {
     const { provider: providerName } = request.params;
-    const { scope: requestedScope, mode } = request.query;
+    const { scope: requestedScope, mode, source, redirect } = request.query;
 
     try {
       const providerStrategy = OAuthFactory.getProvider(providerName);
@@ -56,7 +64,8 @@ export async function oauthRoutes(fastify: FastifyInstance) {
             where: { user_id: decoded.id, provider: providerName }
           });
           if (account && account.scope) {
-            finalScopeList.push(...account.scope.split(' '));
+            const accountScopes = account.scope.split(/[\s,]+/).filter(s => s.length > 0);
+            finalScopeList.push(...accountScopes);
           }
         } catch (error) {
           // Handle token verification error if needed
@@ -69,6 +78,8 @@ export async function oauthRoutes(fastify: FastifyInstance) {
       const statePayload: any = {
         mode: mode || 'login',
         provider: providerName,
+        source: source || 'web',
+        redirect: redirect
       };
 
       if (mode === 'connect' && authHeader) {
@@ -106,6 +117,96 @@ export async function oauthRoutes(fastify: FastifyInstance) {
         return reply.status(400).send({ error: error.message });
       }
       return reply.status(500).send({ error: 'Failed to generate OAuth authorization URL' });
+    }
+  });
+
+  fastify.get<{ Querystring: CallbackQuery }>('/oauth/callback', async (request, reply) => {
+    const { code, state, error } = request.query;
+
+    const doRedirect = (target: string, params: Record<string, string>) => {
+      const query = new URLSearchParams(params).toString();
+       return reply.redirect(`${target}?${query}`);
+    };
+
+    const stateJson = Buffer.from(state, 'base64url').toString('utf-8');
+    const stateData = JSON.parse(stateJson);
+    const { provider, source, mode, redirect } = stateData;
+
+    const isMobile = source === 'mobile';
+
+    if (error) {
+      request.log.error(`OAuth provider error: ${error}`);
+      let targetRedirect = redirect || (source === 'mobile' ? 'area://oauth-callback' : 'http://localhost:8081/auth/callback');
+      if (isMobile) {
+        return reply.redirect(`${targetRedirect}?error=oauth_provider_error`);
+      }
+      return doRedirect(targetRedirect, {
+        error: 'oauth_provider_error',
+        state: state
+      });
+    }
+
+    let targetRedirect = '';
+
+    if (redirect) {
+      targetRedirect = redirect; // Will be "exp://..." for dev
+    } else {
+      console.error('No redirect URL provided in state, falling back to defaults');
+      targetRedirect = source === 'mobile' ? 'area://oauth-callback' : 'http://localhost:8081/auth/callback';
+    }
+
+    console.log('OAuth Callback State Data:', stateData);
+    console.log('Is Mobile:', isMobile);
+
+    try {
+      if (mode === 'login') {
+        // Perform the logic internally (Exchange code -> token)
+        const result = await authManager.loginWithOAuth(provider, code);
+
+        // Generate the App JWT
+        const token = fastify.jwt.sign({
+          id: result.user.id,
+          email: result.user.email,
+          username: result.user.username
+        });
+
+        // Redirect with token and isNewUser info
+        return doRedirect(targetRedirect, {
+          token,
+          isNewUser: String(result.isNewUser)
+        });
+      } else if (mode === 'connect') {
+        // For connecting an account, we need the user's JWT from state
+        const userToken = stateData.token;
+        if (!userToken) {
+          throw new Error('Missing user token for account connection');
+        }
+        const decoded = fastify.jwt.verify<{ id: string }>(userToken);
+
+        // Link the OAuth account
+        await authManager.linkOAuthAccount(decoded.id, provider, code);
+
+        console.log('OAuth account linked successfully');
+
+        // Redirect back indicating success, include state so frontend can decode redirect
+        return doRedirect(targetRedirect, {
+          linked: 'true',
+          state: state
+        });
+      } else {
+        throw new Error('Invalid mode in state');
+      }
+
+    } catch (err: any) {
+      request.log.error(err);
+      const isMobileGuess = state && state.includes('mobile');
+      if (isMobileGuess) {
+        return reply.redirect(`${targetRedirect}?error=auth_failed`);
+      }
+      return doRedirect(targetRedirect, {
+        error: 'auth_failed',
+        state: state
+      });
     }
   });
 

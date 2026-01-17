@@ -43,4 +43,12 @@ export class AxiosAdapter implements IHttpClient {
     });
     return response.data;
   }
+
+  async patch<T>(url: string, data?: unknown, config?: HttpRequestConfig): Promise<T> {
+    const response = await this.client.patch<T>(url, data, {
+      headers: config?.headers,
+      params: config?.params,
+    });
+    return response.data;
+  }
 }

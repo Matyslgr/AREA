@@ -1,5 +1,5 @@
-import { useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
+import { useState, useEffect } from "react"
+import { Link, useNavigate, useSearchParams } from "react-router-dom"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -15,6 +15,16 @@ interface SigninFormProps extends React.ComponentProps<"form"> {
   onOAuthSignin?: (provider: string) => void
 }
 
+const ERROR_MESSAGES: Record<string, string> = {
+  missing_code: "OAuth authentication failed: No authorization code received",
+  missing_provider: "OAuth authentication failed: Provider not specified",
+  auth_failed: "Authentication failed. Please try again.",
+  session_expired: "Your session has expired. Please sign in again.",
+  oauth_init_failed: "Failed to start authentication. Please try again.",
+  oauth_provider_error: "The service denied the authentication request. Please check your permissions and try again.",
+  user_fetch_failed: "Failed to retrieve user information. Please try again.",
+}
+
 export function SigninForm({
   className,
   onOAuthSignin,
@@ -26,6 +36,17 @@ export function SigninForm({
   const [loading, setLoading] = useState(false)
   const { login } = useAuth()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  useEffect(() => {
+    const errorParam = searchParams.get('error')
+    if (errorParam) {
+      const errorMessage = ERROR_MESSAGES[errorParam] || "An error occurred. Please try again."
+      setError(errorMessage)
+      searchParams.delete('error')
+      setSearchParams(searchParams, { replace: true })
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

@@ -1,9 +1,11 @@
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { SignupForm } from "@/components/signup-form"
 import { api } from "@/lib/api"
 import { Zap } from "lucide-react"
 
 export default function SignupPage() {
+  const navigate = useNavigate()
+
   const handleOAuthSignup = async (provider: string) => {
     try {
       let scope = ""
@@ -31,12 +33,13 @@ export default function SignupPage() {
 
       const encodedScope = encodeURIComponent(scope)
       const { url } = await api.get<{ url: string }>(
-        `/auth/oauth/authorize/${provider}?scope=${encodedScope}&mode=login`
+        `/auth/oauth/authorize/${provider}?scope=${encodedScope}&mode=login&redirect=${encodeURIComponent(window.location.origin + "/auth/callback")}`
       )
 
       window.location.href = url
     } catch (err) {
       console.error(`Failed to start OAuth with ${provider}:`, err)
+      navigate('/signup?error=oauth_init_failed', { replace: true })
     }
   }
 
