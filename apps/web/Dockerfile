@@ -31,12 +31,14 @@ EXPOSE 8081
 # 1. Check if client.apk exists (provided by mobile_client via volume)
 # 2. If NOT (Railway case), download it manually
 # 3. Start Nginx
-CMD sh -c "if [ ! -f /var/www/shared/client.apk ]; then \
-        echo 'Web Service: APK not found (Volume empty). Downloading fallback...'; \
+CMD sh -c "mkdir -p /var/www/shared && \
+    if [ ! -f /var/www/shared/client.apk ]; then \
+        echo 'Web Service: APK not found. Downloading fallback...'; \
         curl -f -L -o /var/www/shared/client.apk https://github.com/Matyslgr/AREA/releases/latest/download/client.apk || \
-        echo 'Dummy APK' > /var/www/shared/client.apk; \
+        (echo 'Download failed' && echo 'Dummy APK' > /var/www/shared/client.apk); \
     else \
-        echo 'Web Service: APK found in volume (Provided by Mobile Service).'; \
+        echo 'Web Service: APK found in volume.'; \
     fi && \
     chmod 644 /var/www/shared/client.apk && \
+    echo 'Starting Nginx...' && \
     nginx -g 'daemon off;'"
