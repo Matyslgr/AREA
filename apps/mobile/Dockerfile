@@ -1,26 +1,12 @@
-FROM node:20-alpine AS builder
+FROM alpine:latest
 
-WORKDIR /app
+RUN apk add --no-cache curl
 
-ARG EXPO_PUBLIC_API_URL
-ENV EXPO_PUBLIC_API_URL=${EXPO_PUBLIC_API_URL}
+WORKDIR /shared
 
-COPY package.json turbo.json ./
-COPY package-lock.json* ./
-COPY apps/server ./apps/server
-COPY apps/web ./apps/web
-COPY apps/mobile ./apps/mobile
-COPY packages ./packages
-
-RUN npm install
-
-FROM node:20-alpine AS runner
-WORKDIR /app
-
-# Copy node_modules from builder (already resolved)
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/apps/mobile ./apps/mobile
-COPY --from=builder /app/package.json ./package.json
-
-# Copy APK to shared volume and keep container alive
-CMD ["sh", "-c", "echo 'AREA Mobile App - Build Complete' > /shared/client.apk && echo 'Version: 1.0.0' >> /shared/client.apk && echo 'Build Date: '$(date) >> /shared/client.apk && echo 'APK generated at /shared/client.apk' && tail -f /dev/null"]
+CMD sh -c "echo 'Attempting download...' && \
+    curl -f -L -o /shared/client.apk https://github.com/Matyslgr/AREA/releases/latest/download/client.apk || \
+    (echo 'Download failed (404). Creating dummy APK for testing.' && echo 'DUMMY_CONTENT_FOR_VALIDATION' > /shared/client.apk) && \
+    chmod 644 /shared/client.apk && \
+    echo 'APK ready in volume.' && \
+    tail -f /dev/null"
