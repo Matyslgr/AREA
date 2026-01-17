@@ -43,9 +43,11 @@ jobs:
 
       - name: 📱 Generate Android APK (Release)
         run: |
-          export GRADLE_OPTS="-Xmx4g -XX:MaxMetaspaceSize=3g"
           cd apps/mobile
           npx expo prebuild --platform android
+
+          echo "org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=2g" >> android/gradle.properties
+
           cd android
           chmod +x gradlew
           ./gradlew assembleRelease
