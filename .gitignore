@@ -61,3 +61,6 @@ yarn-error.log*
 pnpm-debug.log*
 
 apps/server/prisma/seed.local.ts
+
+android/
+

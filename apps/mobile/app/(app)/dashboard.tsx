@@ -1,11 +1,12 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Text } from '@/components/ui/text';
+import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { useAuth } from '@/contexts/AuthContext';
-import { cn } from '@/lib/utils';
-import { Area, areasApi } from '@/lib/api';
+import { useTheme } from '@/contexts/ThemeContext';
+import { getColors } from '@/lib/theme-colors';
+import { Area, areasApi, authApi, OAuthAccount } from '@/lib/api';
 import { router } from 'expo-router';
-import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
   ActivityIndicator,
@@ -15,70 +16,106 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
+  Switch,
   TextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-// --- LOGIC PORTED FROM WEB ---
+// --- SERVICE UTILS ---
 
-const getServiceFromAction = (actionName: string): string => {
-  if (actionName.startsWith("GITHUB_")) return "github";
-  if (actionName.startsWith("GOOGLE_")) return "google";
-  if (actionName.startsWith("GMAIL_")) return "google";
-  if (actionName.startsWith("DISCORD_")) return "discord";
-  if (actionName.startsWith("SPOTIFY_")) return "spotify";
-  if (actionName.startsWith("TWITCH_")) return "twitch";
-  if (actionName.startsWith("NOTION_")) return "notion";
-  if (actionName.startsWith("LINKEDIN_")) return "linkedin";
-  if (actionName.startsWith("TIMER_")) return "timer";
-  return "unknown";
+const SERVICE_CONFIG: Record<
+  string,
+  { name: string; icon: ImageSourcePropType; useTint: boolean }
+> = {
+  google: {
+    name: 'Google',
+    icon: require('../../assets/google.png'),
+    useTint: false,
+  },
+  github: {
+    name: 'GitHub',
+    icon: require('../../assets/github.png'),
+    useTint: true,
+  },
+  spotify: {
+    name: 'Spotify',
+    icon: require('../../assets/spotify.png'),
+    useTint: false,
+  },
+  notion: {
+    name: 'Notion',
+    icon: require('../../assets/notion.png'),
+    useTint: true,
+  },
+  linkedin: {
+    name: 'LinkedIn',
+    icon: require('../../assets/linkedin.png'),
+    useTint: false,
+  },
+  twitch: {
+    name: 'Twitch',
+    icon: require('../../assets/twitch.png'),
+    useTint: false,
+  },
 };
 
-// Mapping for local assets instead of string URLs
-const serviceIcons: Record<string, ImageSourcePropType> = {
-  github: require('../../assets/github.png'),
-  google: require('../../assets/google.png'),
-  spotify: require('../../assets/spotify.png'),
-  twitch: require('../../assets/twitch.png'),
-  notion: require('../../assets/notion.png'),
-  linkedin: require('../../assets/linkedin.png'),
+const ALL_PROVIDERS = ['google', 'github', 'spotify', 'notion', 'linkedin', 'twitch'];
+
+const getServiceFromAction = (actionName: string): string => {
+  const name = actionName.toLowerCase();
+  if (name.includes("github")) return "github";
+  if (name.includes("google") || name.includes("gmail")) return "google";
+  if (name.includes("discord")) return "discord";
+  if (name.includes("spotify")) return "spotify";
+  if (name.includes("twitch")) return "twitch";
+  if (name.includes("notion")) return "notion";
+  if (name.includes("linkedin")) return "linkedin";
+  if (name.includes("timer")) return "timer";
+  return "unknown";
 };
 
 export default function DashboardScreen() {
   const { user, signOut } = useAuth();
-  const { colorScheme, setColorScheme } = useColorScheme();
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   // --- STATE ---
   const [areas, setAreas] = React.useState<Area[]>([]);
+  const [connectedAccounts, setConnectedAccounts] = React.useState<OAuthAccount[]>([]);
   const [filteredAreas, setFilteredAreas] = React.useState<Area[]>([]);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [loading, setLoading] = React.useState(true);
   const [refreshing, setRefreshing] = React.useState(false);
+  const [togglingArea, setTogglingArea] = React.useState<string | null>(null);
 
-  // --- FETCH LOGIC (Matches Web fetchAreas) ---
-  const fetchAreas = React.useCallback(async () => {
+  // --- FETCH LOGIC ---
+  const fetchData = React.useCallback(async () => {
     try {
-      const response = await areasApi.list();
-      if (response.data) {
-        setAreas(response.data);
-        if (searchQuery.trim() === "") {
-          setFilteredAreas(response.data);
-        }
+      const [accountsRes, areasRes] = await Promise.all([
+        authApi.getOAuthAccounts(),
+        areasApi.list(),
+      ]);
+
+      if (accountsRes.data?.accounts) {
+        setConnectedAccounts(accountsRes.data.accounts);
+      }
+      if (areasRes.data) {
+        setAreas(areasRes.data);
       }
     } catch (error) {
-      console.error('Failed to fetch areas:', error);
+      console.error('Failed to fetch dashboard data:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [searchQuery]);
-
-  React.useEffect(() => {
-    fetchAreas();
   }, []);
 
-  // --- FILTERING EFFECT (Matches Web useEffect) ---
+  React.useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // --- FILTERING EFFECT ---
   React.useEffect(() => {
     if (searchQuery.trim() === "") {
       setFilteredAreas(areas);
@@ -93,128 +130,191 @@ export default function DashboardScreen() {
 
   const onRefresh = React.useCallback(() => {
     setRefreshing(true);
-    fetchAreas();
-  }, [fetchAreas]);
+    fetchData();
+  }, [fetchData]);
 
-  // --- ACTIONS ---
-  function toggleTheme() {
-    setColorScheme(colorScheme === 'dark' ? 'light' : 'dark');
+  async function toggleArea(areaId: string, currentStatus: boolean) {
+    setTogglingArea(areaId);
+    try {
+      const { error } = await areasApi.update(areaId, { is_active: !currentStatus });
+      if (!error) {
+        setAreas((prev) =>
+          prev.map((area) =>
+            area.id === areaId ? { ...area, is_active: !currentStatus } : area
+          )
+        );
+      }
+    } finally {
+      setTogglingArea(null);
+    }
   }
 
   async function onLogout() {
     await signOut();
   }
 
-  // --- CALCULATED STATS (Matches Web Logic) ---
+  // --- CALCULATED STATS ---
+  const connectedProviders = new Set(connectedAccounts.map((a) => a.provider));
   const activeAreasCount = areas.filter(area => area.is_active).length;
-  const totalReactions = areas.reduce((sum, area) => sum + area.reactions.length, 0);
+  const totalReactions = areas.reduce((sum, area) => sum + (area.reactions?.length || 0), 0);
   const activePercentage = areas.length > 0 ? Math.round((activeAreasCount / areas.length) * 100) : 0;
 
   if (loading) {
     return (
-      <SafeAreaView className="bg-background flex-1 items-center justify-center">
-        <ActivityIndicator size="large" />
-        <Text className="text-muted-foreground mt-4">Loading your areas...</Text>
+      <SafeAreaView
+        className="flex-1 items-center justify-center"
+        style={{ backgroundColor: colors.background }}
+      >
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={{ color: colors.mutedForeground, marginTop: 16 }}>Loading your areas...</Text>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView className="bg-background flex-1">
+    <SafeAreaView
+      className="flex-1"
+      style={{ backgroundColor: colors.background }}
+    >
       <ScrollView
         contentContainerStyle={{ flexGrow: 1 }}
+        style={{ backgroundColor: colors.background }}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
         }
       >
-        <View className="flex-1 px-6 py-6">
+        <View className="flex-1 px-6 py-6" style={{ backgroundColor: colors.background }}>
           {/* Header */}
           <View className="mb-6 flex-row items-center justify-between">
             <View>
-              <Text className="text-muted-foreground text-sm">Welcome back,</Text>
-              <Text className="text-foreground text-xl font-bold">
+              <Text style={{ color: colors.mutedForeground, fontSize: 14 }}>Welcome back,</Text>
+              <Text style={{ color: colors.foreground, fontSize: 20, fontWeight: 'bold' }}>
                 {user?.username || 'User'}
               </Text>
             </View>
             <View className="flex-row gap-2">
               <Pressable
-                onPress={toggleTheme}
-                className="bg-secondary h-10 w-10 items-center justify-center rounded-full"
-              >
-                <Text>{colorScheme === 'dark' ? '☀️' : '🌙'}</Text>
-              </Pressable>
-              <Pressable
                 onPress={onLogout}
-                className="bg-secondary h-10 w-10 items-center justify-center rounded-full"
+                className="h-10 w-10 items-center justify-center rounded-full"
+                style={{ backgroundColor: colors.secondary }}
               >
                 <Text>👋</Text>
               </Pressable>
             </View>
           </View>
 
-          {/* Stats Cards (Matches Web Stats) */}
+          {/* Stats Cards */}
           <View className="mb-6 flex-row gap-3">
-            {/* Total AREAs */}
-            <Card className="border-border flex-1 bg-card">
+            <Card className="flex-1" style={{ backgroundColor: colors.card, borderColor: colors.border }}>
               <CardContent className="items-center py-4">
-                <Text className="text-primary text-2xl font-bold">{areas.length}</Text>
-                <Text className="text-muted-foreground text-xs text-center">Total AREAs</Text>
-                <Text className="text-muted-foreground text-[10px] mt-1">{activeAreasCount} active</Text>
+                <Text style={{ color: colors.primary, fontSize: 24, fontWeight: 'bold' }}>{areas.length}</Text>
+                <Text style={{ color: colors.mutedForeground, fontSize: 12, textAlign: 'center' }}>Total AREAs</Text>
+                <Text style={{ color: colors.mutedForeground, fontSize: 10, marginTop: 4 }}>{activeAreasCount} active</Text>
               </CardContent>
             </Card>
 
-            {/* Active Percentage */}
-            <Card className="border-border flex-1 bg-card">
+            <Card className="flex-1" style={{ backgroundColor: colors.card, borderColor: colors.border }}>
               <CardContent className="items-center py-4">
-                <Text className="text-green-500 text-2xl font-bold">{activePercentage}%</Text>
-                <Text className="text-muted-foreground text-xs text-center">Active Rate</Text>
-                <Text className="text-muted-foreground text-[10px] mt-1">% of total</Text>
+                <Text style={{ color: '#22c55e', fontSize: 24, fontWeight: 'bold' }}>{activePercentage}%</Text>
+                <Text style={{ color: colors.mutedForeground, fontSize: 12, textAlign: 'center' }}>Active Rate</Text>
+                <Text style={{ color: colors.mutedForeground, fontSize: 10, marginTop: 4 }}>% of total</Text>
               </CardContent>
             </Card>
 
-            {/* Total Reactions */}
-            <Card className="border-border flex-1 bg-card">
+            <Card className="flex-1" style={{ backgroundColor: colors.card, borderColor: colors.border }}>
               <CardContent className="items-center py-4">
-                <Text className="text-orange-500 text-2xl font-bold">{totalReactions}</Text>
-                <Text className="text-muted-foreground text-xs text-center">Reactions</Text>
-                <Text className="text-muted-foreground text-[10px] mt-1">Total</Text>
+                <Text style={{ color: '#f97316', fontSize: 24, fontWeight: 'bold' }}>{totalReactions}</Text>
+                <Text style={{ color: colors.mutedForeground, fontSize: 12, textAlign: 'center' }}>Reactions</Text>
+                <Text style={{ color: colors.mutedForeground, fontSize: 10, marginTop: 4 }}>Total</Text>
               </CardContent>
             </Card>
           </View>
 
-          {/* Search & Create (Matches Web Controls) */}
+          {/* Search & Quick Actions */}
           <View className="mb-6 gap-3">
-            <View className="flex-row items-center gap-2 bg-secondary/50 rounded-xl px-4 py-3 border border-border">
-              <Text className="text-muted-foreground">🔍</Text>
+            <View
+              className="flex-row items-center gap-2 rounded-xl px-4 py-3"
+              style={{ backgroundColor: colors.secondary, borderColor: colors.border, borderWidth: 1 }}
+            >
+              <Text style={{ color: colors.mutedForeground }}>🔍</Text>
               <TextInput
                 placeholder="Search areas..."
-                placeholderTextColor="#9ca3af"
+                placeholderTextColor={colors.mutedForeground}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
-                className="flex-1 text-foreground"
+                className="flex-1"
+                style={{ color: colors.foreground }}
               />
             </View>
 
-            <Button
-              className="bg-primary w-full"
-              onPress={() => router.push('/(app)/create-area')}
-            >
-              <Text className="text-primary-foreground font-semibold">+ Create AREA</Text>
-            </Button>
+            <Card style={{ backgroundColor: colors.card, borderColor: colors.border }}>
+              <CardContent className="flex-row gap-3 py-4">
+                <Button variant="default" className="flex-1" onPress={() => router.push('/(app)/create-area')}>
+                  <Text style={{ color: colors.primaryForeground, fontSize: 14 }}>+ New AREA</Text>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onPress={() => router.push('/(app)/account-setup')}
+                  style={{ borderColor: colors.border }}
+                >
+                  <Text style={{ color: colors.foreground, fontSize: 14 }}>Connect Service</Text>
+                </Button>
+              </CardContent>
+            </Card>
+          </View>
+
+          {/* Theme Switcher */}
+          <ThemeSwitcher />
+
+          {/* Connected Services */}
+          <View className="mb-6">
+            <Text style={{ color: colors.foreground, fontWeight: '600', marginBottom: 12 }}>Connected Services</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View className="flex-row gap-3">
+                {ALL_PROVIDERS.map((provider) => {
+                  const config = SERVICE_CONFIG[provider];
+                  const isConnected = connectedProviders.has(provider);
+                  return (
+                    <ServiceCard
+                      key={provider}
+                      name={config.name}
+                      icon={config.icon}
+                      useTint={config.useTint}
+                      connected={isConnected}
+                      isDark={isDark}
+                      colors={colors}
+                    />
+                  );
+                })}
+                <Pressable
+                  onPress={() => router.push('/(app)/account-setup')}
+                  className="h-20 w-20 items-center justify-center rounded-2xl border-dashed"
+                  style={{ backgroundColor: colors.muted, borderColor: colors.border, borderWidth: 1 }}
+                >
+                  <Text style={{ color: colors.mutedForeground, fontSize: 24 }}>+</Text>
+                </Pressable>
+              </View>
+            </ScrollView>
           </View>
 
           {/* Areas List */}
           <View className="mb-6">
-            <Text className="text-foreground font-semibold mb-3">Your Automation Workflows</Text>
+            <Text style={{ color: colors.foreground, fontWeight: '600', marginBottom: 12 }}>Your Automation Workflows</Text>
 
             {filteredAreas.length === 0 ? (
-              <Card className="border-border bg-card">
+              <Card style={{ backgroundColor: colors.card, borderColor: colors.border }}>
                 <CardContent className="items-center py-8">
-                  <Text className="text-muted-foreground mb-2 text-4xl">⚡</Text>
-                  <Text className="text-foreground mb-1 font-medium">
+                  <Text style={{ color: colors.mutedForeground, marginBottom: 8, fontSize: 32 }}>⚡</Text>
+                  <Text style={{ color: colors.foreground, marginBottom: 4, fontWeight: '500' }}>
                     {searchQuery ? "No matching areas" : "No areas yet"}
                   </Text>
-                  <Text className="text-muted-foreground text-center text-sm px-4">
+                  <Text style={{ color: colors.mutedForeground, textAlign: 'center', fontSize: 14, paddingHorizontal: 16 }}>
                     {searchQuery
                       ? `No areas matching "${searchQuery}"`
                       : "Create your first automation to get started with AREA"
@@ -225,21 +325,79 @@ export default function DashboardScreen() {
             ) : (
               <View className="gap-3">
                 {filteredAreas.map((area) => (
-                  <AreaCard key={area.id} area={area} colorScheme={colorScheme} />
+                  <AreaCard
+                    key={area.id}
+                    area={area}
+                    toggling={togglingArea === area.id}
+                    onToggle={() => toggleArea(area.id, area.is_active)}
+                    colors={colors}
+                  />
                 ))}
               </View>
             )}
           </View>
         </View>
-      </ScrollView>
-    </SafeAreaView>
+      </ScrollView >
+    </SafeAreaView >
   );
 }
 
-// --- UPDATED CARD LOGIC ---
+function ServiceCard({
+  name,
+  icon,
+  useTint,
+  connected,
+  isDark,
+  colors,
+}: {
+  name: string;
+  icon: ImageSourcePropType;
+  useTint: boolean;
+  connected: boolean;
+  isDark: boolean;
+  colors: ReturnType<typeof getColors>;
+}) {
+  return (
+    <Pressable
+      onPress={() => router.push('/(app)/account-setup')}
+      className="h-20 w-20 items-center justify-center rounded-2xl"
+      style={{
+        backgroundColor: connected ? colors.card : colors.muted,
+        borderColor: colors.border,
+        borderWidth: 1,
+        opacity: connected ? 1 : 0.5,
+      }}
+    >
+      <Image
+        source={icon}
+        className="h-8 w-8"
+        tintColor={Platform.select({
+          native: useTint ? (isDark ? 'white' : 'black') : undefined,
+        })}
+      />
+      <Text style={{ color: colors.foreground, marginTop: 4, fontSize: 12 }}>{name}</Text>
+      {connected && (
+        <View
+          className="absolute -right-1 -top-1 h-3 w-3 rounded-full"
+          style={{ backgroundColor: '#22c55e', borderWidth: 2, borderColor: colors.background }}
+        />
+      )}
+    </Pressable>
+  );
+}
 
-function AreaCard({ area, colorScheme }: { area: Area, colorScheme: 'light' | 'dark' | undefined }) {
-  // Logic from Web: getUniqueServices
+function AreaCard({
+  area,
+  toggling,
+  onToggle,
+  colors,
+}: {
+  area: Area;
+  toggling: boolean;
+  onToggle: () => void;
+  colors: ReturnType<typeof getColors>;
+}) {
+  // Get unique services for iconography
   const getUniqueServices = (area: Area): string[] => {
     const services = new Set<string>();
     services.add(getServiceFromAction(area.action.name));
@@ -252,71 +410,83 @@ function AreaCard({ area, colorScheme }: { area: Area, colorScheme: 'light' | 'd
   const uniqueServices = getUniqueServices(area);
 
   return (
-    <Pressable onPress={() => { /* Navigate to detail if needed */ }}>
-      <Card className="border-border bg-card">
-        <CardContent className="py-4 space-y-3">
-          {/* Header: Name and Status */}
-          <View className="flex-row justify-between items-start">
-            <View className="flex-1 mr-2">
-              <Text className="text-foreground font-bold text-lg" numberOfLines={1}>
-                {area.name}
-              </Text>
-              <Text className="text-muted-foreground text-xs mt-1" numberOfLines={1}>
-                {area.action.name.replace(/_/g, " ")}
-              </Text>
-            </View>
+    <Card style={{ backgroundColor: colors.card, borderColor: colors.border }}>
+      <CardContent className="py-4 space-y-3">
+        {/* Header: Name and Status */}
+        <View className="flex-row justify-between items-start">
+          <View className="flex-1 mr-2">
+            <Text style={{ color: colors.foreground, fontWeight: 'bold', fontSize: 18 }} numberOfLines={1}>
+              {area.name}
+            </Text>
+            <Text style={{ color: colors.mutedForeground, fontSize: 12, marginTop: 4 }} numberOfLines={1}>
+              {area.action.name.split('.').pop()?.replace(/_/g, " ")}
+            </Text>
+          </View>
 
+          <View className="flex-row items-center gap-3">
             <View
-              className={cn(
-                'rounded-full px-2 py-1 border',
-                area.is_active
-                  ? 'bg-green-500/10 border-green-500/20'
-                  : 'bg-zinc-500/10 border-zinc-500/20'
-              )}
+              className="rounded-full px-2 py-1"
+              style={{
+                backgroundColor: area.is_active ? 'rgba(34, 197, 94, 0.1)' : 'rgba(113, 113, 122, 0.1)',
+                borderColor: area.is_active ? 'rgba(34, 197, 94, 0.2)' : 'rgba(113, 113, 122, 0.2)',
+                borderWidth: 1,
+              }}
             >
               <Text
-                className={cn(
-                  'text-xs font-medium',
-                  area.is_active ? 'text-green-500' : 'text-zinc-500'
-                )}
+                style={{
+                  fontSize: 12,
+                  fontWeight: '500',
+                  color: area.is_active ? '#22c55e' : '#71717a',
+                }}
               >
-                {area.is_active ? 'Active' : 'Inactive'}
+                {area.is_active ? 'Active' : 'Paused'}
               </Text>
             </View>
+            {toggling ? (
+              <ActivityIndicator size="small" color={colors.primary} />
+            ) : (
+              <Switch
+                value={area.is_active}
+                onValueChange={onToggle}
+                trackColor={{ false: '#767577', true: '#22c55e' }}
+                thumbColor={area.is_active ? '#fff' : '#f4f3f4'}
+              />
+            )}
           </View>
+        </View>
 
-          {/* Icons Row */}
-          <View className="flex-row flex-wrap gap-2">
-            {uniqueServices.map((service) => (
-               <View
-                key={service}
-                className="h-8 w-8 rounded-lg bg-secondary flex items-center justify-center overflow-hidden border border-border"
-              >
-                <Image
-                  source={serviceIcons[service] || require('../../assets/google.png')} // Fallback icon
-                  className={cn('h-5 w-5',
-                    // Optional: tint Logic if needed, similar to Web might not need it for logos
-                    // keeping it simple
-                  )}
-                  resizeMode="contain"
-                />
-              </View>
-            ))}
-          </View>
+        {/* Icons Row */}
+        <View className="flex-row flex-wrap gap-2">
+          {uniqueServices.map((service) => (
+            <View
+              key={service}
+              className="h-8 w-8 rounded-lg flex items-center justify-center overflow-hidden"
+              style={{ backgroundColor: colors.secondary, borderColor: colors.border, borderWidth: 1 }}
+            >
+              <Image
+                source={SERVICE_CONFIG[service]?.icon || require('../../assets/google.png')}
+                className="h-5 w-5"
+                resizeMode="contain"
+              />
+            </View>
+          ))}
+        </View>
 
-          {/* Footer: Reactions count and Date */}
-          <View className="flex-row justify-between items-center border-t border-border pt-3 mt-1">
-             <Text className="text-muted-foreground text-xs font-medium">
-               {area.reactions.length} reaction{area.reactions.length !== 1 ? "s" : ""}
-             </Text>
-             {area.last_executed_at && (
-               <Text className="text-muted-foreground text-[10px]">
-                 Last run: {new Date(area.last_executed_at).toLocaleDateString()}
-               </Text>
-             )}
-          </View>
-        </CardContent>
-      </Card>
-    </Pressable>
+        {/* Footer: Reactions count and Date */}
+        <View
+          className="flex-row justify-between items-center pt-3 mt-1"
+          style={{ borderTopWidth: 1, borderTopColor: colors.border }}
+        >
+          <Text style={{ color: colors.mutedForeground, fontSize: 12, fontWeight: '500' }}>
+            {area.reactions.length} reaction{area.reactions.length !== 1 ? "s" : ""}
+          </Text>
+          {area.last_executed_at && (
+            <Text style={{ color: colors.mutedForeground, fontSize: 10 }}>
+              Last run: {new Date(area.last_executed_at).toLocaleDateString()}
+            </Text>
+          )}
+        </View>
+      </CardContent>
+    </Card>
   );
 }

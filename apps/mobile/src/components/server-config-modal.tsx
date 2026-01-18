@@ -5,7 +5,7 @@ import { Text } from '@/components/ui/text';
 import { setApiUrl } from '@/lib/api';
 
 export function ServerConfigModal({ visible, onSave }: { visible: boolean, onSave: () => void }) {
-  const [url, setUrl] = useState('https://selectable-unenergized-lashandra.ngrok-free.dev');
+  const [url, setUrl] = useState('https://server-production-613e.up.railway.app');
 
   const handleSave = async () => {
     if (!url) return;
