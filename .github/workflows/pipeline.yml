@@ -60,8 +60,9 @@ jobs:
       - name: 📤 Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: release-files
-          path: release-assets/
+          name: client-apk
+          path: client.apk
+          if-no-files-found: error
 
   mirror:
     name: 🪞 Push to Epitech Mirror
