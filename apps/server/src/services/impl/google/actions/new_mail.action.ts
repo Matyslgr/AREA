@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { IAction } from '../../../../interfaces/service.interface';
-import { getAccessToken } from '../../../../utils/token.utils';
+import { getAccessTokenWithRefresh } from '../../../../utils/token.utils';
 import { UserWithAccounts } from '../../../../types/user.types';
 
 interface GoogleNewMailParams {
@@ -21,11 +21,17 @@ export const GoogleNewMailAction: IAction<GoogleNewMailParams, GoogleNewMailStat
   state: {
     lastMessageId: ''
   },
+  return_values: [
+    { name: 'subject', description: 'Subject of the email', example: 'Meeting Reminder' },
+    { name: 'from', description: 'Sender email address', example: 'example@example.com' },
+    { name: 'snippet', description: 'Short preview of the content', example: 'Don\'t forget our meeting tomorrow at 10am...' },
+    { name: 'link', description: 'Direct link to the email', example: 'https://mail.google.com/mail/u/0/#inbox/12345' }
+  ],
   scopes: ['https://www.googleapis.com/auth/gmail.readonly'],
 
   check: async (user: UserWithAccounts, params: GoogleNewMailParams, previousState?: GoogleNewMailState) => {
     try {
-      const token = getAccessToken(user, 'google');
+      const token = await getAccessTokenWithRefresh(user, 'google');
 
       const listUrl = 'https://gmail.googleapis.com/gmail/v1/users/me/messages';
       const listResponse = await axios.get(listUrl, {
