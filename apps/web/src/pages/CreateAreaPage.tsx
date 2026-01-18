@@ -66,6 +66,10 @@ const getServiceIcon = (serviceId: string) => {
   return serviceIcons[serviceId] || "https://img.icons8.com/fluency/96/services.png"
 }
 
+const shouldInvertIcon = (serviceId: string) => {
+  return serviceId === "github" || serviceId === "notion"
+}
+
 // Helper component to display variable pills
 const VariablePills = ({
   variables,
@@ -78,7 +82,7 @@ const VariablePills = ({
 
   return (
     <div className="mb-4 p-3 bg-zinc-900/50 border border-zinc-800 rounded-lg">
-      <p className="text-xs font-semibold text-zinc-400 mb-2 uppercase tracking-wider">
+      <p className="text-xs font-semibold text-indigo-300 mb-2 uppercase tracking-wider">
         Available Ingredients (Click to insert)
       </p>
       <div className="flex flex-wrap gap-2">
@@ -593,7 +597,7 @@ export default function CreateAreaPage() {
                             <img
                               src={getServiceIcon(service.id) || "/assets/default.png"}
                               alt={service.name}
-                              className="h-12 w-12 mx-auto mb-2"
+                              className={`h-12 w-12 mx-auto mb-2 ${shouldInvertIcon(service.id) ? "invert" : ""}`}
                             />
                             <p className="text-sm font-medium text-zinc-200">{service.name}</p>
                             {!isLinked && (
@@ -628,7 +632,7 @@ export default function CreateAreaPage() {
                             <img
                               src={getServiceIcon(service.id) || "/assets/default.png"}
                               alt={service.name}
-                              className="h-12 w-12 mx-auto mb-2"
+                              className={`h-12 w-12 mx-auto mb-2 ${shouldInvertIcon(service.id) ? "invert" : ""}`}
                             />
                             <p className="text-sm font-medium text-zinc-200">{service.name}</p>
                             {!isLinked && (
@@ -653,7 +657,7 @@ export default function CreateAreaPage() {
                   <img
                     src={getServiceIcon(selectedActionService.id) || "/assets/default.png"}
                     alt={selectedActionService.name}
-                    className="h-10 w-10"
+                    className={`h-10 w-10 ${shouldInvertIcon(selectedActionService.id) ? "invert" : ""}`}
                   />
                   <div>
                     <p className="font-semibold text-white">{selectedActionService.name} Actions</p>
@@ -708,7 +712,7 @@ export default function CreateAreaPage() {
                   <img
                     src={getServiceIcon(selectedReactionService.id) || "/assets/default.png"}
                     alt={selectedReactionService.name}
-                    className="h-10 w-10"
+                    className={`h-10 w-10 ${shouldInvertIcon(selectedReactionService.id) ? "invert" : ""}`}
                   />
                   <div>
                     <p className="font-semibold text-white">{selectedReactionService.name} Reactions</p>

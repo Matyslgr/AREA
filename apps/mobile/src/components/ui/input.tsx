@@ -1,30 +1,27 @@
-import { cn } from '@/lib/utils';
-import { Platform, TextInput, type TextInputProps } from 'react-native';
+import { TextInput, type TextInputProps } from 'react-native';
+import { useTheme } from '@/contexts/ThemeContext';
 
-function Input({
-  className,
-  placeholderClassName,
-  ...props
-}: TextInputProps & React.RefAttributes<TextInput>) {
+function Input(props: TextInputProps & { className?: string; placeholderClassName?: string }) {
+  const { isDark } = useTheme();
+
+  const inputStyle = {
+    backgroundColor: isDark ? '#27272a' : '#f5f5f5',
+    borderColor: isDark ? '#3f3f46' : '#d4d4d8',
+    color: isDark ? 'white' : 'black',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+    fontSize: 16,
+    height: 40,
+    width: '100%',
+  };
+
   return (
     <TextInput
-      className={cn(
-        'dark:bg-input/30 border-input bg-background text-foreground flex h-10 w-full min-w-0 flex-row items-center rounded-md border px-3 py-1 text-base leading-5 shadow-sm shadow-black/5 sm:h-9',
-        props.editable === false &&
-          cn(
-            'opacity-50',
-            Platform.select({ web: 'disabled:pointer-events-none disabled:cursor-not-allowed' })
-          ),
-        Platform.select({
-          web: cn(
-            'placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground outline-none transition-[color,box-shadow] md:text-sm',
-            'focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
-            'aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive'
-          ),
-          native: 'placeholder:text-muted-foreground/50',
-        }),
-        className
-      )}
+      style={inputStyle}
+      placeholderTextColor={isDark ? '#71717a' : '#a1a1a6'}
+      editable={props.editable !== false}
       {...props}
     />
   );

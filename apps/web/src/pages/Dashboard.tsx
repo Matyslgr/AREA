@@ -34,6 +34,10 @@ const serviceIcons: Record<string, string> = {
   timer: "https://img.icons8.com/fluency/96/clock.png",
 };
 
+const shouldInvertIcon = (serviceId: string) => {
+  return serviceId === "github" || serviceId === "notion";
+};
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const [areas, setAreas] = useState<AreaDto[]>([]);
@@ -236,7 +240,7 @@ export default function Dashboard() {
                         <img
                           src={serviceIcons[service] || "/assets/default.png"}
                           alt={service}
-                          className="h-5 w-5 object-contain"
+                          className={`h-5 w-5 object-contain ${shouldInvertIcon(service) ? "invert" : ""}`}
                         />
                       </div>
                     ))}
