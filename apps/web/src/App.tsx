@@ -15,7 +15,6 @@ import AreaDetailsPage from './pages/AreaDetailsPage'
 import EditAreaPage from './pages/EditAreaPage'
 import SettingsPage from './pages/SettingsPage'
 
-
 function App() {
   return (
     <ThemeProvider defaultTheme="dark" storageKey="area-ui-theme">

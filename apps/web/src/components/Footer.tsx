@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom"
 import { Zap } from "lucide-react"
 
 const serviceIcons: Record<string, string> = {
@@ -54,15 +53,7 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-10 pt-6 border-t border-zinc-800 flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="flex gap-6 text-sm">
-            <Link to="/terms" className="text-zinc-500 hover:text-zinc-300 transition-colors">
-              Terms
-            </Link>
-            <Link to="/privacy" className="text-zinc-500 hover:text-zinc-300 transition-colors">
-              Privacy
-            </Link>
-          </div>
+        <div className="mt-10 pt-6 border-t border-zinc-800 flex justify-center">
           <div className="text-zinc-600 text-sm">
             Built with passion for automation
           </div>

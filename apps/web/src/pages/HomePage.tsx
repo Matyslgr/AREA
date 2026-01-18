@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
-import { MyCarousel } from "@/components/MyCarousel"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import { Zap, ArrowRight, Sparkles, Link as LinkIcon, Clock } from "lucide-react"
@@ -133,21 +132,6 @@ export default function HomePage() {
               </p>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* Carousel Section */}
-      <section className="py-24 bg-zinc-950">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              Powerful Integrations
-            </h2>
-            <p className="text-zinc-400 text-lg">
-              Connect the tools you already use
-            </p>
-          </div>
-          <MyCarousel />
         </div>
       </section>
 

@@ -55,6 +55,15 @@ export default function SettingsPage() {
   const [savingProfile, setSavingProfile] = useState(false)
   const [savingPassword, setSavingPassword] = useState(false)
   const [unlinkingService, setUnlinkingService] = useState<string | null>(null)
+  const [confirmModal, setConfirmModal] = useState<{
+    show: boolean
+    accountId: string
+    serviceName: string
+  }>({
+    show: false,
+    accountId: "",
+    serviceName: ""
+  })
 
   useEffect(() => {
     // Wait for auth to finish loading
@@ -178,8 +187,17 @@ export default function SettingsPage() {
     }
   }
 
-  const handleUnlinkService = async (accountId: string, serviceName: string) => {
-    if (!confirm(`Are you sure you want to unlink ${serviceName}?`)) return
+  const handleUnlinkService = (accountId: string, serviceName: string) => {
+    setConfirmModal({
+      show: true,
+      accountId,
+      serviceName
+    })
+  }
+
+  const handleConfirmUnlink = async () => {
+    const { accountId, serviceName } = confirmModal
+    setConfirmModal({ show: false, accountId: "", serviceName: "", accountIdentifier: "" })
 
     try {
       setUnlinkingService(accountId)
@@ -196,6 +214,10 @@ export default function SettingsPage() {
     } finally {
       setUnlinkingService(null)
     }
+  }
+
+  const handleCancelUnlink = () => {
+    setConfirmModal({ show: false, accountId: "", serviceName: "" })
   }
 
   const isServiceLinked = (serviceId: string) => {
@@ -407,6 +429,39 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Unlink Confirmation Modal */}
+      {confirmModal.show && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="bg-zinc-900 border-zinc-800 w-full max-w-sm">
+            <CardHeader>
+              <CardTitle className="text-white">Confirm Unlinking</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-zinc-300">Are you sure you want to unlink <span className="font-semibold text-white">{confirmModal.serviceName}</span>?</p>
+
+              <p className="text-sm text-amber-400/70">⚠️ This action cannot be undone. You will need to link your account again to use this service.</p>
+
+              <div className="flex gap-3">
+                <Button
+                  onClick={handleCancelUnlink}
+                  variant="outline"
+                  className="flex-1 border-zinc-700 text-zinc-300 hover:bg-zinc-800/50"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleConfirmUnlink}
+                  disabled={unlinkingService === confirmModal.accountId}
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                >
+                  {unlinkingService === confirmModal.accountId ? "Unlinking..." : "Unlink"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       <Footer />
     </div>

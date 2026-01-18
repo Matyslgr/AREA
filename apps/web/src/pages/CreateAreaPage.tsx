@@ -13,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { ArrowLeft, ArrowRight, Check, AlertCircle, Link as LinkIcon } from "lucide-react"
+import { ArrowLeft, ArrowRight, Check, AlertCircle, Link as LinkIcon, HelpCircle } from "lucide-react"
 import { api } from "@/lib/api"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
@@ -440,13 +440,27 @@ export default function CreateAreaPage() {
     }
   };
 
+  const getParameterHint = (serviceId: string, paramName: string): string | null => {
+    const hints: Record<string, Record<string, string>> = {
+      notion: {
+        page_id: "Copy the ID from your Notion page URL after 'p=' (remove hyphens)",
+        database_id: "Copy the ID from your Notion database URL from after '.so/' to '?' (remove hyphens)",
+        parent_page_id: "Copy the ID from your parent Notion page URL after 'p=' (remove hyphens)",
+      }
+    };
+    return hints[serviceId]?.[paramName] || null;
+  };
+
   const renderParameterInput = (
     param: ServiceDto["actions"][0]["parameters"][0],
     value: unknown,
     onChange: (key: string, val: string | number | boolean) => void,
     prefix: string,
-    availableVariables?: { name: string, description: string, example?: string }[]
+    availableVariables?: { name: string, description: string, example?: string }[],
+    serviceId?: string
   ) => {
+    const hint = serviceId ? getParameterHint(serviceId, param.name) : null;
+
     return (
       <div key={param.name} className="space-y-2">
         <div className="flex justify-between items-baseline">
@@ -455,6 +469,12 @@ export default function CreateAreaPage() {
             {param.required && <span className="text-amber-400 ml-1">*</span>}
             </Label>
         </div>
+        {hint && (
+          <div className="flex items-start gap-2 p-2 bg-blue-500/10 border border-blue-500/30 rounded-md">
+            <HelpCircle className="h-4 w-4 text-blue-400 flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-blue-300">{hint}</p>
+          </div>
+        )}
 
         {/* Afficher les variables uniquement pour les champs texte des REACTIONS */}
         {availableVariables && param.type === "string" && (
@@ -693,7 +713,9 @@ export default function CreateAreaPage() {
                         param,
                         actionParams[param.name],
                         (key, val) => setActionParams({ ...actionParams, [key]: val }),
-                        "action"
+                        "action",
+                        undefined,
+                        selectedActionService?.id
                       )
                     )}
                   </div>
@@ -754,7 +776,8 @@ export default function CreateAreaPage() {
                           reactionParams[param.name],
                           (key, val) => setReactionParams({ ...reactionParams, [key]: val }),
                           "reaction",
-                          actionVariables
+                          actionVariables,
+                          selectedReactionService?.id
                         )
                       );
                     })()}
