@@ -1,19 +1,14 @@
 import { UserWithAccounts } from '../types/user.types';
-export interface Parameter {
-  name: string;
-  description: string;
-  type: 'string' | 'number' | 'boolean' | 'select';
-  required: boolean;
-  options?: string[]; // If type === 'select'
-}
+import { ServiceActionValueDto, ParameterDto } from '@area/shared/src/dto/service.dto';
 
 // The Action (The Trigger)
 export interface IAction<TParam = any, TState = any> {
   id: string;          // ex: "GITHUB_NEW_ISSUE"
   name: string;        // ex: "New Issue Detected"
   description: string;
-  parameters: Parameter[];
+  parameters: ParameterDto[];
   state: any;
+  return_values: ServiceActionValueDto[];
   scopes?: string[];
 
   /**
@@ -31,7 +26,7 @@ export interface IReaction<TParam = any> {
   id: string;          // ex: "DISCORD_SEND_MSG"
   name: string;
   description: string;
-  parameters: Parameter[];
+  parameters: ParameterDto[];
   scopes?: string[];
 
   /**
@@ -49,6 +44,7 @@ export interface IService {
   name: string;        // ex: "GitHub"
   version: string;
   description: string;
+  is_oauth: boolean;
   actions: IAction[];
   reactions: IReaction[];
 }

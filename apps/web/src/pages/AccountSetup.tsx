@@ -1,9 +1,13 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
+import { Check, Link as LinkIcon, ArrowRight, AlertCircle } from "lucide-react"
+import { api } from "@/lib/api"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
-import { api } from "@/lib/api"
-import "./AccountSetup.css"
 
 import GithubIcon from "@/assets/icons/github.png"
 import GoogleIcon from "@/assets/icons/google.png"
@@ -24,6 +28,15 @@ interface AccountDetails {
   }>
 }
 
+const services = [
+  { id: "google", name: "Google", icon: GoogleIcon, useTint: false },
+  { id: "github", name: "GitHub", icon: GithubIcon, useTint: true },
+  { id: "spotify", name: "Spotify", icon: SpotifyIcon, useTint: false },
+  { id: "notion", name: "Notion", icon: NotionIcon, useTint: true },
+  { id: "linkedin", name: "LinkedIn", icon: LinkedinIcon, useTint: false },
+  { id: "twitch", name: "Twitch", icon: TwitchIcon, useTint: false },
+]
+
 export default function AccountSetup() {
   const navigate = useNavigate()
   const [accountDetails, setAccountDetails] = useState<AccountDetails | null>(null)
@@ -33,7 +46,6 @@ export default function AccountSetup() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Check token instead of user to allow OAuth redirect
     const token = localStorage.getItem('area-token')
     if (!token) {
       navigate("/signin")
@@ -71,7 +83,6 @@ export default function AccountSetup() {
 
     try {
       await api.post("/auth/account/password", { password })
-      // Refresh account details
       const details = await api.get<AccountDetails>("/auth/account")
       setAccountDetails(details)
       setPassword("")
@@ -84,7 +95,7 @@ export default function AccountSetup() {
   const handleLinkService = async (provider: string) => {
     try {
       const { url } = await api.get<{ url: string }>(
-        `/auth/oauth/authorize/${provider}?mode=connect`
+        `/auth/oauth/authorize/${provider}?mode=connect&redirect=${encodeURIComponent(window.location.origin + "/account-setup")}`
       )
 
       window.location.href = url
@@ -106,132 +117,162 @@ export default function AccountSetup() {
 
   if (loading) {
     return (
-      <div className="account-setup-container">
+      <div className="min-h-screen bg-zinc-950 flex flex-col">
         <Navbar />
-        <div className="account-setup-loading">Loading...</div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="flex items-center gap-3 text-zinc-400">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-amber-400 border-t-transparent" />
+            Loading...
+          </div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="account-setup-container">
+    <div className="min-h-screen bg-zinc-950 flex flex-col">
       <Navbar />
 
-      <div className="account-setup-main-section">
-        <div className="account-setup-wrapper">
-          <div className="account-setup-left-section">
-            {accountDetails?.hasPassword ? (
-              <div className="account-setup-text-content">
-                <h2 className="account-setup-title">Accounts</h2>
-                <p className="account-setup-subtitle">
-                  Connect your different accounts to take full advantage of all available services
-                </p>
-              </div>
-            ) : (
-              <div className="account-setup-form-content">
-                <h2 className="account-setup-form-title">Set up your password</h2>
-                <p className="account-setup-form-subtitle">
-                  Create a password to secure your account
-                </p>
-                <form onSubmit={handlePasswordSubmit} className="password-form">
-                  {error && <div className="form-error">{error}</div>}
-
-                  <div className="form-group">
-                    <label htmlFor="password" className="form-label">Password</label>
-                    <input
-                      type="password"
-                      id="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="form-input text-black"
-                      placeholder="Enter your password"
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="confirmPassword" className="form-label">Confirm Password</label>
-                    <input
-                      type="password"
-                      id="confirmPassword"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="form-input text-black"
-                      placeholder="Confirm your password"
-                      required
-                    />
-                  </div>
-
-                  <button type="submit" className="password-submit-btn">
-                    Set Password
-                  </button>
-                </form>
-              </div>
-            )}
+      <div className="flex-1 container mx-auto px-4 pt-28 md:pt-32 pb-16">
+        <div className="max-w-4xl mx-auto space-y-8">
+          <div className="text-center">
+            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Set Up Your Account</h1>
+            <p className="text-zinc-400">
+              Connect your services to start automating your workflows
+            </p>
           </div>
 
-          <div className="account-setup-separator"></div>
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Password Section */}
+            <Card className="bg-zinc-900 border-zinc-800 shadow-xl">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  {accountDetails?.hasPassword ? (
+                    <>
+                      <Check className="h-5 w-5 text-green-400" />
+                      Password Set
+                    </>
+                  ) : (
+                    "Set Your Password"
+                  )}
+                </CardTitle>
+                <CardDescription className="text-zinc-400">
+                  {accountDetails?.hasPassword
+                    ? "Your account is secured with a password"
+                    : "Create a password to secure your account"
+                  }
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {accountDetails?.hasPassword ? (
+                  <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
+                    <p className="text-sm text-green-400">
+                      You can sign in using your email and password
+                    </p>
+                  </div>
+                ) : (
+                  <form onSubmit={handlePasswordSubmit} className="space-y-4">
+                    {error && (
+                      <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg">
+                        <AlertCircle className="h-5 w-5" />
+                        <p className="text-sm">{error}</p>
+                      </div>
+                    )}
 
-          <div className="account-setup-right-section">
-            <div className="account-setup-services-wrapper">
-              <h3 className="account-setup-services-title">Link your services</h3>
-              <div className="account-setup-services-content">
-                <button
-                  className="service-link-button service-button-google"
-                  onClick={() => handleLinkService("google")}
-                  disabled={isServiceLinked("google")}
-                >
-                  <img src={GoogleIcon} alt="Google" className="service-icon" />
-                  {isServiceLinked("google") ? "Google Linked" : "Link Google"}
-                </button>
-                <button
-                  className="service-link-button service-button-github"
-                  onClick={() => handleLinkService("github")}
-                  disabled={isServiceLinked("github")}
-                >
-                  <img src={GithubIcon} alt="Github" className="service-icon" />
-                  {isServiceLinked("github") ? "Github Linked" : "Link Github"}
-                </button>
-                <button
-                  className="service-link-button service-button-spotify"
-                  onClick={() => handleLinkService("spotify")}
-                  disabled={isServiceLinked("spotify")}
-                >
-                  <img src={SpotifyIcon} alt="Spotify" className="service-icon" />
-                  {isServiceLinked("spotify") ? "Spotify Linked" : "Link Spotify"}
-                </button>
-                <button
-                  className="service-link-button service-button-notion"
-                  onClick={() => handleLinkService("notion")}
-                  disabled={isServiceLinked("notion")}
-                >
-                  <img src={NotionIcon} alt="Notion" className="service-icon" />
-                  {isServiceLinked("notion") ? "Notion Linked" : "Link Notion"}
-                </button>
-                <button
-                  className="service-link-button service-button-linkedin"
-                  onClick={() => handleLinkService("linkedin")}
-                  disabled={isServiceLinked("linkedin")}
-                >
-                  <img src={LinkedinIcon} alt="LinkedIn" className="service-icon" />
-                  {isServiceLinked("linkedin") ? "LinkedIn Linked" : "Link LinkedIn"}
-                </button>
-                <button
-                  className="service-link-button service-button-twitch"
-                  onClick={() => handleLinkService("twitch")}
-                  disabled={isServiceLinked("twitch")}
-                >
-                  <img src={TwitchIcon} alt="Twitch" className="service-icon" />
-                  {isServiceLinked("twitch") ? "Twitch Linked" : "Link Twitch"}
-                </button>
-              </div>
-              <p className="account-setup-services-footer">
-                You can link your accounts later at any time in your Area account settings
-              </p>
-              <button onClick={handleContinue} className="continue-button">
-                Continue to Dashboard
-              </button>
-            </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="password" className="text-zinc-200">Password</Label>
+                      <Input
+                        type="password"
+                        id="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Enter your password"
+                        className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="confirmPassword" className="text-zinc-200">Confirm Password</Label>
+                      <Input
+                        type="password"
+                        id="confirmPassword"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="Confirm your password"
+                        className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
+                        required
+                      />
+                    </div>
+
+                    <Button
+                      type="submit"
+                      className="w-full bg-gradient-to-r from-amber-400 to-orange-500 text-black font-medium hover:from-amber-500 hover:to-orange-600"
+                    >
+                      Set Password
+                    </Button>
+                  </form>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Services Section */}
+            <Card className="bg-zinc-900 border-zinc-800 shadow-xl">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <LinkIcon className="h-5 w-5 text-amber-400" />
+                  Link Your Services
+                </CardTitle>
+                <CardDescription className="text-zinc-400">
+                  Connect accounts to use them in your automations
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-3">
+                  {services.map((service) => {
+                    const linked = isServiceLinked(service.id)
+                    return (
+                      <button
+                        key={service.id}
+                        onClick={() => !linked && handleLinkService(service.id)}
+                        disabled={linked}
+                        className={`relative p-4 rounded-lg border-2 transition-all ${
+                          linked
+                            ? "border-green-500/50 bg-green-500/10"
+                            : "border-zinc-700 hover:border-amber-500/50 bg-zinc-800 hover:scale-105"
+                        }`}
+                      >
+                        <img
+                          src={service.icon}
+                          alt={service.name}
+                          className={`h-10 w-10 mx-auto mb-2 ${service.useTint ? "invert" : ""}`}
+                        />
+                        <p className="text-sm font-medium text-zinc-200">{service.name}</p>
+                        {linked && (
+                          <div className="absolute top-2 right-2">
+                            <Check className="h-4 w-4 text-green-400" />
+                          </div>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+                <p className="text-xs text-zinc-500 mt-4 text-center">
+                  You can link more accounts anytime in settings
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="flex justify-center">
+            <Button
+              onClick={handleContinue}
+              size="lg"
+              className="bg-gradient-to-r from-amber-400 to-orange-500 text-black font-semibold px-8 hover:from-amber-500 hover:to-orange-600 shadow-lg shadow-amber-500/20"
+            >
+              Continue to Dashboard
+              <ArrowRight className="h-5 w-5 ml-2" />
+            </Button>
           </div>
         </div>
       </div>

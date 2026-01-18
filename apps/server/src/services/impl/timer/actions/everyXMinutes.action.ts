@@ -18,6 +18,11 @@ export const EveryXMinutesAction: IAction<TimerActionParams, TimerState> = {
   parameters: [
     { name: 'interval', description: 'Interval (min)', type: 'number', required: true }
   ],
+  return_values: [
+    { name: 'date', description: 'Date of the trigger', example: '2024-04-27' },
+    { name: 'time', description: 'Time of the trigger', example: '14:30:00' },
+    { name: 'timestamp', description: 'Timestamp of the trigger', example: '1714411800000' }
+  ],
   state: {
     lastTrigger: 0
   },

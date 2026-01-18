@@ -1,30 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Plus } from "lucide-react";
+import { Search, Plus, Zap, Activity, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
+import type { AreaDto } from "@area/shared";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-
-interface Area {
-  id: string;
-  name: string;
-  is_active: boolean;
-  user_id: string;
-  last_executed_at?: string | null;
-  error_log?: string | null;
-  action: {
-    name: string;
-    parameters: Record<string, unknown>;
-  };
-  reactions: Array<{
-    name: string;
-    parameters: Record<string, unknown>;
-  }>;
-}
 
 const getServiceFromAction = (actionName: string): string => {
   if (actionName.startsWith("GITHUB_")) return "github";
@@ -35,6 +19,7 @@ const getServiceFromAction = (actionName: string): string => {
   if (actionName.startsWith("TWITCH_")) return "twitch";
   if (actionName.startsWith("NOTION_")) return "notion";
   if (actionName.startsWith("LINKEDIN_")) return "linkedin";
+  if (actionName.startsWith("TIMER_")) return "timer";
   return "unknown";
 };
 
@@ -46,12 +31,17 @@ const serviceIcons: Record<string, string> = {
   twitch: "/assets/twitch.png",
   notion: "/assets/notion.png",
   linkedin: "/assets/linkedin.png",
+  timer: "https://img.icons8.com/fluency/96/clock.png",
+};
+
+const shouldInvertIcon = (serviceId: string) => {
+  return serviceId === "github" || serviceId === "notion";
 };
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [areas, setAreas] = useState<Area[]>([]);
-  const [filteredAreas, setFilteredAreas] = useState<Area[]>([]);
+  const [areas, setAreas] = useState<AreaDto[]>([]);
+  const [filteredAreas, setFilteredAreas] = useState<AreaDto[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -73,7 +63,7 @@ export default function Dashboard() {
 
   const fetchAreas = async () => {
     try {
-      const data = await api.get<Area[]>("/areas");
+      const data = await api.get<AreaDto[]>("/areas");
       setAreas(data);
       setFilteredAreas(data);
     } catch (error) {
@@ -87,7 +77,7 @@ export default function Dashboard() {
     navigate("/areas/create");
   };
 
-  const getUniqueServices = (area: Area): string[] => {
+  const getUniqueServices = (area: AreaDto): string[] => {
     const services = new Set<string>();
     services.add(getServiceFromAction(area.action.name));
     area.reactions.forEach((reaction) => {
@@ -100,96 +90,109 @@ export default function Dashboard() {
   const totalReactions = areas.reduce((sum, area) => sum + area.reactions.length, 0);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#91B7FF] to-[#7BA5FF] flex flex-col">
+    <div className="min-h-screen bg-zinc-950 flex flex-col">
       <Navbar />
 
       <div className="flex-1 container mx-auto px-4 pt-28 md:pt-32 pb-16 space-y-8">
-        <div className="flex flex-col gap-4">
-          <h1 className="text-4xl font-bold tracking-tight text-white">My AREAs</h1>
-          <p className="text-white/90">
+        {/* Header */}
+        <div className="flex flex-col gap-2">
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-white">My AREAs</h1>
+          <p className="text-zinc-400">
             Manage and monitor your automation workflows
           </p>
         </div>
 
+        {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-3">
-          <Card className="bg-white border-0 shadow-lg hover:shadow-xl transition-shadow">
+          <Card className="bg-zinc-900 border-zinc-800 shadow-xl">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-900">Total AREAs</CardTitle>
+              <CardTitle className="text-sm font-medium text-zinc-400">Total AREAs</CardTitle>
+              <Layers className="h-4 w-4 text-amber-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">{areas.length}</div>
-              <p className="text-xs text-gray-600">
+              <div className="text-2xl font-bold text-white">{areas.length}</div>
+              <p className="text-xs text-zinc-500">
                 {activeAreas} active
               </p>
             </CardContent>
           </Card>
 
-          <Card className="bg-white border-0 shadow-lg hover:shadow-xl transition-shadow">
+          <Card className="bg-zinc-900 border-zinc-800 shadow-xl">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-900">Active AREAs</CardTitle>
+              <CardTitle className="text-sm font-medium text-zinc-400">Active AREAs</CardTitle>
+              <Activity className="h-4 w-4 text-green-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">{activeAreas}</div>
-              <p className="text-xs text-gray-600">
+              <div className="text-2xl font-bold text-white">{activeAreas}</div>
+              <p className="text-xs text-zinc-500">
                 {areas.length > 0 ? Math.round((activeAreas / areas.length) * 100) : 0}% of total
               </p>
             </CardContent>
           </Card>
 
-          <Card className="bg-white border-0 shadow-lg hover:shadow-xl transition-shadow">
+          <Card className="bg-zinc-900 border-zinc-800 shadow-xl">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-900">Total Reactions</CardTitle>
+              <CardTitle className="text-sm font-medium text-zinc-400">Total Reactions</CardTitle>
+              <Zap className="h-4 w-4 text-orange-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">{totalReactions}</div>
-              <p className="text-xs text-gray-600">
+              <div className="text-2xl font-bold text-white">{totalReactions}</div>
+              <p className="text-xs text-zinc-500">
                 Across all AREAs
               </p>
             </CardContent>
           </Card>
         </div>
 
+        {/* Search and Create */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
             <Input
               type="text"
               placeholder="Search areas..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 bg-white border-0 shadow-md text-gray-900 placeholder:text-gray-500"
+              className="pl-9 bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-500 focus:border-amber-500/50 focus:ring-amber-500/20"
             />
           </div>
 
           <Button
             onClick={handleCreateArea}
-            className="bg-white text-[#6097FF] hover:bg-white/90 font-semibold shadow-md hover:shadow-lg transition-all"
+            className="bg-gradient-to-r from-amber-400 to-orange-500 text-black font-semibold hover:from-amber-500 hover:to-orange-600 shadow-lg shadow-amber-500/20"
           >
             <Plus className="h-5 w-5 mr-2" />
             Create AREA
           </Button>
         </div>
 
+        {/* Areas List */}
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="flex items-center gap-2 text-white">
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+            <div className="flex items-center gap-3 text-zinc-400">
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-amber-400 border-t-transparent" />
               Loading your areas...
             </div>
           </div>
         ) : filteredAreas.length === 0 ? (
-          <Card className="py-12 bg-white border-0 shadow-lg">
+          <Card className="py-16 bg-zinc-900 border-zinc-800">
             <CardContent className="flex flex-col items-center justify-center text-center">
-              <h3 className="text-lg font-semibold mb-2 text-gray-900">
+              <div className="w-16 h-16 rounded-full bg-zinc-800 flex items-center justify-center mb-4">
+                <Zap className="h-8 w-8 text-zinc-600" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2 text-white">
                 {searchQuery ? "No areas found" : "No areas yet"}
               </h3>
-              <p className="text-sm text-gray-600 mb-4">
+              <p className="text-sm text-zinc-400 mb-6 max-w-sm">
                 {searchQuery
                   ? `No areas matching "${searchQuery}"`
-                  : "Create your first automation to get started"}
+                  : "Create your first automation to get started with AREA"}
               </p>
               {!searchQuery && (
-                <Button onClick={handleCreateArea} className="bg-[#6097FF] text-white hover:bg-[#5087EF] shadow-md">
+                <Button
+                  onClick={handleCreateArea}
+                  className="bg-gradient-to-r from-amber-400 to-orange-500 text-black font-semibold hover:from-amber-500 hover:to-orange-600"
+                >
                   <Plus className="h-5 w-5 mr-2" />
                   Create your first AREA
                 </Button>
@@ -201,22 +204,26 @@ export default function Dashboard() {
             {filteredAreas.map((area) => (
               <Card
                 key={area.id}
-                className="group bg-white border-0 shadow-lg hover:shadow-xl transition-all duration-200 cursor-pointer hover:-translate-y-1"
+                className="group bg-zinc-900 border-zinc-800 hover:border-amber-500/30 transition-all duration-200 cursor-pointer hover:shadow-lg hover:shadow-amber-500/5"
                 onClick={() => navigate(`/areas/${area.id}`)}
               >
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="space-y-1 flex-1">
-                      <CardTitle className="text-lg line-clamp-1 text-gray-900">
+                      <CardTitle className="text-lg line-clamp-1 text-white group-hover:text-amber-400 transition-colors">
                         {area.name}
                       </CardTitle>
-                      <CardDescription className="line-clamp-1 text-gray-600">
+                      <CardDescription className="line-clamp-1 text-zinc-500">
                         {area.action.name.replace(/_/g, " ")}
                       </CardDescription>
                     </div>
                     <Badge
                       variant={area.is_active ? "success" : "secondary"}
-                      className="ml-2 shrink-0"
+                      className={`ml-2 shrink-0 ${
+                        area.is_active
+                          ? "bg-green-500/20 text-green-400 border-green-500/30"
+                          : "bg-zinc-800 text-zinc-400 border-zinc-700"
+                      }`}
                     >
                       {area.is_active ? "Active" : "Inactive"}
                     </Badge>
@@ -228,18 +235,18 @@ export default function Dashboard() {
                     {getUniqueServices(area).map((service) => (
                       <div
                         key={service}
-                        className="h-8 w-8 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden"
+                        className="h-8 w-8 rounded-lg bg-zinc-800 flex items-center justify-center overflow-hidden border border-zinc-700"
                       >
                         <img
                           src={serviceIcons[service] || "/assets/default.png"}
                           alt={service}
-                          className="h-6 w-6 object-contain"
+                          className={`h-5 w-5 object-contain ${shouldInvertIcon(service) ? "invert" : ""}`}
                         />
                       </div>
                     ))}
                   </div>
 
-                  <div className="flex items-center justify-between text-sm text-gray-600 pt-2 border-t border-gray-200">
+                  <div className="flex items-center justify-between text-sm text-zinc-500 pt-2 border-t border-zinc-800">
                     <span className="font-medium">
                       {area.reactions.length} reaction{area.reactions.length !== 1 ? "s" : ""}
                     </span>

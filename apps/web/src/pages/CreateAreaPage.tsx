@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useSearchParams } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -17,7 +17,7 @@ import { ArrowLeft, ArrowRight, Check, AlertCircle, Link as LinkIcon } from "luc
 import { api } from "@/lib/api"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
-import type { ServiceDto, CreateAreaDto } from "@area/shared"
+import type { ServiceDto, CreateAreaDto, ServiceActionDto, ServiceReactionDto } from "@area/shared"
 
 import GoogleIcon from "@/assets/icons/google.png"
 import SpotifyIcon from "@/assets/icons/spotify.png"
@@ -66,8 +66,45 @@ const getServiceIcon = (serviceId: string) => {
   return serviceIcons[serviceId] || "https://img.icons8.com/fluency/96/services.png"
 }
 
+const shouldInvertIcon = (serviceId: string) => {
+  return serviceId === "github" || serviceId === "notion"
+}
+
+// Helper component to display variable pills
+const VariablePills = ({
+  variables,
+  onInsert
+}: {
+  variables: { name: string; description: string }[],
+  onInsert: (tag: string) => void
+}) => {
+  if (!variables || variables.length === 0) return null;
+
+  return (
+    <div className="mb-4 p-3 bg-zinc-900/50 border border-zinc-800 rounded-lg">
+      <p className="text-xs font-semibold text-indigo-300 mb-2 uppercase tracking-wider">
+        Available Ingredients (Click to insert)
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {variables.map((v) => (
+          <button
+            key={v.name}
+            type="button"
+            onClick={() => onInsert(`{{${v.name}}}`)}
+            className="text-xs bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-1 rounded-md hover:bg-indigo-500/30 transition-colors flex items-center gap-1"
+            title={v.description}
+          >
+            {v.name}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export default function CreateAreaPage() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [currentStep, setCurrentStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -78,8 +115,8 @@ export default function CreateAreaPage() {
   const [areaName, setAreaName] = useState("")
   const [selectedActionService, setSelectedActionService] = useState<ServiceDto | null>(null)
   const [selectedReactionService, setSelectedReactionService] = useState<ServiceDto | null>(null)
-  const [selectedAction, setSelectedAction] = useState<ServiceDto["actions"][0] | null>(null)
-  const [selectedReaction, setSelectedReaction] = useState<ServiceDto["reactions"][0] | null>(null)
+  const [selectedAction, setSelectedAction] = useState<ServiceActionDto | null>(null)
+  const [selectedReaction, setSelectedReaction] = useState<ServiceReactionDto | null>(null)
   const [actionParams, setActionParams] = useState<Record<string, unknown>>({})
   const [reactionParams, setReactionParams] = useState<Record<string, unknown>>({})
 
@@ -92,6 +129,16 @@ export default function CreateAreaPage() {
   useEffect(() => {
     fetchServices()
     fetchLinkedAccounts()
+  }, [])
+
+  useEffect(() => {
+    const linked = searchParams.get('linked')
+    if (linked === 'true') {
+      fetchLinkedAccounts()
+      const newParams = new URLSearchParams(searchParams)
+      newParams.delete('linked')
+      setSearchParams(newParams, { replace: true })
+    }
   }, [])
 
   // Effect to restore saved form state from localStorage
@@ -139,10 +186,20 @@ export default function CreateAreaPage() {
     }
   }, [services]) // Depend on services to ensure they are loaded first
 
+  // Auto-save form state with debounce to avoid excessive localStorage writes
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      saveFormState()
+    }, 500) // Wait 500ms after last change before saving
+
+    return () => clearTimeout(debounceTimer)
+  }, [areaName, currentStep, selectedActionService, selectedReactionService, selectedAction, selectedReaction, actionParams, reactionParams])
+
   const fetchServices = async () => {
     try {
       const data = await api.get<ServiceDto[]>("/services")
       setServices(data)
+      console.log("Fetched services:", data)
     } catch (err) {
       console.error("Failed to fetch services:", err)
     }
@@ -152,6 +209,7 @@ export default function CreateAreaPage() {
     try {
       const data = await api.get<{ linkedAccounts: Array<{ id: string; provider: string; scopes: string[] }> }>("/auth/account")
       const accounts = data.linkedAccounts || []
+      console.log("Fetched linked accounts:", accounts)
       setLinkedAccounts(accounts.map((acc) => ({
         id: acc.id,
         service: acc.provider,
@@ -178,24 +236,33 @@ export default function CreateAreaPage() {
   const handleServiceSelect = (service: ServiceDto, type: "action" | "reaction") => {
     const account = getServiceAccount(service.id)
 
-    if (service.id !== "timer" && !account) {
+    
+    console.log("Service OAuth requirement:", service.is_oauth, "Account found:", !!account)
+    if (service.is_oauth && !account) {
+      console.log("Service account not linked for:", service.name)
       setModalService(service.name)
       setModalType(type)
       setShowAccountModal(true)
       return
     }
 
+    console.log("Selected service:", service.name, "for", type)
+
     if (type === "action") {
       setSelectedActionService(service)
+      setSelectedAction(null)
+      setActionParams({})
     } else {
       setSelectedReactionService(service)
+      setSelectedReaction(null)
+      setReactionParams({})
     }
   }
 
-  const handleActionSelect = (action: ServiceDto["actions"][0]) => {
+  const handleActionSelect = (action: ServiceActionDto) => {
     const account = getServiceAccount(selectedActionService!.id)
 
-    if (selectedActionService!.id !== "timer" && action.scopes && action.scopes.length > 0) {
+    if (selectedActionService!.is_oauth && action.scopes && action.scopes.length > 0) {
       if (!account || !hasRequiredScopes(selectedActionService!.id, action.scopes)) {
         setModalService(selectedActionService!.name)
         setModalScopes(action.scopes)
@@ -205,14 +272,16 @@ export default function CreateAreaPage() {
       }
     }
 
+    console.log("Selected action:", action.name)
+    console.log("Action return values:", action.return_values)
     setSelectedAction(action)
     setActionParams({})
   }
 
-  const handleReactionSelect = (reaction: ServiceDto["reactions"][0]) => {
+  const handleReactionSelect = (reaction: ServiceReactionDto) => {
     const account = getServiceAccount(selectedReactionService!.id)
 
-    if (selectedReactionService!.id !== "timer" && reaction.scopes && reaction.scopes.length > 0) {
+    if (selectedReactionService!.is_oauth && reaction.scopes && reaction.scopes.length > 0) {
       if (!account || !hasRequiredScopes(selectedReactionService!.id, reaction.scopes)) {
         setModalService(selectedReactionService!.name)
         setModalScopes(reaction.scopes)
@@ -247,10 +316,8 @@ export default function CreateAreaPage() {
 
       saveFormState()
 
-      localStorage.setItem('oauth-redirect', '/areas/create')
-
       const { url } = await api.get<{ url: string }>(
-        `/auth/oauth/authorize/${serviceId}?mode=connect`
+        `/auth/oauth/authorize/${serviceId}?mode=connect&redirect=${encodeURIComponent(window.location.origin + "/areas/create")}`
       )
 
       window.location.href = url
@@ -266,14 +333,12 @@ export default function CreateAreaPage() {
 
       saveFormState()
 
-      localStorage.setItem('oauth-redirect', '/areas/create')
-
       console.log("Requesting additional permissions for scopes:", modalScopes)
 
       const scopeParam = encodeURIComponent(modalScopes.join(' '))
 
       const { url } = await api.get<{ url: string }>(
-        `/auth/oauth/authorize/${serviceId}?mode=connect&scope=${scopeParam}`
+        `/auth/oauth/authorize/${serviceId}?mode=connect&source=web&scope=${scopeParam}&redirect=${encodeURIComponent(window.location.origin + "/areas/create")}`
       )
 
       window.location.href = url
@@ -319,6 +384,11 @@ export default function CreateAreaPage() {
     setCurrentStep((prev) => Math.min(prev + 1, 4))
   }
 
+  const handleCancel = () => {
+    localStorage.removeItem(STORAGE_KEY_FORM)
+    navigate("/dashboard")
+  }
+
   const handleBack = () => {
     console.log("Back button clicked! Current step:", currentStep)
     setError("")
@@ -359,13 +429,45 @@ export default function CreateAreaPage() {
     }
   }
 
-  const renderParameterInput = (param: ServiceDto["actions"][0]["parameters"][0], value: unknown, onChange: (key: string, val: string | number | boolean) => void, prefix: string) => {
+  // Fonction pour insérer une variable dans le champ texte
+  const insertVariable = (paramName: string, tag: string, isAction: boolean) => {
+    const currentParams = isAction ? actionParams : reactionParams;
+    const currentValue = String(currentParams[paramName] || "");
+
+    // Ajoute à la fin (simple) ou à la position du curseur (plus complexe, nécessite une ref)
+    const newValue = currentValue + " " + tag;
+
+    if (isAction) {
+      setActionParams({ ...actionParams, [paramName]: newValue });
+    } else {
+      setReactionParams({ ...reactionParams, [paramName]: newValue });
+    }
+  };
+
+  const renderParameterInput = (
+    param: ServiceDto["actions"][0]["parameters"][0],
+    value: unknown,
+    onChange: (key: string, val: string | number | boolean) => void,
+    prefix: string,
+    availableVariables?: { name: string, description: string, example?: string }[]
+  ) => {
     return (
       <div key={param.name} className="space-y-2">
-        <Label htmlFor={`${prefix}-${param.name}`} className="text-gray-900 text-sm font-medium">
-          {param.description}
-          {param.required && <span className="text-red-500 ml-1">*</span>}
-        </Label>
+        <div className="flex justify-between items-baseline">
+            <Label htmlFor={`${prefix}-${param.name}`} className="text-zinc-200 text-sm font-medium">
+            {param.description}
+            {param.required && <span className="text-amber-400 ml-1">*</span>}
+            </Label>
+        </div>
+
+        {/* Afficher les variables uniquement pour les champs texte des REACTIONS */}
+        {availableVariables && param.type === "string" && (
+            <VariablePills
+                variables={availableVariables}
+                onInsert={(tag) => insertVariable(param.name, tag, prefix === "action")}
+            />
+        )}
+
         {param.type === "number" ? (
           <Input
             id={`${prefix}-${param.name}`}
@@ -374,14 +476,14 @@ export default function CreateAreaPage() {
             value={String(value || "")}
             onChange={(e) => onChange(param.name, e.target.value)}
             required={param.required}
-            className="text-black"
+            className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus:border-amber-500/50"
           />
         ) : param.type === "boolean" ? (
           <select
             id={`${prefix}-${param.name}`}
             value={String(value || "")}
             onChange={(e) => onChange(param.name, e.target.value === "true")}
-            className="w-full rounded-md border border-input bg-background px-3 py-2"
+            className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-white"
             required={param.required}
           >
             <option value="">Select...</option>
@@ -396,21 +498,20 @@ export default function CreateAreaPage() {
             value={String(value || "")}
             onChange={(e) => onChange(param.name, e.target.value)}
             required={param.required}
-            className="text-black"
+            className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus:border-amber-500/50"
           />
         )}
-        <p className="text-xs text-gray-500">Type: {param.type}</p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#91B7FF] to-[#7BA5FF] flex flex-col">
+    <div className="min-h-screen bg-zinc-950 flex flex-col">
       <Navbar />
 
       <div className="flex-1 container mx-auto px-4 pt-28 md:pt-32 pb-16">
         {/* Stepper */}
-        <Card className="mb-8 max-w-4xl mx-auto bg-white border-0 shadow-lg">
+        <Card className="mb-8 max-w-4xl mx-auto bg-zinc-900 border-zinc-800">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               {STEPS.map((step, index) => (
@@ -421,21 +522,21 @@ export default function CreateAreaPage() {
                         currentStep > step.number
                           ? "bg-green-500 text-white"
                           : currentStep === step.number
-                          ? "bg-[#6097FF] text-white"
-                          : "bg-gray-200 text-gray-500"
+                          ? "bg-gradient-to-r from-amber-400 to-orange-500 text-black"
+                          : "bg-zinc-800 text-zinc-500"
                       }`}
                     >
                       {currentStep > step.number ? <Check className="h-5 w-5" /> : step.number}
                     </div>
                     <div className="mt-2 text-center hidden md:block">
-                      <p className="text-sm font-semibold text-gray-900">{step.title}</p>
-                      <p className="text-xs text-gray-600">{step.description}</p>
+                      <p className="text-sm font-semibold text-zinc-200">{step.title}</p>
+                      <p className="text-xs text-zinc-500">{step.description}</p>
                     </div>
                   </div>
                   {index < STEPS.length - 1 && (
                     <div
-                      className={`h-1 flex-1 mx-2 transition-colors ${
-                        currentStep > step.number ? "bg-green-500" : "bg-gray-200"
+                      className={`h-1 flex-1 mx-2 transition-colors rounded-full ${
+                        currentStep > step.number ? "bg-green-500" : "bg-zinc-800"
                       }`}
                     />
                   )}
@@ -445,20 +546,20 @@ export default function CreateAreaPage() {
           </CardContent>
         </Card>
 
-        <Card className="max-w-4xl mx-auto bg-white shadow-xl border-0">
+        <Card className="max-w-4xl mx-auto bg-zinc-900 border-zinc-800 shadow-xl">
           <CardHeader>
-            <CardTitle className="text-2xl text-gray-900 flex items-center gap-2">
+            <CardTitle className="text-2xl text-white flex items-center gap-2">
               {STEPS[currentStep - 1].title}
             </CardTitle>
-            <CardDescription className="text-gray-600">
+            <CardDescription className="text-zinc-400">
               {STEPS[currentStep - 1].description}
             </CardDescription>
           </CardHeader>
 
           <CardContent className="space-y-6">
             {error && (
-              <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
-                <AlertCircle className="h-5 w-5 text-red-600" />
+              <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg">
+                <AlertCircle className="h-5 w-5" />
                 <p className="text-sm font-medium">{error}</p>
               </div>
             )}
@@ -467,40 +568,40 @@ export default function CreateAreaPage() {
             {currentStep === 1 && (
               <div className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="areaName" className="text-black">AREA Name</Label>
+                  <Label htmlFor="areaName" className="text-zinc-200">AREA Name</Label>
                   <Input
                     id="areaName"
                     placeholder="e.g., Send me an email every day"
                     value={areaName}
                     onChange={(e) => setAreaName(e.target.value)}
-                    className="text-black"
+                    className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus:border-amber-500/50"
                   />
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-3">
-                    <Label className="text-gray-900 text-base font-semibold flex items-center gap-2">Action Service (Trigger)</Label>
+                    <Label className="text-zinc-200 text-base font-semibold flex items-center gap-2">Action Service (Trigger)</Label>
                     <div className="grid grid-cols-2 gap-3">
                       {services.filter(s => s.actions.length > 0).map((service) => {
-                        const isLinked = getServiceAccount(service.id) || service.id === "timer"
+                        const isLinked = getServiceAccount(service.id) || !service.is_oauth
                         return (
                           <button
                             key={service.id}
                             onClick={() => handleServiceSelect(service, "action")}
                             className={`relative p-4 rounded-lg border-2 transition-all hover:scale-105 ${
                               selectedActionService?.id === service.id
-                                ? "border-[#6097FF] bg-[#6097FF]/10"
-                                : "border-gray-200 hover:border-[#6097FF]/50 bg-white"
+                                ? "border-amber-500 bg-amber-500/10"
+                                : "border-zinc-700 hover:border-amber-500/50 bg-zinc-800"
                             }`}
                           >
                             <img
                               src={getServiceIcon(service.id) || "/assets/default.png"}
                               alt={service.name}
-                              className="h-12 w-12 mx-auto mb-2"
+                              className={`h-12 w-12 mx-auto mb-2 ${shouldInvertIcon(service.id) ? "invert" : ""}`}
                             />
-                            <p className="text-sm font-medium text-gray-900">{service.name}</p>
+                            <p className="text-sm font-medium text-zinc-200">{service.name}</p>
                             {!isLinked && (
-                              <Badge variant="outline" className="absolute top-2 right-2 text-xs text-gray-700">
+                              <Badge variant="outline" className="absolute top-2 right-2 text-xs text-zinc-400 border-zinc-600">
                                 <LinkIcon className="h-3 w-3 mr-1" />
                                 Link
                               </Badge>
@@ -512,30 +613,30 @@ export default function CreateAreaPage() {
                   </div>
 
                   <div className="space-y-3">
-                    <Label className="text-gray-900 text-base font-semibold flex items-center gap-2">
+                    <Label className="text-zinc-200 text-base font-semibold flex items-center gap-2">
                       Reaction Service (Response)
                     </Label>
                     <div className="grid grid-cols-2 gap-3">
                       {services.filter(s => s.reactions.length > 0).map((service) => {
-                        const isLinked = getServiceAccount(service.id) || service.id === "timer"
+                        const isLinked = getServiceAccount(service.id) || !service.is_oauth
                         return (
                           <button
                             key={service.id}
                             onClick={() => handleServiceSelect(service, "reaction")}
                             className={`relative p-4 rounded-lg border-2 transition-all hover:scale-105 ${
                               selectedReactionService?.id === service.id
-                                ? "border-[#6097FF] bg-[#6097FF]/10"
-                                : "border-gray-200 hover:border-[#6097FF]/50 bg-white"
+                                ? "border-amber-500 bg-amber-500/10"
+                                : "border-zinc-700 hover:border-amber-500/50 bg-zinc-800"
                             }`}
                           >
                             <img
                               src={getServiceIcon(service.id) || "/assets/default.png"}
                               alt={service.name}
-                              className="h-12 w-12 mx-auto mb-2"
+                              className={`h-12 w-12 mx-auto mb-2 ${shouldInvertIcon(service.id) ? "invert" : ""}`}
                             />
-                            <p className="text-sm font-medium text-gray-900">{service.name}</p>
+                            <p className="text-sm font-medium text-zinc-200">{service.name}</p>
                             {!isLinked && (
-                              <Badge variant="outline" className="absolute top-2 right-2 text-xs text-gray-700">
+                              <Badge variant="outline" className="absolute top-2 right-2 text-xs text-zinc-400 border-zinc-600">
                                 <LinkIcon className="h-3 w-3 mr-1" />
                                 Link
                               </Badge>
@@ -552,15 +653,15 @@ export default function CreateAreaPage() {
             {/* Step 2: Select Action */}
             {currentStep === 2 && selectedActionService && (
               <div className="space-y-4">
-                <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="flex items-center gap-3 p-4 bg-zinc-800/50 rounded-lg border border-zinc-700">
                   <img
                     src={getServiceIcon(selectedActionService.id) || "/assets/default.png"}
                     alt={selectedActionService.name}
-                    className="h-10 w-10"
+                    className={`h-10 w-10 ${shouldInvertIcon(selectedActionService.id) ? "invert" : ""}`}
                   />
                   <div>
-                    <p className="font-semibold text-gray-900">{selectedActionService.name} Actions</p>
-                    <p className="text-sm text-gray-600">Choose what triggers this automation</p>
+                    <p className="font-semibold text-white">{selectedActionService.name} Actions</p>
+                    <p className="text-sm text-zinc-400">Choose what triggers this automation</p>
                   </div>
                 </div>
 
@@ -571,17 +672,17 @@ export default function CreateAreaPage() {
                       onClick={() => handleActionSelect(action)}
                       className={`w-full p-4 rounded-lg border-2 text-left transition-all ${
                         selectedAction?.id === action.id
-                          ? "border-[#6097FF] bg-[#6097FF]/10"
-                          : "border-gray-200 hover:border-[#6097FF]/50 bg-white"
+                          ? "border-amber-500 bg-amber-500/10"
+                          : "border-zinc-700 hover:border-amber-500/50 bg-zinc-800"
                       }`}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <p className="font-semibold text-gray-900">{action.name}</p>
-                          <p className="text-sm text-gray-600 mt-1">{action.description}</p>
+                          <p className="font-semibold text-white">{action.name}</p>
+                          <p className="text-sm text-zinc-400 mt-1">{action.description}</p>
                         </div>
                         {selectedAction?.id === action.id && (
-                          <Badge variant="success">Selected</Badge>
+                          <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Selected</Badge>
                         )}
                       </div>
                     </button>
@@ -589,8 +690,8 @@ export default function CreateAreaPage() {
                 </div>
 
                 {selectedAction && selectedAction.parameters.length > 0 && (
-                  <div className="mt-6 space-y-4 p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border border-blue-200 shadow-sm">
-                    <h4 className="font-semibold text-gray-900">Configure Parameters</h4>
+                  <div className="mt-6 space-y-4 p-4 bg-zinc-800/50 rounded-lg border border-zinc-700">
+                    <h4 className="font-semibold text-white">Configure Parameters</h4>
                     {selectedAction.parameters.map((param) =>
                       renderParameterInput(
                         param,
@@ -607,15 +708,15 @@ export default function CreateAreaPage() {
             {/* Step 3: Select Reaction */}
             {currentStep === 3 && selectedReactionService && (
               <div className="space-y-4">
-                <div className="flex items-center gap-3 p-4 bg-orange-50 rounded-lg border border-orange-200">
+                <div className="flex items-center gap-3 p-4 bg-zinc-800/50 rounded-lg border border-zinc-700">
                   <img
                     src={getServiceIcon(selectedReactionService.id) || "/assets/default.png"}
                     alt={selectedReactionService.name}
-                    className="h-10 w-10"
+                    className={`h-10 w-10 ${shouldInvertIcon(selectedReactionService.id) ? "invert" : ""}`}
                   />
                   <div>
-                    <p className="font-semibold text-gray-900">{selectedReactionService.name} Reactions</p>
-                    <p className="text-sm text-gray-600">Choose what happens when triggered</p>
+                    <p className="font-semibold text-white">{selectedReactionService.name} Reactions</p>
+                    <p className="text-sm text-zinc-400">Choose what happens when triggered</p>
                   </div>
                 </div>
 
@@ -626,17 +727,17 @@ export default function CreateAreaPage() {
                       onClick={() => handleReactionSelect(reaction)}
                       className={`w-full p-4 rounded-lg border-2 text-left transition-all ${
                         selectedReaction?.id === reaction.id
-                          ? "border-[#6097FF] bg-[#6097FF]/10"
-                          : "border-gray-200 hover:border-[#6097FF]/50 bg-white"
+                          ? "border-amber-500 bg-amber-500/10"
+                          : "border-zinc-700 hover:border-amber-500/50 bg-zinc-800"
                       }`}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <p className="font-semibold text-gray-900">{reaction.name}</p>
-                          <p className="text-sm text-gray-600 mt-1">{reaction.description}</p>
+                          <p className="font-semibold text-white">{reaction.name}</p>
+                          <p className="text-sm text-zinc-400 mt-1">{reaction.description}</p>
                         </div>
                         {selectedReaction?.id === reaction.id && (
-                          <Badge variant="success">Selected</Badge>
+                          <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Selected</Badge>
                         )}
                       </div>
                     </button>
@@ -644,16 +745,23 @@ export default function CreateAreaPage() {
                 </div>
 
                 {selectedReaction && selectedReaction.parameters.length > 0 && (
-                  <div className="mt-6 space-y-4 p-4 bg-gradient-to-br from-orange-50 to-red-50 rounded-lg border border-orange-200 shadow-sm">
-                    <h4 className="font-semibold text-gray-900">Configure Parameters</h4>
-                    {selectedReaction.parameters.map((param) =>
-                      renderParameterInput(
-                        param,
-                        reactionParams[param.name],
-                        (key, val) => setReactionParams({ ...reactionParams, [key]: val }),
-                        "reaction"
-                      )
-                    )}
+                  <div className="mt-6 space-y-4 p-4 bg-zinc-800/50 rounded-lg border border-zinc-700">
+                    <h4 className="font-semibold text-white">Configure Parameters</h4>
+                    {(() => {
+                      const actionVariables = selectedAction?.return_values || [];
+
+                      console.log("Variables detected:", actionVariables);
+
+                      return selectedReaction.parameters.map((param) =>
+                        renderParameterInput(
+                          param,
+                          reactionParams[param.name],
+                          (key, val) => setReactionParams({ ...reactionParams, [key]: val }),
+                          "reaction",
+                          actionVariables
+                        )
+                      );
+                    })()}
                   </div>
                 )}
               </div>
@@ -662,21 +770,21 @@ export default function CreateAreaPage() {
             {/* Step 4: Review */}
             {currentStep === 4 && (
               <div className="space-y-6">
-                <div className="p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg space-y-4">
-                  <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <div className="p-6 bg-gradient-to-br from-amber-500/10 via-zinc-900 to-orange-500/10 rounded-lg border border-zinc-700 space-y-4">
+                  <h3 className="text-xl font-bold text-white flex items-center gap-2">
                     {areaName}
                   </h3>
 
                   <div className="space-y-3">
-                    <div className="flex items-start gap-3 p-3 bg-white rounded-lg">
+                    <div className="flex items-start gap-3 p-3 bg-zinc-800 rounded-lg">
                       <div className="flex-1">
-                        <p className="text-sm font-semibold text-gray-500">WHEN</p>
-                        <p className="font-semibold text-gray-900">{selectedAction?.name}</p>
-                        <p className="text-sm text-gray-600">{selectedAction?.description}</p>
+                        <p className="text-sm font-semibold text-amber-400">WHEN</p>
+                        <p className="font-semibold text-white">{selectedAction?.name}</p>
+                        <p className="text-sm text-zinc-400">{selectedAction?.description}</p>
                         {Object.keys(actionParams).length > 0 && (
                           <div className="mt-2 space-y-1">
                             {Object.entries(actionParams).map(([key, value]) => (
-                              <p key={key} className="text-xs text-gray-600">
+                              <p key={key} className="text-xs text-zinc-500">
                                 <span className="font-medium">{key}:</span> {String(value)}
                               </p>
                             ))}
@@ -685,15 +793,15 @@ export default function CreateAreaPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-start gap-3 p-3 bg-white rounded-lg">
+                    <div className="flex items-start gap-3 p-3 bg-zinc-800 rounded-lg">
                       <div className="flex-1">
-                        <p className="text-sm font-semibold text-gray-500">THEN</p>
-                        <p className="font-semibold text-gray-900">{selectedReaction?.name}</p>
-                        <p className="text-sm text-gray-600">{selectedReaction?.description}</p>
+                        <p className="text-sm font-semibold text-orange-400">THEN</p>
+                        <p className="font-semibold text-white">{selectedReaction?.name}</p>
+                        <p className="text-sm text-zinc-400">{selectedReaction?.description}</p>
                         {Object.keys(reactionParams).length > 0 && (
                           <div className="mt-2 space-y-1">
                             {Object.entries(reactionParams).map(([key, value]) => (
-                              <p key={key} className="text-xs text-gray-600">
+                              <p key={key} className="text-xs text-zinc-500">
                                 <span className="font-medium">{key}:</span> {String(value)}
                               </p>
                             ))}
@@ -704,9 +812,9 @@ export default function CreateAreaPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <Check className="h-5 w-5 text-yellow-600 flex-shrink-0" />
-                  <p className="text-sm text-yellow-800">
+                <div className="flex items-center gap-2 p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+                  <Check className="h-5 w-5 text-amber-400 flex-shrink-0" />
+                  <p className="text-sm text-amber-200">
                     Your AREA will be created as <strong>active</strong> and will start working immediately.
                   </p>
                 </div>
@@ -714,28 +822,33 @@ export default function CreateAreaPage() {
             )}
 
             {/* Navigation */}
-            <div className="flex items-center justify-between pt-6 border-t">
+            <div className="flex items-center justify-between pt-6 border-t border-zinc-800">
               <div className="flex gap-2">
-                <button
+                <Button
                   type="button"
+                  variant="outline"
                   onClick={handleBack}
                   disabled={currentStep === 1}
-                  className="inline-flex items-center justify-center gap-2 h-9 px-4 py-2 rounded-md text-sm font-medium border border-gray-300 bg-white text-gray-900 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white disabled:opacity-50"
                 >
-                  <ArrowLeft className="h-4 w-4" />
+                  <ArrowLeft className="h-4 w-4 mr-2" />
                   Back
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
-                  onClick={() => navigate("/dashboard")}
-                  className="inline-flex items-center justify-center gap-2 h-9 px-4 py-2 rounded-md text-sm font-medium border border-red-300 bg-white text-red-600 hover:bg-red-50 transition-colors"
+                  variant="outline"
+                  onClick={handleCancel}
+                  className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300"
                 >
                   Cancel
-                </button>
+                </Button>
               </div>
 
               {currentStep < 4 ? (
-                <Button onClick={handleNext} className="bg-[#6097FF] text-white hover:bg-[#5087EF]">
+                <Button
+                  onClick={handleNext}
+                  className="bg-gradient-to-r from-amber-400 to-orange-500 text-black font-medium hover:from-amber-500 hover:to-orange-600"
+                >
                   Next
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
@@ -743,9 +856,9 @@ export default function CreateAreaPage() {
                 <Button
                   onClick={handleSubmit}
                   disabled={loading}
-                  className="bg-green-600 text-white hover:bg-green-700"
+                  className="bg-green-500 text-white hover:bg-green-600"
                 >
-                  {loading ? "Creating..." : "Create"}
+                  {loading ? "Creating..." : "Create AREA"}
                   <Check className="h-4 w-4 ml-2" />
                 </Button>
               )}
@@ -756,27 +869,27 @@ export default function CreateAreaPage() {
 
       {/* Account Not Linked Modal */}
       <Dialog open={showAccountModal} onOpenChange={setShowAccountModal}>
-        <DialogContent className="bg-white">
+        <DialogContent className="bg-zinc-900 border-zinc-800">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-gray-900">
-              <LinkIcon className="h-5 w-5 text-[#6097FF]" />
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <LinkIcon className="h-5 w-5 text-amber-400" />
               Link Your {modalService} Account
             </DialogTitle>
-            <DialogDescription className="text-gray-600">
+            <DialogDescription className="text-zinc-400">
               You need to link your {modalService} account to use this service in your AREAs.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-zinc-400">
               Linking your account allows AREA to perform actions on your behalf using {modalService}.
               You'll be redirected to {modalService} to authorize the connection.
             </p>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAccountModal(false)} className="text-gray-900">
+            <Button variant="outline" onClick={() => setShowAccountModal(false)} className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">
               Cancel
             </Button>
-            <Button onClick={handleLinkAccount} className="bg-[#6097FF] text-white hover:bg-[#5087EF]">
+            <Button onClick={handleLinkAccount} className="bg-gradient-to-r from-amber-400 to-orange-500 text-black hover:from-amber-500 hover:to-orange-600">
               <LinkIcon className="h-4 w-4 mr-2" />
               Link Account
             </Button>
@@ -786,33 +899,33 @@ export default function CreateAreaPage() {
 
       {/* Missing Permissions Modal */}
       <Dialog open={showPermissionModal} onOpenChange={setShowPermissionModal}>
-        <DialogContent className="bg-white">
+        <DialogContent className="bg-zinc-900 border-zinc-800">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-gray-900">
-              <AlertCircle className="h-5 w-5 text-orange-500" />
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <AlertCircle className="h-5 w-5 text-orange-400" />
               Additional Permissions Required
             </DialogTitle>
-            <DialogDescription className="text-gray-600">
+            <DialogDescription className="text-zinc-400">
               This {modalType} requires additional permissions from your {modalService} account.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <p className="text-sm text-gray-600 mb-3">
+            <p className="text-sm text-zinc-400 mb-3">
               The following permissions are needed:
             </p>
             <ul className="space-y-2">
               {modalScopes.map((scope) => (
-                <li key={scope} className="text-xs bg-gray-50 border border-gray-200 p-2 rounded font-mono text-gray-700">
+                <li key={scope} className="text-xs bg-zinc-800 border border-zinc-700 p-2 rounded font-mono text-zinc-300">
                   {scope}
                 </li>
               ))}
             </ul>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowPermissionModal(false)} className="text-gray-900">
+            <Button variant="outline" onClick={() => setShowPermissionModal(false)} className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">
               Cancel
             </Button>
-            <Button onClick={handleRequestPermissions} className="bg-[#6097FF] text-white hover:bg-[#5087EF]">
+            <Button onClick={handleRequestPermissions} className="bg-gradient-to-r from-amber-400 to-orange-500 text-black hover:from-amber-500 hover:to-orange-600">
               Grant Permissions
             </Button>
           </DialogFooter>

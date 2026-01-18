@@ -90,4 +90,35 @@ export class SpotifyProvider implements IOAuthProvider {
   getAuthUrlParameters(): Record<string, string> {
     return {};
   }
+
+  async refreshAccessToken(refreshToken: string): Promise<OAuthTokens> {
+    const url = 'https://accounts.spotify.com/api/token';
+
+    const params = new URLSearchParams();
+    params.append('grant_type', 'refresh_token');
+    params.append('refresh_token', refreshToken);
+    params.append('client_id', process.env.SPOTIFY_CLIENT_ID!);
+    params.append('client_secret', process.env.SPOTIFY_CLIENT_SECRET!);
+
+    const config = {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    };
+
+    try {
+      const data = await this.httpClient.post<SpotifyTokenResponse>(url, params, config);
+
+      console.log('Spotify Token Refresh Response:', data);
+      return {
+        access_token: data.access_token,
+        refresh_token: data.refresh_token,
+        expires_in: data.expires_in,
+        scope: data.scope,
+      };
+    } catch (error: any) {
+      console.error('Spotify Token Refresh Error:', error.response?.data || error.message);
+      throw new Error('Failed to refresh Spotify token');
+    }
+  }
 }

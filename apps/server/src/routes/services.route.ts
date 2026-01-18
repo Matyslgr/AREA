@@ -16,13 +16,15 @@ export async function serviceRoutes(fastify: FastifyInstance) {
       name: s.name,
       version: s.version || '1.0.0',
       description: s.description,
+      is_oauth: s.is_oauth,
 
       actions: s.actions.map(a => ({
         id: a.id,
         name: a.name,
         description: a.description,
         parameters: a.parameters,
-        scopes: a.scopes || []
+        scopes: a.scopes || [],
+        return_values: a.return_values || []
       })),
 
       reactions: s.reactions.map(r => ({
@@ -30,7 +32,7 @@ export async function serviceRoutes(fastify: FastifyInstance) {
         name: r.name,
         description: r.description,
         parameters: r.parameters,
-        scopes: r.scopes || []
+        scopes: r.scopes || [],
       }))
     }));
 

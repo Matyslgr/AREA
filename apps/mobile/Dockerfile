@@ -1,10 +1,12 @@
-FROM node:20-alpine
-WORKDIR /app
+FROM alpine:latest
 
-# Volume where the generated APK will be stored
-VOLUME /shared
+RUN apk add --no-cache curl
 
-# Command that runs in a loop:
-# 1. Creates a fake APK file
-# 2. Sleeps to keep the container alive
-CMD sh -c "echo 'This is a simulated APK for the PoC' > /shared/client.apk && echo 'APK generated in /shared/client.apk' && tail -f /dev/null"
+WORKDIR /shared
+
+CMD sh -c "echo 'Attempting download...' && \
+    curl -f -L -o /shared/client.apk https://github.com/Matyslgr/AREA/releases/latest/download/client.apk || \
+    (echo 'Download failed (404). Creating dummy APK for testing.' && echo 'DUMMY_CONTENT_FOR_VALIDATION' > /shared/client.apk) && \
+    chmod 644 /shared/client.apk && \
+    echo 'APK ready in volume.' && \
+    tail -f /dev/null"

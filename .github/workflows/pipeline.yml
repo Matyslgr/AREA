@@ -19,10 +19,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+
+      - name: 🧹 Clean package-lock for optional deps
+        run: rm -f package-lock.json
 
       - name: 📦 Install Dependencies
-        run: npm ci
+        run: npm install
 
       - name: 🏗️ Build Project
         run: npm run build
@@ -33,21 +35,11 @@ jobs:
       - name: 🧪 Run Tests
         run: npm test --if-present
 
-      - name: 📱 Generate Release APK (Simulation)
-        if: startsWith(github.ref, 'refs/tags/')
-        run: |
-          # In a real scenario, we would build our mobile like this:
-          # cd apps/mobile && ./gradlew assembleRelease
-          # For the sake of this example, we'll just create a dummy APK file.
-          echo "APK Version ${{ github.ref_name }}" > client.apk
-
-      - name: 📤 Upload Artifacts
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: actions/upload-artifact@v4
+      - name: ☕ Setup Java
+        uses: actions/setup-java@v4
         with:
-          name: client-apk
-          path: client.apk
-          if-no-files-found: error
+          distribution: 'temurin'
+          java-version: '17'
 
   mirror:
     name: 🪞 Push to Epitech Mirror
@@ -61,11 +53,31 @@ jobs:
   release:
     name: 📦 Create GitHub Release
     needs: [build]
-    if: startsWith(github.ref, 'refs/tags/')
+    if: |
+      startsWith(github.ref, 'refs/tags/') ||
+      (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/ci/apk_build'))
 
     permissions:
       contents: write
 
-    uses: Matyslgr/.github/.github/workflows/release_maker.yml@main
-    with:
-      artifact_pattern: "*"
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-files
+          path: dist
+
+      - name: 📦 Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'latest' }}
+          name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'Latest Development Build' }}
+          body: |
+            Automatic build from ${{ github.ref_name }} branch.
+            Built on: ${{ github.event.head_commit.timestamp || 'N/A' }}
+            Commit: ${{ github.sha }}
+          files: dist/**/*
+          generate_release_notes: true
+          prerelease: false
+          make_latest: true
