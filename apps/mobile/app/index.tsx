@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { useTheme } from '@/contexts/ThemeContext';
+import { getColors } from '@/lib/theme-colors';
 import { Link } from 'expo-router';
 import * as React from 'react';
 import { ServerConfigModal } from '@/components/server-config-modal';
@@ -8,7 +9,6 @@ import { ServerInfoModal } from '@/components/server-info-modal';
 import { resetApiUrl, getApiUrl } from '@/lib/api';
 import * as Updates from 'expo-updates';
 import {
-  Dimensions,
   Image,
   Platform,
   ScrollView,
@@ -17,20 +17,8 @@ import {
   TouchableOpacity
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { cn } from '@/lib/utils';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
 const heroDiscord = require('../assets/yt_discord_hero.png');
 const heroYoutube = require('../assets/yt_gmail_hero.png');
-
-const featureImages = [
-  require('../assets/feature1.jpeg'),
-  require('../assets/feature2.jpeg'),
-  require('../assets/feature3.jpeg'),
-  require('../assets/feature4.jpeg'),
-  require('../assets/feature5.jpeg'),
-];
 
 const SERVICES = [
   { id: 'google', name: 'Google', icon: require('../assets/google.png'), useTint: false },
@@ -43,7 +31,7 @@ const SERVICES = [
 
 export default function HomePage() {
   const { isDark } = useTheme();
-  const [activeFeature, setActiveFeature] = React.useState(0);
+  const colors = getColors(isDark);
 
   const [isConfiguring, setIsConfiguring] = React.useState(false);
   const [showServerInfo, setShowServerInfo] = React.useState(false);
@@ -86,7 +74,7 @@ export default function HomePage() {
   }
 
   return (
-    <SafeAreaView className="bg-background flex-1">
+    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
       <ServerConfigModal
         visible={isConfiguring}
         onSave={() => {
@@ -103,13 +91,14 @@ export default function HomePage() {
         onReset={handleReset}
       />
 
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ flexGrow: 1, backgroundColor: colors.background }} showsVerticalScrollIndicator={false}>
         <View className="px-6 pt-4 pb-6 relative">
 
           <View className="absolute top-4 right-6 z-10">
             <TouchableOpacity
               onPress={() => setShowServerInfo(true)}
-              className="h-10 w-10 bg-card border border-border items-center justify-center rounded-full shadow-sm active:opacity-70"
+              className="h-10 w-10 items-center justify-center rounded-full shadow-sm active:opacity-70"
+              style={{ backgroundColor: '#1a1a1a', borderColor: '#404040', borderWidth: 1 }}
             >
               <Text className="text-lg">⚙️</Text>
             </TouchableOpacity>
@@ -125,7 +114,7 @@ export default function HomePage() {
           </View>
 
           {/* Hero Description */}
-          <Text className="text-muted-foreground text-center text-base leading-6 mb-6">
+          <Text style={{ color: isDark ? '#d4d4d8' : '#52525b', textAlign: 'center', fontSize: 16, lineHeight: 24, marginBottom: 24 }}>
             Automate your workflow by linking the accounts of your favorite apps and services.
             Create powerful integrations between different platforms to save time and boost productivity.
           </Text>
@@ -154,73 +143,19 @@ export default function HomePage() {
               </Button>
             </Link>
             <Link href="/(auth)/sign-up" asChild>
-              <Button variant="outline" size="lg" className="w-full">
-                <Text className="font-semibold text-base">Create Account</Text>
+              <Button size="lg" className="w-full" style={{ backgroundColor: '#6b21a8' }}>
+                <Text className="text-primary-foreground font-semibold text-base">Create Account</Text>
               </Button>
             </Link>
           </View>
         </View>
 
-        {/* Features Section */}
-        <View className="py-6 bg-muted/30">
-          <Text className="text-foreground text-xl font-bold text-center mb-6 px-6">
-            Key Features
-          </Text>
-
-          {/* Feature Images Carousel */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            pagingEnabled
-            snapToInterval={SCREEN_WIDTH - 48}
-            decelerationRate="fast"
-            contentContainerStyle={{ paddingHorizontal: 24 }}
-            onScroll={(e) => {
-              const index = Math.round(e.nativeEvent.contentOffset.x / (SCREEN_WIDTH - 48));
-              setActiveFeature(index);
-            }}
-            scrollEventThrottle={16}
-          >
-            {featureImages.map((image, index) => (
-              <View
-                key={index}
-                className="mr-4"
-                style={{ width: SCREEN_WIDTH - 72 }}
-              >
-                <Image
-                  source={image}
-                  className={cn(
-                    'w-full h-48 rounded-2xl',
-                    activeFeature === index ? 'opacity-100' : 'opacity-70'
-                  )}
-                  resizeMode="cover"
-                />
-              </View>
-            ))}
-          </ScrollView>
-
-          {/* Dots Indicator */}
-          <View className="flex-row justify-center gap-2 mt-4">
-            {featureImages.map((_, index) => (
-              <View
-                key={index}
-                className={cn(
-                  'h-2 rounded-full',
-                  activeFeature === index
-                    ? 'w-6 bg-primary'
-                    : 'w-2 bg-muted-foreground/30'
-                )}
-              />
-            ))}
-          </View>
-        </View>
-
         {/* Services Section */}
         <View className="px-6 py-6">
-          <Text className="text-foreground text-xl font-bold text-center mb-2">
+          <Text style={{ color: colors.foreground, fontSize: 20, fontWeight: 'bold', textAlign: 'center', marginBottom: 8 }}>
             Available Services
           </Text>
-          <Text className="text-muted-foreground text-center text-sm mb-6">
+          <Text style={{ color: isDark ? '#d4d4d8' : '#52525b', textAlign: 'center', fontSize: 14, marginBottom: 24 }}>
             Connect with your favorite platforms
           </Text>
 
@@ -229,9 +164,9 @@ export default function HomePage() {
               <View
                 key={service.id}
                 className="items-center"
-                style={{ width: (SCREEN_WIDTH - 72) / 3 }}
+                style={{ width: '30%' }}
               >
-                <View className="bg-card border border-border h-16 w-16 items-center justify-center rounded-2xl mb-2">
+                <View className="border border-border h-16 w-16 items-center justify-center rounded-2xl mb-2" style={{ backgroundColor: isDark ? '#27272a' : '#f5f5f5' }}>
                   <Image
                     source={service.icon}
                     className="h-8 w-8"
@@ -245,7 +180,7 @@ export default function HomePage() {
                     })}
                   />
                 </View>
-                <Text className="text-foreground text-xs font-medium">
+                <Text style={{ color: isDark ? 'white' : 'black', fontSize: 12, fontWeight: '500' }}>
                   {service.name}
                 </Text>
               </View>
@@ -254,14 +189,14 @@ export default function HomePage() {
         </View>
 
         {/* Footer */}
-        <View className="px-6 py-8 bg-muted/50 mt-auto">
+        <View className="px-6 py-8 mt-auto" style={{ backgroundColor: isDark ? '#09090b' : '#f5f5f5' }}>
           <View className="items-center mb-4">
-            <Text className="text-foreground text-lg font-bold">AREA</Text>
-            <Text className="text-muted-foreground text-xs text-center mt-2">
+            <Text style={{ color: colors.foreground, fontSize: 18, fontWeight: 'bold' }}>AREA</Text>
+            <Text style={{ color: isDark ? '#d4d4d8' : '#52525b', fontSize: 12, textAlign: 'center', marginTop: 8 }}>
               Automate your workflow by connecting your favorite apps and services.
             </Text>
           </View>
-          <Text className="text-muted-foreground text-xs text-center">
+          <Text style={{ color: isDark ? '#d4d4d8' : '#52525b', fontSize: 12, textAlign: 'center' }}>
             © 2025 AREA. All rights reserved.
           </Text>
         </View>

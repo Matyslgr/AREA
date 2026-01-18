@@ -34,6 +34,10 @@ const serviceIcons: Record<string, string> = {
   timer: "https://img.icons8.com/fluency/96/clock.png",
 };
 
+const shouldInvertIcon = (serviceId: string) => {
+  return serviceId === "github" || serviceId === "notion";
+};
+
 const formatActionName = (name: string): string => {
   return name.replace(/_/g, " ").toLowerCase()
     .split(" ")
@@ -207,7 +211,7 @@ export default function AreaDetailsPage() {
                     <img
                       src={serviceIcons[actionService] || "/assets/default.png"}
                       alt={actionService}
-                      className="h-8 w-8 object-contain"
+                      className={`h-8 w-8 object-contain ${shouldInvertIcon(actionService) ? "invert" : ""}`}
                     />
                   </div>
                 )}
@@ -271,7 +275,7 @@ export default function AreaDetailsPage() {
                           <img
                             src={serviceIcons[reactionService] || "/assets/default.png"}
                             alt={reactionService}
-                            className="h-8 w-8 object-contain"
+                            className={`h-8 w-8 object-contain ${shouldInvertIcon(reactionService) ? "invert" : ""}`}
                           />
                         </div>
                       )}

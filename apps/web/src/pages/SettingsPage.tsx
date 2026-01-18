@@ -30,12 +30,12 @@ interface AccountDetails {
 }
 
 const SERVICES = [
-  { id: "google", name: "Google", icon: GoogleIcon },
-  { id: "github", name: "GitHub", icon: GithubIcon },
-  { id: "spotify", name: "Spotify", icon: SpotifyIcon },
-  { id: "notion", name: "Notion", icon: NotionIcon },
-  { id: "linkedin", name: "LinkedIn", icon: LinkedinIcon },
-  { id: "twitch", name: "Twitch", icon: TwitchIcon },
+  { id: "google", name: "Google", icon: GoogleIcon, useTint: false },
+  { id: "github", name: "GitHub", icon: GithubIcon, useTint: true },
+  { id: "spotify", name: "Spotify", icon: SpotifyIcon, useTint: false },
+  { id: "notion", name: "Notion", icon: NotionIcon, useTint: true },
+  { id: "linkedin", name: "LinkedIn", icon: LinkedinIcon, useTint: false },
+  { id: "twitch", name: "Twitch", icon: TwitchIcon, useTint: false },
 ]
 
 export default function SettingsPage() {
@@ -369,7 +369,7 @@ export default function SettingsPage() {
                     }`}
                   >
                     <div className="flex items-center gap-3 mb-3">
-                      <img src={service.icon} alt={service.name} className="h-8 w-8 rounded" />
+                      <img src={service.icon} alt={service.name} className={`h-8 w-8 rounded ${service.useTint ? "invert" : ""}`} />
                       <div>
                         <p className="font-semibold text-white">{service.name}</p>
                         {linked && (

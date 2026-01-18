@@ -222,9 +222,9 @@ export default function DashboardScreen() {
           />
         }
       >
-        <View className="flex-1 px-6 py-6" style={{ backgroundColor: colors.background }}>
+        <View className="flex-1 px-6 pt-4 pb-6" style={{ backgroundColor: colors.background }}>
           {/* Header */}
-          <View className="mb-6 flex-row items-center justify-between">
+          <View className="mb-4 flex-row items-center justify-between">
             <View>
               <Text style={{ color: colors.mutedForeground, fontSize: 14 }}>Welcome back,</Text>
               <Text style={{ color: colors.foreground, fontSize: 20, fontWeight: 'bold' }}>
@@ -253,7 +253,7 @@ export default function DashboardScreen() {
           <View className="mb-6 flex-row gap-3">
             <Card className="flex-1" style={{ backgroundColor: colors.card, borderColor: colors.border }}>
               <CardContent className="items-center py-4">
-                <Text style={{ color: colors.primary, fontSize: 24, fontWeight: 'bold' }}>{areas.length}</Text>
+                <Text style={{ color: colors.primary, fontSize: 20, fontWeight: 'bold' }}>{areas.length}</Text>
                 <Text style={{ color: colors.mutedForeground, fontSize: 12, textAlign: 'center' }}>Total AREAs</Text>
                 <Text style={{ color: colors.mutedForeground, fontSize: 10, marginTop: 4 }}>{activeAreasCount} active</Text>
               </CardContent>
@@ -261,7 +261,7 @@ export default function DashboardScreen() {
 
             <Card className="flex-1" style={{ backgroundColor: colors.card, borderColor: colors.border }}>
               <CardContent className="items-center py-4">
-                <Text style={{ color: '#22c55e', fontSize: 24, fontWeight: 'bold' }}>{activePercentage}%</Text>
+                <Text style={{ color: '#22c55e', fontSize: 20, fontWeight: 'bold' }}>{activePercentage}%</Text>
                 <Text style={{ color: colors.mutedForeground, fontSize: 12, textAlign: 'center' }}>Active Rate</Text>
                 <Text style={{ color: colors.mutedForeground, fontSize: 10, marginTop: 4 }}>% of total</Text>
               </CardContent>
@@ -269,7 +269,7 @@ export default function DashboardScreen() {
 
             <Card className="flex-1" style={{ backgroundColor: colors.card, borderColor: colors.border }}>
               <CardContent className="items-center py-4">
-                <Text style={{ color: '#f97316', fontSize: 24, fontWeight: 'bold' }}>{totalReactions}</Text>
+                <Text style={{ color: '#f97316', fontSize: 20, fontWeight: 'bold' }}>{totalReactions}</Text>
                 <Text style={{ color: colors.mutedForeground, fontSize: 12, textAlign: 'center' }}>Reactions</Text>
                 <Text style={{ color: colors.mutedForeground, fontSize: 10, marginTop: 4 }}>Total</Text>
               </CardContent>
@@ -350,12 +350,12 @@ export default function DashboardScreen() {
 
             {filteredAreas.length === 0 ? (
               <Card style={{ backgroundColor: colors.card, borderColor: colors.border }}>
-                <CardContent className="items-center py-8">
-                  <Text style={{ color: colors.mutedForeground, marginBottom: 8, fontSize: 32 }}>⚡</Text>
-                  <Text style={{ color: colors.foreground, marginBottom: 4, fontWeight: '500' }}>
+                <CardContent className="items-center py-12 px-4">
+                  <Text style={{ color: colors.mutedForeground, marginBottom: 12, fontSize: 48, lineHeight: 52 }}>⚡</Text>
+                  <Text style={{ color: colors.foreground, marginBottom: 8, fontWeight: '600', fontSize: 16 }}>
                     {searchQuery ? "No matching areas" : "No areas yet"}
                   </Text>
-                  <Text style={{ color: colors.mutedForeground, textAlign: 'center', fontSize: 14, paddingHorizontal: 16 }}>
+                  <Text style={{ color: colors.mutedForeground, textAlign: 'center', fontSize: 14, paddingHorizontal: 16, lineHeight: 20 }}>
                     {searchQuery
                       ? `No areas matching "${searchQuery}"`
                       : "Create your first automation to get started with AREA"
