@@ -155,16 +155,20 @@ export interface OAuthAccount {
   created_at: string;
 }
 
-export interface LinkedAccountInfo {
+export interface LinkedAccount {
   id: string;
   provider: string;
-  scopes: string[];
+  provider_account_id: string;
+  expires_at?: string;
+  scopes?: string[];
 }
 
-export interface AccountDetails extends User {
-  accounts: OAuthAccount[];
-  linkedAccounts?: LinkedAccountInfo[];
+export interface AccountDetails {
+  id: string;
+  email: string;
+  username: string;
   hasPassword: boolean;
+  linkedAccounts: LinkedAccount[];
 }
 
 export const authApi = {
@@ -204,11 +208,8 @@ export const authApi = {
   oauthLink: (provider: string, code: string) =>
     api.post<{ message: string }>('/auth/oauth/link', { provider, code }),
 
-  getOAuthAccounts: () =>
-    api.get<{ accounts: OAuthAccount[] }>('/auth/oauth/accounts'),
-
   unlinkOAuthAccount: (provider: string) =>
-    api.delete<{ message: string }>(`/auth/oauth/accounts/${provider}`),
+    api.delete<{ message: string }>(`/auth/account/providers/${provider}`),
 };
 
 // Area types

@@ -5,7 +5,8 @@ import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getColors } from '@/lib/theme-colors';
-import { Area, areasApi, authApi, OAuthAccount } from '@/lib/api';
+// 👇 Ajout de AccountDetails dans les imports pour le typage
+import { Area, areasApi, authApi, AccountDetails, LinkedAccount } from '@/lib/api';
 import { router } from 'expo-router';
 import * as React from 'react';
 import {
@@ -83,7 +84,8 @@ export default function DashboardScreen() {
 
   // --- STATE ---
   const [areas, setAreas] = React.useState<Area[]>([]);
-  const [connectedAccounts, setConnectedAccounts] = React.useState<OAuthAccount[]>([]);
+  // 👇 On change le type ici pour correspondre à linkedAccounts
+  const [connectedAccounts, setConnectedAccounts] = React.useState<LinkedAccount[]>([]);
   const [filteredAreas, setFilteredAreas] = React.useState<Area[]>([]);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [loading, setLoading] = React.useState(true);
@@ -93,14 +95,15 @@ export default function DashboardScreen() {
   // --- FETCH LOGIC ---
   const fetchData = React.useCallback(async () => {
     try {
-      const [accountsRes, areasRes] = await Promise.all([
-        authApi.getOAuthAccounts(),
+      const [accountRes, areasRes] = await Promise.all([
+        authApi.getAccount(),
         areasApi.list(),
       ]);
 
-      if (accountsRes.data?.accounts) {
-        setConnectedAccounts(accountsRes.data.accounts);
+      if (accountRes.data && !accountRes.error) {
+        setConnectedAccounts(accountRes.data.linkedAccounts || []);
       }
+
       if (areasRes.data) {
         setAreas(areasRes.data);
       }
@@ -185,7 +188,7 @@ export default function DashboardScreen() {
   }
 
   // --- CALCULATED STATS ---
-  const connectedProviders = new Set(connectedAccounts.map((a) => a.provider));
+  const connectedProviders = new Set(connectedAccounts.map((a) => a.provider.toLowerCase()));
   const activeAreasCount = areas.filter(area => area.is_active).length;
   const totalReactions = areas.reduce((sum, area) => sum + (area.reactions?.length || 0), 0);
   const activePercentage = areas.length > 0 ? Math.round((activeAreasCount / areas.length) * 100) : 0;
@@ -317,7 +320,7 @@ export default function DashboardScreen() {
               <View className="flex-row gap-3">
                 {ALL_PROVIDERS.map((provider) => {
                   const config = SERVICE_CONFIG[provider];
-                  const isConnected = connectedProviders.has(provider);
+                  const isConnected = connectedProviders.has(provider.toLowerCase());
                   return (
                     <ServiceCard
                       key={provider}
