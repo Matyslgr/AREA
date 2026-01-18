@@ -229,12 +229,19 @@ export interface Area {
   }[];
 }
 
+export interface ServiceActionValue {
+  name: string;
+  description: string;
+  example?: string;
+}
+
 export interface ServiceAction {
   id: string;
   name: string;
   description: string;
   parameters: { name: string; type: string; description: string; required: boolean }[];
   scopes?: string[];
+  return_values?: ServiceActionValue[];
 }
 
 export interface ServiceReaction {
@@ -256,14 +263,20 @@ export interface Service {
 export const areasApi = {
   list: () => api.get<Area[]>('/areas'),
 
+  get: (id: string) => api.get<Area>(`/areas/${id}`),
+
   create: (data: {
     name: string;
     action: { name: string; parameters: Record<string, unknown> };
     reactions: { name: string; parameters: Record<string, unknown> }[];
   }) => api.post<{ message: string; area: Area }>('/areas', data),
 
-  update: (id: string, data: { is_active?: boolean; name?: string }) =>
-    api.put<{ success: boolean }>(`/areas/${id}`, data),
+  update: (id: string, data: {
+    is_active?: boolean;
+    name?: string;
+    action?: { name: string; parameters: Record<string, unknown> };
+    reactions?: { name: string; parameters: Record<string, unknown> }[];
+  }) => api.put<{ success: boolean }>(`/areas/${id}`, data),
 
   delete: (id: string) => api.delete<{ success: boolean }>(`/areas/${id}`),
 };

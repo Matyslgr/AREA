@@ -455,10 +455,54 @@ export default function CreateAreaScreen() {
     return SERVICE_CONFIG[serviceId]?.useTint || false;
   };
 
+  // Helper to insert a variable tag into a parameter
+  const insertVariable = (paramName: string, tag: string, isAction: boolean) => {
+    const currentParams = isAction ? actionParams : reactionParams;
+    const currentValue = String(currentParams[paramName] || '');
+    const newValue = currentValue ? currentValue + ' ' + tag : tag;
+
+    if (isAction) {
+      setActionParams({ ...actionParams, [paramName]: newValue });
+    } else {
+      setReactionParams({ ...reactionParams, [paramName]: newValue });
+    }
+  };
+
+  // Variable pills component for ingredients
+  const VariablePills = ({
+    variables,
+    paramName,
+  }: {
+    variables: { name: string; description: string }[];
+    paramName: string;
+  }) => {
+    if (!variables || variables.length === 0) return null;
+
+    return (
+      <View className="mb-3 p-3 bg-indigo-500/10 dark:bg-indigo-900/20 rounded-lg border border-indigo-500/20">
+        <Text className="text-xs font-semibold text-indigo-400 mb-2 uppercase">
+          Available Ingredients (Tap to insert)
+        </Text>
+        <View className="flex-row flex-wrap gap-2">
+          {variables.map((v) => (
+            <Pressable
+              key={v.name}
+              onPress={() => insertVariable(paramName, `{{${v.name}}}`, false)}
+              className="bg-indigo-500/20 px-2 py-1 rounded-md border border-indigo-500/30"
+            >
+              <Text className="text-xs text-indigo-300">{v.name}</Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
+    );
+  };
+
   const renderParameterInput = (
     param: ServiceAction['parameters'][0],
     value: unknown,
-    onChange: (key: string, val: string | number | boolean) => void
+    onChange: (key: string, val: string | number | boolean) => void,
+    availableVariables?: { name: string; description: string }[]
   ) => {
     return (
       <View key={param.name} className="mb-4">
@@ -468,6 +512,12 @@ export default function CreateAreaScreen() {
             {param.required && <Text className="text-red-500"> *</Text>}
           </Text>
         </Label>
+
+        {/* Show variable pills for string parameters in reactions */}
+        {availableVariables && param.type === 'string' && (
+          <VariablePills variables={availableVariables} paramName={param.name} />
+        )}
+
         {param.type === 'boolean' ? (
           <View className="flex-row items-center gap-2">
             <Switch
@@ -784,13 +834,18 @@ export default function CreateAreaScreen() {
               }}
             >
               <Text className="font-semibold mb-4" style={{ color: colors.foreground }}>Configure Parameters</Text>
-              {selectedReaction.parameters.map((param) =>
-                renderParameterInput(
-                  param,
-                  reactionParams[param.name],
-                  (key, val) => setReactionParams({ ...reactionParams, [key]: val })
-                )
-              )}
+              {(() => {
+                // Get available variables from the selected action's return values
+                const actionVariables = selectedAction?.return_values || [];
+                return selectedReaction.parameters.map((param) =>
+                  renderParameterInput(
+                    param,
+                    reactionParams[param.name],
+                    (key, val) => setReactionParams({ ...reactionParams, [key]: val }),
+                    actionVariables
+                  )
+                );
+              })()}
             </View>
           )}
         </>
