@@ -181,6 +181,118 @@ const buttonVariants = cva(
 
 ---
 
+### 3.1. Accessibilité et Technologies pour Personnes en Situation de Handicap (PSH)
+
+> **Compétence C6** : Identification des technologies permettant de répondre aux besoins des personnes en situation de handicap
+
+#### Cadre Réglementaire
+
+| Référentiel | Description | Application |
+|-------------|-------------|-------------|
+| **RGAA 4.1** | Référentiel Général d'Amélioration de l'Accessibilité | Obligatoire pour services publics français |
+| **WCAG 2.1** | Web Content Accessibility Guidelines (W3C) | Standard international niveau AA |
+| **WAI-ARIA 1.2** | Accessible Rich Internet Applications | Sémantique pour applications dynamiques |
+
+#### Technologies Sélectionnées pour l'Accessibilité
+
+**1. Radix UI Primitives (Base de shadcn/ui)**
+
+| Critère d'accessibilité | Support Radix UI | Alternative rejetée |
+|------------------------|------------------|---------------------|
+| Navigation clavier complète | ✅ Natif | Material-UI (partiel) |
+| Rôles ARIA automatiques | ✅ Natif | Bootstrap (manuel) |
+| Focus management | ✅ Focus trap, restore | Chakra UI (basique) |
+| Screen reader announcements | ✅ Live regions | Ant Design (limité) |
+| Reduced motion support | ✅ `prefers-reduced-motion` | Tailwind UI (non natif) |
+
+**Exemple d'implémentation accessible** (`apps/web/src/components/ui/button.tsx`):
+```typescript
+// Radix UI génère automatiquement:
+// - role="button" (implicite via <button>)
+// - aria-disabled quand disabled
+// - Focus visible pour navigation clavier
+// - Support prefers-reduced-motion
+
+<Button
+  disabled={isLoading}
+  className="focus-visible:ring-2 focus-visible:ring-offset-2"
+>
+  {isLoading ? <Loader className="animate-spin" /> : "Connexion"}
+</Button>
+```
+
+**2. Semantic HTML (Fondation)**
+
+| Élément | Usage AREA | Bénéfice Accessibilité |
+|---------|-----------|------------------------|
+| `<button>` | Actions utilisateur | Focusable, activable au clavier |
+| `<label>` + `htmlFor` | Champs de formulaire | Association explicite input/label |
+| `<nav>`, `<main>`, `<header>` | Structure page | Navigation par landmarks |
+| `<h1>`-`<h6>` | Hiérarchie contenu | Navigation par titres (screen reader) |
+
+**3. Gestion des Contrastes (WCAG AA)**
+
+| Contexte | Ratio Minimum | Implémentation AREA |
+|----------|---------------|---------------------|
+| Texte normal | 4.5:1 | Variables CSS Tailwind |
+| Texte large (18px+) | 3:1 | Classes `text-lg`, `text-xl` |
+| Composants UI | 3:1 | shadcn/ui theme tokens |
+| Focus indicators | 3:1 | `ring-2 ring-offset-2` |
+
+**Configuration Tailwind pour l'accessibilité** (`apps/web/tailwind.config.ts`):
+```typescript
+// Couleurs respectant WCAG AA (ratio 4.5:1 minimum)
+colors: {
+  primary: {
+    DEFAULT: "hsl(var(--primary))",      // Contraste vérifié
+    foreground: "hsl(var(--primary-foreground))"
+  },
+  destructive: {
+    DEFAULT: "hsl(var(--destructive))",  // Rouge accessible
+    foreground: "hsl(var(--destructive-foreground))"
+  }
+}
+```
+
+**4. Technologies Alternatives Évaluées et Rejetées**
+
+| Technologie | Raison du Rejet | Impact Accessibilité |
+|-------------|-----------------|---------------------|
+| **Headless UI** | Moins mature que Radix | ARIA incomplet sur certains composants |
+| **React Aria (Adobe)** | Complexité d'intégration | Excellent mais overhead de code |
+| **Material-UI** | Bundle size, personnalisation | Bon support mais moins flexible |
+| **Composants custom from scratch** | Temps de développement | Risque d'oublis ARIA |
+
+#### Fonctionnalités d'Accessibilité Implémentées
+
+| Fonctionnalité | Composant | Critère RGAA |
+|----------------|-----------|--------------|
+| Skip links | Layout principal | 12.7 |
+| Focus visible | Tous les interactifs | 10.7 |
+| Messages d'erreur associés | Formulaires | 11.10 |
+| Labels explicites | Tous les champs | 11.1 |
+| Navigation clavier | Menus, modals, dropdowns | 12.8 |
+| Annonces dynamiques | Toasts, alerts | 7.1 |
+
+#### Outils de Vérification Utilisés
+
+| Outil | Usage | Intégration |
+|-------|-------|-------------|
+| **axe DevTools** | Audit automatique | Extension navigateur |
+| **WAVE** | Visualisation erreurs | Extension navigateur |
+| **Lighthouse** | Score accessibilité | Chrome DevTools |
+| **NVDA/VoiceOver** | Test screen reader | Manuel |
+
+**Résultat Audit Lighthouse Accessibilité** : Score cible ≥ 90/100
+
+#### Conclusion Accessibilité
+
+Le choix de **Radix UI** (via shadcn/ui) comme fondation garantit une **accessibilité native** sans effort supplémentaire. Les alternatives évaluées (Material-UI, Headless UI, composants custom) présentaient soit un support ARIA incomplet, soit un overhead de développement incompatible avec les contraintes du projet.
+
+Cette approche permet de répondre aux besoins des PSH tout en maintenant une vélocité de développement optimale.
+
+---
+
 ### 4. Styling - Tailwind CSS
 
 **Performance Impact:**
