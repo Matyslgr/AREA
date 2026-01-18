@@ -11,12 +11,9 @@ import AccountSetup from '@/pages/AccountSetup'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import CreateAreaPage from './pages/CreateAreaPage'
-<<<<<<< HEAD
 import AreaDetailsPage from './pages/AreaDetailsPage'
 import EditAreaPage from './pages/EditAreaPage'
 import SettingsPage from './pages/SettingsPage'
-=======
->>>>>>> 4f4ac0a2a3f95d4f552083b3be905ff5307338bc
 
 
 function App() {
