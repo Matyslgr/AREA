@@ -242,7 +242,7 @@ export default function AccountSetupScreen() {
                 const isConnecting = connectingService === service.id;
 
                 return (
-                  <Card key={service.id} style={{ backgroundColor: colors.card, borderColor: colors.border }}>
+                  <Card key={service.id} style={{ backgroundColor: colors.card, borderColor: isLinked ? '#22c55e' : colors.border, borderWidth: isLinked ? 2 : 1 }}>
                     <Pressable
                       onPress={() => !isLinked && !isConnecting && handleLinkService(service.id)}
                       disabled={isLinked || isConnecting || oauthLoading}
@@ -271,8 +271,17 @@ export default function AccountSetupScreen() {
                         </View>
                         <View>
                           {isLinked ? (
-                            <View style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)', borderRadius: 9999, paddingHorizontal: 12, paddingVertical: 4 }}>
-                              <Text style={{ color: '#22c55e', fontSize: 12, fontWeight: '500' }}>Connected</Text>
+                            <View
+                              style={{
+                                backgroundColor: '#22c55e',
+                                borderRadius: 9999,
+                                width: 32,
+                                height: 32,
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                              }}
+                            >
+                              <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>✓</Text>
                             </View>
                           ) : isConnecting ? (
                             <View style={{ backgroundColor: colors.muted, borderRadius: 9999, paddingHorizontal: 12, paddingVertical: 4, flexDirection: 'row', alignItems: 'center' }}>
@@ -282,8 +291,8 @@ export default function AccountSetupScreen() {
                               </Text>
                             </View>
                           ) : (
-                            <View style={{ backgroundColor: colors.secondary, borderRadius: 9999, paddingHorizontal: 12, paddingVertical: 4 }}>
-                              <Text style={{ color: colors.secondaryForeground, fontSize: 12, fontWeight: '500' }}>
+                            <View style={{ backgroundColor: colors.primary, borderRadius: 9999, paddingHorizontal: 12, paddingVertical: 6 }}>
+                              <Text style={{ color: colors.primaryForeground, fontSize: 12, fontWeight: '500' }}>
                                 Connect
                               </Text>
                             </View>

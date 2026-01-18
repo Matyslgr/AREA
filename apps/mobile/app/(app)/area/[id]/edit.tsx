@@ -3,10 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Text } from '@/components/ui/text';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Area, areasApi } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import {
   ActivityIndicator,
@@ -61,7 +61,7 @@ const formatActionName = (name: string): string => {
 
 export default function EditAreaScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { colorScheme } = useColorScheme();
+  const { isDark } = useTheme();
 
   const [area, setArea] = React.useState<Area | null>(null);
   const [loading, setLoading] = React.useState(true);
@@ -266,13 +266,13 @@ export default function EditAreaScreen() {
                     <Image
                       source={serviceIcons[actionService] || require('../../../../assets/icon.png')}
                       className="w-6 h-6"
-                      tintColor={
-                        serviceTints[actionService]
-                          ? colorScheme === 'dark'
+                      tintColor={Platform.select({
+                        native: serviceTints[actionService]
+                          ? isDark
                             ? 'white'
                             : 'black'
-                          : undefined
-                      }
+                          : undefined,
+                      })}
                       resizeMode="contain"
                     />
                   </View>
@@ -332,13 +332,13 @@ export default function EditAreaScreen() {
                       <Image
                         source={serviceIcons[reactionService] || require('../../../../assets/icon.png')}
                         className="w-6 h-6"
-                        tintColor={
-                          serviceTints[reactionService]
-                            ? colorScheme === 'dark'
+                        tintColor={Platform.select({
+                          native: serviceTints[reactionService]
+                            ? isDark
                               ? 'white'
                               : 'black'
-                            : undefined
-                        }
+                            : undefined,
+                        })}
                         resizeMode="contain"
                       />
                     </View>

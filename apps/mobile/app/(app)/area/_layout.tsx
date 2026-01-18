@@ -1,15 +1,17 @@
+import { useTheme } from '@/contexts/ThemeContext';
+import { getColors } from '@/lib/theme-colors';
 import { Stack } from 'expo-router';
-import { useColorScheme } from 'nativewind';
 
 export default function AreaLayout() {
-  const { colorScheme } = useColorScheme();
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   return (
     <Stack
       screenOptions={{
         headerShown: false,
         contentStyle: {
-          backgroundColor: colorScheme === 'dark' ? 'hsl(240, 10%, 3.9%)' : 'hsl(0, 0%, 100%)',
+          backgroundColor: colors.background,
         },
         animation: 'slide_from_right',
       }}

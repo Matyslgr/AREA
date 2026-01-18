@@ -403,14 +403,15 @@ function ServiceCard({
       className="h-20 w-20 items-center justify-center rounded-2xl"
       style={{
         backgroundColor: connected ? colors.card : colors.muted,
-        borderColor: colors.border,
-        borderWidth: 1,
+        borderColor: connected ? '#22c55e' : colors.border,
+        borderWidth: connected ? 2 : 1,
         opacity: connected ? 1 : 0.5,
       }}
     >
       <Image
         source={icon}
         className="h-8 w-8"
+        resizeMode="contain"
         tintColor={Platform.select({
           native: useTint ? (isDark ? 'white' : 'black') : undefined,
         })}
@@ -418,9 +419,11 @@ function ServiceCard({
       <Text style={{ color: colors.foreground, marginTop: 4, fontSize: 12 }}>{name}</Text>
       {connected && (
         <View
-          className="absolute -right-1 -top-1 h-3 w-3 rounded-full"
+          className="absolute -right-1 -top-1 h-4 w-4 rounded-full items-center justify-center"
           style={{ backgroundColor: '#22c55e', borderWidth: 2, borderColor: colors.background }}
-        />
+        >
+          <Text style={{ color: 'white', fontSize: 8, fontWeight: 'bold' }}>✓</Text>
+        </View>
       )}
     </Pressable>
   );
