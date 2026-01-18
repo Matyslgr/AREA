@@ -66,7 +66,12 @@ const SERVICE_CONFIG: Record<
   },
   timer: {
     name: 'Timer',
-    icon: require('../../assets/icon.png'),
+    icon: require('../../assets/timer.png'),
+    useTint: false,
+  },
+  tools: {
+    name: 'Tools',
+    icon: require('../../assets/tools.png'),
     useTint: false,
   },
 };
@@ -220,15 +225,6 @@ export default function CreateAreaScreen() {
           scopes: acc.scopes || [],
         }));
         console.log('[CreateArea] Parsed linkedAccounts:', accounts);
-        setLinkedAccounts(accounts);
-      } else if (data?.accounts) {
-        // Fallback to accounts array if linkedAccounts not present
-        const accounts = data.accounts.map((acc) => ({
-          id: acc.id,
-          service: acc.provider,
-          scopes: acc.scope?.split(' ') || [],
-        }));
-        console.log('[CreateArea] Parsed accounts (fallback):', accounts);
         setLinkedAccounts(accounts);
       }
     } catch (err) {

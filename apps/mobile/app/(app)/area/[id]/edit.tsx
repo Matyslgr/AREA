@@ -5,7 +5,8 @@ import { Label } from '@/components/ui/label';
 import { Text } from '@/components/ui/text';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Area, areasApi } from '@/lib/api';
-import { cn } from '@/lib/utils';
+// 👇 Import des couleurs
+import { getColors } from '@/lib/theme-colors';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
 import {
@@ -22,17 +23,20 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+// --- CONFIGURATION ---
+
 const getServiceFromAction = (actionName: string): string => {
-  if (actionName.startsWith('GITHUB_')) return 'github';
-  if (actionName.startsWith('GOOGLE_')) return 'google';
-  if (actionName.startsWith('GMAIL_')) return 'google';
-  if (actionName.startsWith('DISCORD_')) return 'discord';
-  if (actionName.startsWith('SPOTIFY_')) return 'spotify';
-  if (actionName.startsWith('TWITCH_')) return 'twitch';
-  if (actionName.startsWith('NOTION_')) return 'notion';
-  if (actionName.startsWith('LINKEDIN_')) return 'linkedin';
-  if (actionName.startsWith('TIMER_')) return 'timer';
-  return 'unknown';
+  if (!actionName) return 'unknown';
+  const name = actionName.toUpperCase();
+  if (name.startsWith('GITHUB_')) return 'github';
+  if (name.startsWith('GOOGLE_') || name.startsWith('GMAIL_')) return 'google';
+  if (name.startsWith('DISCORD_')) return 'discord';
+  if (name.startsWith('SPOTIFY_')) return 'spotify';
+  if (name.startsWith('TWITCH_')) return 'twitch';
+  if (name.startsWith('NOTION_')) return 'notion';
+  if (name.startsWith('LINKEDIN_')) return 'linkedin';
+  if (name.startsWith('TIMER_')) return 'timer';
+  return 'tools';
 };
 
 const serviceIcons: Record<string, ImageSourcePropType> = {
@@ -42,12 +46,15 @@ const serviceIcons: Record<string, ImageSourcePropType> = {
   twitch: require('../../../../assets/twitch.png'),
   notion: require('../../../../assets/notion.png'),
   linkedin: require('../../../../assets/linkedin.png'),
-  timer: require('../../../../assets/icon.png'),
+  timer: require('../../../../assets/timer.png'),
+  tools: require('../../../../assets/tools.png'),
 };
 
 const serviceTints: Record<string, boolean> = {
   github: true,
   notion: true,
+  timer: true,
+  tools: true,
 };
 
 const formatActionName = (name: string): string => {
@@ -59,9 +66,38 @@ const formatActionName = (name: string): string => {
     .join(' ');
 };
 
+// --- COMPOSANTS HELPERS ---
+
+const ServiceIcon = ({ service, isDark, colors }: { service: string; isDark: boolean, colors: any }) => {
+  const iconSource = serviceIcons[service] || require('../../../../assets/icon.png');
+  const shouldTint = serviceTints[service] || false;
+
+  return (
+    <View
+      className="w-10 h-10 rounded-lg items-center justify-center border"
+      style={{ backgroundColor: colors.card, borderColor: colors.border }}
+    >
+      <Image
+        source={iconSource}
+        className="w-6 h-6"
+        resizeMode="contain"
+        tintColor={
+          Platform.OS !== 'web' && shouldTint
+            ? isDark
+              ? 'white'
+              : 'black'
+            : undefined
+        }
+      />
+    </View>
+  );
+};
+
 export default function EditAreaScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { isDark } = useTheme();
+  // 👇 Récupération des couleurs du thème
+  const colors = getColors(isDark);
 
   const [area, setArea] = React.useState<Area | null>(null);
   const [loading, setLoading] = React.useState(true);
@@ -138,6 +174,7 @@ export default function EditAreaScreen() {
     }
   };
 
+  // Fonction Helper pour les inputs stylisés
   const renderParameterInput = (
     paramName: string,
     paramType: string,
@@ -147,36 +184,36 @@ export default function EditAreaScreen() {
     if (paramType === 'boolean') {
       return (
         <View className="flex-row items-center justify-between">
-          <Text className="text-foreground capitalize">{paramName.replace(/_/g, ' ')}</Text>
+          <Text style={{ color: colors.foreground, textTransform: 'capitalize' }}>
+            {paramName.replace(/_/g, ' ')}
+          </Text>
           <Switch
             value={value as boolean || false}
             onValueChange={onChange}
+            trackColor={{ false: '#767577', true: colors.primary }}
+            thumbColor={'#fff'}
           />
         </View>
       );
     }
 
-    if (paramType === 'number') {
-      return (
-        <View className="gap-2">
-          <Label className="capitalize">{paramName.replace(/_/g, ' ')}</Label>
-          <Input
-            keyboardType="numeric"
-            value={String(value || '')}
-            onChangeText={(text) => onChange(Number(text) || 0)}
-            placeholder={`Enter ${paramName.replace(/_/g, ' ')}`}
-          />
-        </View>
-      );
-    }
-
+    // Gestion commune pour string et number
     return (
       <View className="gap-2">
-        <Label className="capitalize">{paramName.replace(/_/g, ' ')}</Label>
+        <Label style={{ color: colors.foreground, textTransform: 'capitalize' }}>
+          {paramName.replace(/_/g, ' ')}
+        </Label>
         <Input
+          keyboardType={paramType === 'number' ? 'numeric' : 'default'}
           value={String(value || '')}
-          onChangeText={onChange}
+          onChangeText={(text) => onChange(paramType === 'number' ? (Number(text) || 0) : text)}
           placeholder={`Enter ${paramName.replace(/_/g, ' ')}`}
+          placeholderTextColor={colors.mutedForeground}
+          style={{
+            color: colors.foreground,
+            borderColor: colors.border,
+            backgroundColor: colors.background
+          }}
         />
       </View>
     );
@@ -184,9 +221,12 @@ export default function EditAreaScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView className="bg-background flex-1 items-center justify-center">
-        <ActivityIndicator size="large" />
-        <Text className="text-muted-foreground mt-4">Loading...</Text>
+      <SafeAreaView
+        className="flex-1 items-center justify-center"
+        style={{ backgroundColor: colors.background }}
+      >
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={{ color: colors.mutedForeground, marginTop: 16 }}>Loading...</Text>
       </SafeAreaView>
     );
   }
@@ -199,26 +239,33 @@ export default function EditAreaScreen() {
   const reactionService = area.reactions.length > 0 ? getServiceFromAction(area.reactions[0].name) : 'unknown';
 
   return (
-    <SafeAreaView className="bg-background flex-1">
+    <SafeAreaView
+      className="flex-1"
+      style={{ backgroundColor: colors.background }}
+    >
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
       >
-        <ScrollView className="flex-1" contentContainerClassName="p-4">
+        <ScrollView
+          className="flex-1"
+          contentContainerClassName="p-4"
+          style={{ backgroundColor: colors.background }}
+        >
           {/* Header */}
           <View className="flex-row items-center mb-6">
-            <Pressable onPress={() => router.back()} className="p-2 mr-2">
-              <Text className="text-2xl">←</Text>
+            <Pressable onPress={() => router.back()} className="p-2 mr-2 rounded-full active:opacity-70">
+              <Text style={{ fontSize: 24, color: colors.foreground }}>←</Text>
             </Pressable>
-            <Text className="text-lg text-muted-foreground">Back to Details</Text>
+            <Text style={{ fontSize: 18, color: colors.mutedForeground }}>Back to Details</Text>
           </View>
 
           {/* Title */}
           <View className="mb-6">
-            <Text className="text-2xl font-bold text-foreground mb-1">
+            <Text style={{ fontSize: 24, fontWeight: 'bold', color: colors.foreground, marginBottom: 4 }}>
               Edit {areaName || 'Untitled AREA'}
             </Text>
-            <Text className="text-muted-foreground">Modify your automation settings</Text>
+            <Text style={{ color: colors.mutedForeground }}>Modify your automation settings</Text>
           </View>
 
           {/* Error */}
@@ -229,10 +276,10 @@ export default function EditAreaScreen() {
           ) : null}
 
           {/* AREA Name */}
-          <Card className="mb-4 border-border bg-card">
+          <Card className="mb-4" style={{ backgroundColor: colors.card, borderColor: colors.border }}>
             <CardHeader>
-              <CardTitle>AREA Name</CardTitle>
-              <Text className="text-sm text-muted-foreground">
+              <CardTitle style={{ color: colors.foreground }}>AREA Name</CardTitle>
+              <Text style={{ color: colors.mutedForeground, fontSize: 14 }}>
                 Give your automation a descriptive name
               </Text>
             </CardHeader>
@@ -241,62 +288,65 @@ export default function EditAreaScreen() {
                 value={areaName}
                 onChangeText={setAreaName}
                 placeholder="e.g., GitHub Stars to Discord"
+                placeholderTextColor={colors.mutedForeground}
+                style={{
+                  color: colors.foreground,
+                  borderColor: colors.border,
+                  backgroundColor: colors.background
+                }}
               />
             </CardContent>
           </Card>
 
           {/* Action Card */}
-          <Card className="mb-4 border-border bg-card">
+          <Card className="mb-4" style={{ backgroundColor: colors.card, borderColor: colors.border }}>
             <CardHeader>
               <View className="flex-row items-center gap-3">
                 <View className="w-12 h-12 rounded-lg bg-amber-500/20 items-center justify-center">
                   <Text className="text-2xl">⚡</Text>
                 </View>
                 <View className="flex-1">
-                  <CardTitle>Action</CardTitle>
-                  <Text className="text-sm text-muted-foreground">Configure trigger event</Text>
+                  <CardTitle style={{ color: colors.foreground }}>Action</CardTitle>
+                  <Text style={{ color: colors.mutedForeground, fontSize: 14 }}>Configure trigger event</Text>
                 </View>
               </View>
             </CardHeader>
             <CardContent className="gap-4">
               {/* Service Info */}
-              <View className="flex-row items-center gap-3 p-3 bg-secondary/50 rounded-lg">
+              <View
+                className="flex-row items-center gap-3 p-3 rounded-lg border"
+                style={{ backgroundColor: colors.secondary, borderColor: colors.border }}
+              >
                 {actionService !== 'unknown' && (
-                  <View className="w-10 h-10 rounded-lg bg-background items-center justify-center border border-border">
-                    <Image
-                      source={serviceIcons[actionService] || require('../../../../assets/icon.png')}
-                      className="w-6 h-6"
-                      tintColor={Platform.select({
-                        native: serviceTints[actionService]
-                          ? isDark
-                            ? 'white'
-                            : 'black'
-                          : undefined,
-                      })}
-                      resizeMode="contain"
-                    />
-                  </View>
+                  <ServiceIcon service={actionService} isDark={isDark} colors={colors} />
                 )}
                 <View>
-                  <Text className="text-xs text-muted-foreground">Service</Text>
-                  <Text className="font-semibold text-foreground capitalize">{actionService}</Text>
+                  <Text style={{ color: colors.mutedForeground, fontSize: 12 }}>Service</Text>
+                  <Text style={{ color: colors.foreground, fontWeight: '600', textTransform: 'capitalize' }}>{actionService}</Text>
                 </View>
               </View>
 
               {/* Action Type */}
-              <View className="p-3 bg-secondary/30 rounded-lg">
-                <Text className="text-xs text-muted-foreground mb-1">Action Type</Text>
-                <Text className="font-medium text-foreground">{formatActionName(area.action.name)}</Text>
+              <View
+                className="p-3 rounded-lg border"
+                style={{ backgroundColor: colors.secondary, borderColor: colors.border }}
+              >
+                <Text style={{ color: colors.mutedForeground, fontSize: 12, marginBottom: 4 }}>Action Type</Text>
+                <Text style={{ color: colors.foreground, fontWeight: '500' }}>{formatActionName(area.action.name)}</Text>
               </View>
 
               {/* Parameters */}
               {Object.keys(actionParams).length === 0 ? (
-                <Text className="text-sm text-muted-foreground italic">No parameters to configure</Text>
+                <Text style={{ color: colors.mutedForeground, fontStyle: 'italic', fontSize: 14 }}>No parameters to configure</Text>
               ) : (
                 <View className="gap-3">
-                  <Text className="text-sm font-medium text-foreground">Parameters</Text>
+                  <Text style={{ color: colors.foreground, fontWeight: '500', fontSize: 14 }}>Parameters</Text>
                   {Object.entries(actionParams).map(([key, value]) => (
-                    <View key={key} className="p-3 bg-secondary/50 rounded-lg border border-border">
+                    <View
+                      key={key}
+                      className="p-3 rounded-lg border"
+                      style={{ backgroundColor: colors.secondary, borderColor: colors.border }}
+                    >
                       {renderParameterInput(
                         key,
                         typeof value === 'boolean' ? 'boolean' : typeof value === 'number' ? 'number' : 'string',
@@ -312,59 +362,56 @@ export default function EditAreaScreen() {
 
           {/* Reaction Card */}
           {area.reactions.length > 0 && (
-            <Card className="mb-4 border-border bg-card">
+            <Card className="mb-4" style={{ backgroundColor: colors.card, borderColor: colors.border }}>
               <CardHeader>
                 <View className="flex-row items-center gap-3">
                   <View className="w-12 h-12 rounded-lg bg-green-500/20 items-center justify-center">
                     <Text className="text-2xl">🔄</Text>
                   </View>
                   <View className="flex-1">
-                    <CardTitle>Reaction</CardTitle>
-                    <Text className="text-sm text-muted-foreground">Configure response action</Text>
+                    <CardTitle style={{ color: colors.foreground }}>Reaction</CardTitle>
+                    <Text style={{ color: colors.mutedForeground, fontSize: 14 }}>Configure response action</Text>
                   </View>
                 </View>
               </CardHeader>
               <CardContent className="gap-4">
                 {/* Service Info */}
-                <View className="flex-row items-center gap-3 p-3 bg-secondary/50 rounded-lg">
+                <View
+                  className="flex-row items-center gap-3 p-3 rounded-lg border"
+                  style={{ backgroundColor: colors.secondary, borderColor: colors.border }}
+                >
                   {reactionService !== 'unknown' && (
-                    <View className="w-10 h-10 rounded-lg bg-background items-center justify-center border border-border">
-                      <Image
-                        source={serviceIcons[reactionService] || require('../../../../assets/icon.png')}
-                        className="w-6 h-6"
-                        tintColor={Platform.select({
-                          native: serviceTints[reactionService]
-                            ? isDark
-                              ? 'white'
-                              : 'black'
-                            : undefined,
-                        })}
-                        resizeMode="contain"
-                      />
-                    </View>
+                    <ServiceIcon service={reactionService} isDark={isDark} colors={colors} />
                   )}
                   <View>
-                    <Text className="text-xs text-muted-foreground">Service</Text>
-                    <Text className="font-semibold text-foreground capitalize">{reactionService}</Text>
+                    <Text style={{ color: colors.mutedForeground, fontSize: 12 }}>Service</Text>
+                    <Text style={{ color: colors.foreground, fontWeight: '600', textTransform: 'capitalize' }}>{reactionService}</Text>
                   </View>
                 </View>
 
                 {/* Reaction Type */}
-                <View className="p-3 bg-secondary/30 rounded-lg">
-                  <Text className="text-xs text-muted-foreground mb-1">Reaction Type</Text>
-                  <Text className="font-medium text-foreground">
+                <View
+                  className="p-3 rounded-lg border"
+                  style={{ backgroundColor: colors.secondary, borderColor: colors.border }}
+                >
+                  <Text style={{ color: colors.mutedForeground, fontSize: 12, marginBottom: 4 }}>Reaction Type</Text>
+                  <Text style={{ color: colors.foreground, fontWeight: '500' }}>
                     {formatActionName(area.reactions[0].name)}
                   </Text>
                 </View>
 
                 {/* Parameters */}
                 {Object.keys(reactionParams).length === 0 ? (
-                  <Text className="text-sm text-muted-foreground italic">No parameters to configure</Text>
+                  <Text style={{ color: colors.mutedForeground, fontStyle: 'italic', fontSize: 14 }}>No parameters to configure</Text>
                 ) : (
                   <View className="gap-3">
-                    <Text className="text-sm font-medium text-foreground">Parameters</Text>
+                    <Text style={{ color: colors.foreground, fontWeight: '500', fontSize: 14 }}>Parameters</Text>
                     {Object.entries(reactionParams).map(([key, value]) => (
-                      <View key={key} className="p-3 bg-secondary/50 rounded-lg border border-border">
+                      <View
+                        key={key}
+                        className="p-3 rounded-lg border"
+                        style={{ backgroundColor: colors.secondary, borderColor: colors.border }}
+                      >
                         {renderParameterInput(
                           key,
                           typeof value === 'boolean' ? 'boolean' : typeof value === 'number' ? 'number' : 'string',
@@ -384,16 +431,18 @@ export default function EditAreaScreen() {
             <Button
               variant="outline"
               onPress={() => router.back()}
-              className="flex-1 border-border"
+              className="flex-1"
+              style={{ borderColor: colors.border, backgroundColor: colors.card }}
             >
-              <Text className="text-foreground">Cancel</Text>
+              <Text style={{ color: colors.foreground }}>Cancel</Text>
             </Button>
             <Button
               onPress={handleSave}
               disabled={saving}
-              className="flex-1 bg-primary"
+              className="flex-1"
+              style={{ backgroundColor: colors.primary }}
             >
-              <Text className="text-primary-foreground font-medium">
+              <Text style={{ color: colors.primaryForeground, fontWeight: '500' }}>
                 {saving ? 'Saving...' : 'Save Changes'}
               </Text>
             </Button>
