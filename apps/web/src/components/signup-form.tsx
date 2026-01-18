@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 import { useState, useEffect } from "react"
 import { Link, useNavigate, useSearchParams } from "react-router-dom"
+=======
+import { useState } from "react"
+import { Link, useNavigate } from "react-router-dom"
+>>>>>>> 4f4ac0a2a3f95d4f552083b3be905ff5307338bc
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -7,11 +12,15 @@ import {
   FieldDescription,
   FieldGroup,
   FieldLabel,
+<<<<<<< HEAD
   FieldSeparator,
+=======
+>>>>>>> 4f4ac0a2a3f95d4f552083b3be905ff5307338bc
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { useAuth } from "@/contexts/AuthContext"
 
+<<<<<<< HEAD
 interface SignupFormProps extends React.ComponentProps<"form"> {
   onOAuthSignup?: (provider: string) => void
 }
@@ -30,6 +39,12 @@ export function SignupForm({
   onOAuthSignup,
   ...props
 }: SignupFormProps) {
+=======
+export function SignupForm({
+  className,
+  ...props
+}: React.ComponentProps<"form">) {
+>>>>>>> 4f4ac0a2a3f95d4f552083b3be905ff5307338bc
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
@@ -37,6 +52,7 @@ export function SignupForm({
   const [loading, setLoading] = useState(false)
   const { signup } = useAuth()
   const navigate = useNavigate()
+<<<<<<< HEAD
   const [searchParams, setSearchParams] = useSearchParams()
 
   useEffect(() => {
@@ -48,6 +64,8 @@ export function SignupForm({
       setSearchParams(searchParams, { replace: true })
     }
   }, [])
+=======
+>>>>>>> 4f4ac0a2a3f95d4f552083b3be905ff5307338bc
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

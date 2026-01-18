@@ -50,7 +50,6 @@ export class GoogleProvider implements IOAuthProvider {
       const data = await this.httpClient.post<GoogleTokenResponse>(url, payload);
 
       console.log('Google Token Response:', data);
-
       return {
         access_token: data.access_token,
         refresh_token: data.refresh_token,
