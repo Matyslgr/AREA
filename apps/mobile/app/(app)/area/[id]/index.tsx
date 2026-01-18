@@ -263,12 +263,12 @@ export default function AreaDetailsScreen() {
             </Text>
           </Button>
           <Button
-            variant="outline"
+            variant="destructive"
             onPress={handleDelete}
             disabled={deleting}
-            className="flex-1 border-red-500/30 bg-red-500/5"
+            className="flex-1"
           >
-            <Text className="text-red-500">{deleting ? '...' : 'Delete'}</Text>
+            <Text style={{ color: 'white' }}>{deleting ? '...' : 'Delete'}</Text>
           </Button>
         </View>
 

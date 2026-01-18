@@ -502,7 +502,7 @@ export default function CreateAreaScreen() {
   ) => {
     return (
       <View key={param.name} className="mb-4">
-        <Label className="mb-2">
+        <Label className="mb-2" style={{ color: colors.foreground }}>
           <Text style={{ color: colors.foreground }}>
             {param.description}
             {param.required && <Text className="text-red-500"> *</Text>}
@@ -590,7 +590,7 @@ export default function CreateAreaScreen() {
   const renderStep1 = () => (
     <View className="gap-6">
       <View>
-        <Label className="mb-2">AREA Name</Label>
+        <Label className="mb-2" style={{ color: colors.foreground }}>AREA Name</Label>
         <Input
           placeholder="e.g., Send me an email every day"
           value={areaName}
@@ -858,30 +858,30 @@ export default function CreateAreaScreen() {
         <Text className="text-xl font-bold mb-4" style={{ color: colors.foreground }}>{areaName}</Text>
 
         <View className="gap-3">
-          <View className="p-3 rounded-lg" style={{ backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }}>
-            <Text className="text-sm font-semibold" style={{ color: colors.mutedForeground }}>WHEN</Text>
-            <Text className="font-semibold" style={{ color: colors.foreground }}>{selectedAction?.name}</Text>
-            <Text className="text-sm" style={{ color: colors.mutedForeground }}>{selectedAction?.description}</Text>
+          <View className="p-3 rounded-lg" style={{ backgroundColor: isDark ? '#18181b' : '#f4f4f5', borderColor: isDark ? '#27272a' : '#e4e4e7', borderWidth: 1 }}>
+            <Text className="text-sm font-semibold" style={{ color: isDark ? '#d4d4d8' : '#52525b' }}>WHEN</Text>
+            <Text className="font-semibold" style={{ color: isDark ? '#fafafa' : '#000000' }}>{selectedAction?.name}</Text>
+            <Text className="text-sm" style={{ color: isDark ? '#d4d4d8' : '#52525b' }}>{selectedAction?.description}</Text>
             {Object.keys(actionParams).length > 0 && (
               <View className="mt-2">
                 {Object.entries(actionParams).map(([key, value]) => (
-                  <Text key={key} className="text-xs" style={{ color: colors.mutedForeground }}>
-                    <Text className="font-medium">{key}:</Text> {String(value)}
+                  <Text key={key} className="text-xs" style={{ color: isDark ? '#d4d4d8' : '#52525b' }}>
+                    <Text className="font-medium" style={{ color: isDark ? '#d4d4d8' : '#52525b' }}>{key}:</Text> {String(value)}
                   </Text>
                 ))}
               </View>
             )}
           </View>
 
-          <View className="p-3 rounded-lg" style={{ backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }}>
-            <Text className="text-sm font-semibold" style={{ color: colors.mutedForeground }}>THEN</Text>
-            <Text className="font-semibold" style={{ color: colors.foreground }}>{selectedReaction?.name}</Text>
-            <Text className="text-sm" style={{ color: colors.mutedForeground }}>{selectedReaction?.description}</Text>
+          <View className="p-3 rounded-lg" style={{ backgroundColor: isDark ? '#18181b' : '#f4f4f5', borderColor: isDark ? '#27272a' : '#e4e4e7', borderWidth: 1 }}>
+            <Text className="text-sm font-semibold" style={{ color: isDark ? '#d4d4d8' : '#52525b' }}>THEN</Text>
+            <Text className="font-semibold" style={{ color: isDark ? '#fafafa' : '#000000' }}>{selectedReaction?.name}</Text>
+            <Text className="text-sm" style={{ color: isDark ? '#d4d4d8' : '#52525b' }}>{selectedReaction?.description}</Text>
             {Object.keys(reactionParams).length > 0 && (
               <View className="mt-2">
                 {Object.entries(reactionParams).map(([key, value]) => (
-                  <Text key={key} className="text-xs" style={{ color: colors.mutedForeground }}>
-                    <Text className="font-medium">{key}:</Text> {String(value)}
+                  <Text key={key} className="text-xs" style={{ color: isDark ? '#d4d4d8' : '#52525b' }}>
+                    <Text className="font-medium" style={{ color: isDark ? '#d4d4d8' : '#52525b' }}>{key}:</Text> {String(value)}
                   </Text>
                 ))}
               </View>
@@ -897,9 +897,9 @@ export default function CreateAreaScreen() {
           borderColor: isDark ? 'rgba(71, 65, 12, 0.5)' : 'rgba(254, 240, 138, 1)'
         }}
       >
-        <Text className="text-2xl">✓</Text>
+        <Text className="text-2xl" style={{ color: isDark ? '#fef08a' : '#854d0e' }}>✓</Text>
         <Text className="text-sm flex-1" style={{ color: isDark ? '#fef08a' : '#854d0e' }}>
-          Your AREA will be created as <Text className="font-bold">active</Text> and will start working immediately.
+          Your AREA will be created as <Text className="font-bold" style={{ color: isDark ? '#fef08a' : '#854d0e' }}>active</Text> and will start working immediately.
         </Text>
       </View>
     </View>
@@ -958,8 +958,8 @@ export default function CreateAreaScreen() {
           <Text className="text-sm mb-2" style={{ color: colors.mutedForeground }}>The following permissions are needed:</Text>
           <View className="mb-6">
             {modalScopes.map((scope) => (
-              <View key={scope} className="p-2 rounded mb-1" style={{ backgroundColor: colors.muted }}>
-                <Text className="text-xs font-mono" style={{ color: colors.mutedForeground }}>{scope}</Text>
+              <View key={scope} className="p-2 rounded mb-1" style={{ backgroundColor: isDark ? '#27272a' : '#e4e4e7' }}>
+                <Text className="text-xs font-mono" style={{ color: isDark ? '#fafafa' : '#000000' }}>{scope}</Text>
               </View>
             ))}
           </View>
@@ -989,9 +989,9 @@ export default function CreateAreaScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
       >
-        <ScrollView className="flex-1" contentContainerClassName="p-4" style={{ backgroundColor: colors.background }}>
+        <ScrollView className="flex-1" contentContainerClassName="p-4 pt-2" style={{ backgroundColor: colors.background }}>
           {/* Header */}
-          <View className="flex-row items-center justify-between mb-6">
+          <View className="flex-row items-center justify-between mb-4">
             <Pressable onPress={() => router.back()} className="p-2">
               <Text style={{ fontSize: 24, color: colors.foreground }}>←</Text>
             </Pressable>
@@ -1041,14 +1041,13 @@ export default function CreateAreaScreen() {
                     <Text style={{ color: currentStep === 1 ? colors.mutedForeground : colors.foreground }}>← Back</Text>
                   </Button>
                   <Button
-                    variant="outline"
+                    variant="destructive"
                     onPress={async () => {
                       await AsyncStorage.removeItem(STORAGE_KEY_FORM);
                       router.back();
                     }}
-                    className="border-red-300 dark:border-red-800"
                   >
-                    <Text className="text-red-600 dark:text-red-400">Cancel</Text>
+                    <Text className="text-white">Cancel</Text>
                   </Button>
                 </View>
 

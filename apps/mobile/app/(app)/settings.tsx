@@ -58,13 +58,13 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} style={{ backgroundColor: colors.background }}>
-        <View className="px-6 py-6">
+        <View className="px-6 pt-4 pb-6">
           {/* Header */}
-          <View className="flex-row items-center mb-6">
+          <View className="flex-row items-center mb-4">
             <Pressable onPress={() => router.back()} className="p-2 mr-2 rounded-full active:opacity-70">
-              <Text style={{ fontSize: 24, color: colors.foreground }}>←</Text>
+              <Text style={{ fontSize: 22, color: colors.foreground }}>←</Text>
             </Pressable>
-            <Text style={{ fontSize: 24, fontWeight: 'bold', color: colors.foreground }}>Settings</Text>
+            <Text style={{ fontSize: 22, fontWeight: 'bold', color: colors.foreground }}>Settings</Text>
           </View>
 
           <View className="gap-6">
@@ -123,11 +123,10 @@ export default function SettingsScreen() {
                   </Text>
                 </View>
                 <Button
-                  variant="outline"
+                  variant="destructive"
                   onPress={handleChangeServer}
-                  style={{ borderColor: colors.border }}
                 >
-                  <Text style={{ color: colors.destructive }}>Change Server URL</Text>
+                  <Text style={{ color: 'white' }}>Change Server URL</Text>
                 </Button>
               </CardContent>
             </Card>

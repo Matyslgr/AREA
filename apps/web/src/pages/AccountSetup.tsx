@@ -29,12 +29,12 @@ interface AccountDetails {
 }
 
 const services = [
-  { id: "google", name: "Google", icon: GoogleIcon },
-  { id: "github", name: "GitHub", icon: GithubIcon },
-  { id: "spotify", name: "Spotify", icon: SpotifyIcon },
-  { id: "notion", name: "Notion", icon: NotionIcon },
-  { id: "linkedin", name: "LinkedIn", icon: LinkedinIcon },
-  { id: "twitch", name: "Twitch", icon: TwitchIcon },
+  { id: "google", name: "Google", icon: GoogleIcon, useTint: false },
+  { id: "github", name: "GitHub", icon: GithubIcon, useTint: true },
+  { id: "spotify", name: "Spotify", icon: SpotifyIcon, useTint: false },
+  { id: "notion", name: "Notion", icon: NotionIcon, useTint: true },
+  { id: "linkedin", name: "LinkedIn", icon: LinkedinIcon, useTint: false },
+  { id: "twitch", name: "Twitch", icon: TwitchIcon, useTint: false },
 ]
 
 export default function AccountSetup() {
@@ -245,7 +245,7 @@ export default function AccountSetup() {
                         <img
                           src={service.icon}
                           alt={service.name}
-                          className="h-10 w-10 mx-auto mb-2"
+                          className={`h-10 w-10 mx-auto mb-2 ${service.useTint ? "invert" : ""}`}
                         />
                         <p className="text-sm font-medium text-zinc-200">{service.name}</p>
                         {linked && (

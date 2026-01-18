@@ -4,6 +4,8 @@ import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
 import { BlurView } from 'expo-blur';
 import { Platform } from 'react-native';
+import { useTheme } from '@/contexts/ThemeContext';
+import { getColors } from '@/lib/theme-colors';
 
 interface ServerInfoModalProps {
   visible: boolean;
@@ -13,6 +15,9 @@ interface ServerInfoModalProps {
 }
 
 export function ServerInfoModal({ visible, currentUrl, onClose, onReset }: ServerInfoModalProps) {
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+
   return (
     <Modal
       visible={visible}
@@ -21,22 +26,22 @@ export function ServerInfoModal({ visible, currentUrl, onClose, onReset }: Serve
       onRequestClose={onClose}
     >
       <Pressable className="flex-1 bg-black/60 justify-center px-6" onPress={onClose}>
-        <Pressable className="bg-background rounded-3xl overflow-hidden border border-border shadow-xl">
+        <Pressable className="rounded-3xl overflow-hidden border shadow-xl" style={{ backgroundColor: colors.card, borderColor: colors.border }}>
             <View className="p-6 items-center">
               <View className="h-16 w-16 bg-primary/10 rounded-full items-center justify-center mb-4">
                 <Text className="text-3xl">🌐</Text>
               </View>
 
-              <Text className="text-xl font-bold text-foreground mb-2">
+              <Text style={{ fontSize: 20, fontWeight: 'bold', color: colors.foreground, marginBottom: 8 }}>
                 Server Connection
               </Text>
 
-              <Text className="text-muted-foreground text-center mb-6">
+              <Text style={{ color: colors.mutedForeground, textAlign: 'center', marginBottom: 24 }}>
                 You are currently connected to:
               </Text>
 
-              <View className="w-full bg-muted/50 p-4 rounded-xl border border-border mb-8">
-                <Text className="text-foreground text-center font-mono text-sm" numberOfLines={1}>
+              <View className="w-full p-4 rounded-xl border mb-8" style={{ backgroundColor: colors.secondary, borderColor: colors.border }}>
+                <Text style={{ color: colors.foreground, textAlign: 'center', fontFamily: 'monospace', fontSize: 14 }} numberOfLines={1}>
                   {currentUrl || 'Unknown'}
                 </Text>
               </View>
@@ -54,7 +59,7 @@ export function ServerInfoModal({ visible, currentUrl, onClose, onReset }: Serve
                   onPress={onClose}
                   className="w-full"
                 >
-                  <Text className="text-muted-foreground">Close</Text>
+                  <Text style={{ color: colors.mutedForeground }}>Close</Text>
                 </Button>
               </View>
             </View>

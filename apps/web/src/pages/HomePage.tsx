@@ -1,9 +1,27 @@
 import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
-import { MyCarousel } from "@/components/MyCarousel"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import { Zap, ArrowRight, Sparkles, Link as LinkIcon, Clock } from "lucide-react"
+import GoogleIcon from "@/assets/icons/google.png"
+import SpotifyIcon from "@/assets/icons/spotify.png"
+import GithubIcon from "@/assets/icons/github.png"
+import NotionIcon from "@/assets/icons/notion.png"
+import LinkedinIcon from "@/assets/icons/linkedin.png"
+import TwitchIcon from "@/assets/icons/twitch.png"
+
+const SERVICES = [
+  { id: "google", name: "Google", icon: GoogleIcon, useTint: false },
+  { id: "github", name: "GitHub", icon: GithubIcon, useTint: true },
+  { id: "spotify", name: "Spotify", icon: SpotifyIcon, useTint: false },
+  { id: "notion", name: "Notion", icon: NotionIcon, useTint: true },
+  { id: "linkedin", name: "LinkedIn", icon: LinkedinIcon, useTint: false },
+  { id: "twitch", name: "Twitch", icon: TwitchIcon, useTint: false },
+]
+
+const shouldInvertIcon = (useTint: boolean) => {
+  return useTint
+}
 
 export default function HomePage() {
   const navigate = useNavigate()
@@ -136,18 +154,35 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Carousel Section */}
-      <section className="py-24 bg-zinc-950">
+      {/* Available Services Section */}
+      <section className="py-24 bg-zinc-900">
         <div className="container mx-auto px-6">
-          <div className="text-center mb-12">
+          <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              Powerful Integrations
+              Available Services
             </h2>
             <p className="text-zinc-400 text-lg">
-              Connect the tools you already use
+              Connect with your favorite platforms
             </p>
           </div>
-          <MyCarousel />
+
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 max-w-5xl mx-auto">
+            {SERVICES.map((service) => (
+              <div
+                key={service.id}
+                className="flex flex-col items-center p-6 rounded-lg border border-zinc-700 bg-zinc-800 hover:border-amber-500/50 hover:bg-zinc-800/80 transition-all"
+              >
+                <img
+                  src={service.icon}
+                  alt={service.name}
+                  className={`h-12 w-12 mb-3 object-contain ${shouldInvertIcon(service.useTint) ? "invert" : ""}`}
+                />
+                <span className="text-sm font-medium text-zinc-200 text-center">
+                  {service.name}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 

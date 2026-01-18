@@ -158,11 +158,11 @@ export default function AccountSetupScreen() {
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} style={{ backgroundColor: colors.background }}>
-        <View className="flex-1 px-6 py-8">
+        <View className="flex-1 px-6 pt-4 pb-8">
 
           {/* Header */}
-          <View className="mb-6">
-            <Text style={{ color: colors.foreground, fontSize: 24, fontWeight: 'bold', marginBottom: 8, textAlign: 'center' }}>
+          <View className="mb-4">
+            <Text style={{ color: colors.foreground, fontSize: 22, fontWeight: 'bold', marginBottom: 8, textAlign: 'center' }}>
               Set up your account
             </Text>
             <Text style={{ color: colors.mutedForeground, textAlign: 'center' }}>
