@@ -110,7 +110,7 @@ async function request<T>(
     if (__DEV__) console.log(`[REQ] ${baseUrl}${endpoint}`);
 
     const headers: HeadersInit = {
-      'Content-Type': 'application/json',
+      ...(options.body && { 'Content-Type': 'application/json' }),
       ...(token && { Authorization: `Bearer ${token}` }),
       ...options.headers,
     };
