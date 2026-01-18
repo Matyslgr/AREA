@@ -3,13 +3,11 @@ import { View, Text, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { api, setToken, setStoredUser } from '@/lib/api';
-import { useAuth } from '@/contexts/AuthContext';
 
 export default function OAuthCallback() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const called = useRef(false);
-  const { setAuthState } = useAuth();
 
   useEffect(() => {
     if (called.current) return;
@@ -53,8 +51,6 @@ export default function OAuthCallback() {
 
             // 3. Stockage User
             await setStoredUser(user);
-
-            setAuthState(user);
 
             // 4. Redirection conditionnelle exacte
             if (isNewUser) {

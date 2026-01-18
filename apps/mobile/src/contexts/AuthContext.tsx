@@ -23,7 +23,6 @@ interface AuthContextType {
   resetPassword: (token: string, password: string) => Promise<{ error?: string }>;
   updateAccount: (data: { email?: string; username?: string; password?: string; currentPassword?: string }) => Promise<{ error?: string }>;
   updatePassword: (password: string, currentPassword?: string) => Promise<{ error?: string }>;
-  setAuthState: (user: User) => void;
 }
 
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
@@ -136,10 +135,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error };
   }
 
-  const setAuthState = (userData: User) => {
-    setUser(userData);
-  };
-
   return (
     <AuthContext.Provider
       value={{
@@ -153,7 +148,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         resetPassword,
         updateAccount,
         updatePassword,
-        setAuthState,
       }}
     >
       {children}
