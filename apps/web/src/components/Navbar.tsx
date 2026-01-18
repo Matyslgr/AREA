@@ -29,6 +29,7 @@ export default function Navbar() {
 
   // Check if we're on auth pages (signin/signup) to hide navbar
   const isAuthPage = location.pathname === '/signin' || location.pathname === '/signup'
+  const isDashboardPage = location.pathname === '/dashboard'
   if (isAuthPage) return null
 
   return (
@@ -49,13 +50,15 @@ export default function Navbar() {
             <div className="hidden md:flex items-center gap-3">
               {isAuthenticated ? (
                 <>
-                  <Button
-                    variant="ghost"
-                    className="text-zinc-300 hover:text-white hover:bg-zinc-800"
-                    onClick={() => navigate("/dashboard")}
-                  >
-                    Dashboard
-                  </Button>
+                  {!isDashboardPage && (
+                    <Button
+                      variant="ghost"
+                      className="text-zinc-300 hover:text-white hover:bg-zinc-800"
+                      onClick={() => navigate("/dashboard")}
+                    >
+                      Dashboard
+                    </Button>
+                  )}
                   <Button
                     className="bg-gradient-to-r from-amber-400 to-orange-500 text-black font-medium hover:from-amber-500 hover:to-orange-600 shadow-lg shadow-amber-500/20"
                     onClick={() => navigate("/areas/create")}
@@ -130,16 +133,18 @@ export default function Navbar() {
           <div className="flex flex-col gap-3">
             {isAuthenticated ? (
               <>
-                <Button
-                  variant="ghost"
-                  className="justify-start text-zinc-300 hover:text-white hover:bg-zinc-800 py-6"
-                  onClick={() => {
-                    navigate("/dashboard")
-                    setIsMenuOpen(false)
-                  }}
-                >
-                  Dashboard
-                </Button>
+                {!isDashboardPage && (
+                  <Button
+                    variant="ghost"
+                    className="justify-start text-zinc-300 hover:text-white hover:bg-zinc-800 py-6"
+                    onClick={() => {
+                      navigate("/dashboard")
+                      setIsMenuOpen(false)
+                    }}
+                  >
+                    Dashboard
+                  </Button>
+                )}
                 <Button
                   className="bg-gradient-to-r from-amber-400 to-orange-500 text-black font-medium hover:from-amber-500 hover:to-orange-600 py-6"
                   onClick={() => {

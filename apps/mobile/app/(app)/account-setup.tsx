@@ -10,52 +10,25 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { router } from 'expo-router';
 import * as React from 'react';
-import { ActivityIndicator, Alert, Image, Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  Platform,
+  Pressable,
+  ScrollView,
+  TextInput,
+  View
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const SERVICES = [
-  {
-    id: 'google',
-    name: 'Google',
-    description: 'Connect Gmail, Calendar, Drive',
-    icon: require('../../assets/google.png'),
-    useTint: false,
-  },
-  {
-    id: 'github',
-    name: 'GitHub',
-    description: 'Connect repositories and issues',
-    icon: require('../../assets/github.png'),
-    useTint: true,
-  },
-  {
-    id: 'spotify',
-    name: 'Spotify',
-    description: 'Connect playlists and music',
-    icon: require('../../assets/spotify.png'),
-    useTint: false,
-  },
-  {
-    id: 'notion',
-    name: 'Notion',
-    description: 'Connect pages and databases',
-    icon: require('../../assets/notion.png'),
-    useTint: true,
-  },
-  {
-    id: 'linkedin',
-    name: 'LinkedIn',
-    description: 'Connect your professional profile',
-    icon: require('../../assets/linkedin.png'),
-    useTint: false,
-  },
-  {
-    id: 'twitch',
-    name: 'Twitch',
-    description: 'Connect your streaming account',
-    icon: require('../../assets/twitch.png'),
-    useTint: false,
-  },
+  { id: 'google', name: 'Google', description: 'Connect Gmail, Calendar, Drive', icon: require('../../assets/google.png'), useTint: false },
+  { id: 'github', name: 'GitHub', description: 'Connect repositories and issues', icon: require('../../assets/github.png'), useTint: true },
+  { id: 'spotify', name: 'Spotify', description: 'Connect playlists and music', icon: require('../../assets/spotify.png'), useTint: false },
+  { id: 'notion', name: 'Notion', description: 'Connect pages and databases', icon: require('../../assets/notion.png'), useTint: true },
+  { id: 'linkedin', name: 'LinkedIn', description: 'Connect your professional profile', icon: require('../../assets/linkedin.png'), useTint: false },
+  { id: 'twitch', name: 'Twitch', description: 'Connect your streaming account', icon: require('../../assets/twitch.png'), useTint: false },
 ];
 
 export default function AccountSetupScreen() {
@@ -66,16 +39,16 @@ export default function AccountSetupScreen() {
 
   const [accountDetails, setAccountDetails] = React.useState<AccountDetails | null>(null);
   const [loading, setLoading] = React.useState(true);
-  const [connectingService, setConnectingService] = React.useState<string | null>(null);
 
-  // Password form state
+  const [connectingService, setConnectingService] = React.useState<string | null>(null);
+  const [disconnectingService, setDisconnectingService] = React.useState<string | null>(null);
+
+  // Password states
   const [password, setPassword] = React.useState('');
   const [confirmPassword, setConfirmPassword] = React.useState('');
   const [passwordError, setPasswordError] = React.useState('');
   const [passwordLoading, setPasswordLoading] = React.useState(false);
-  const confirmPasswordRef = React.useRef<TextInput>(null);
 
-  // Fetch account details on mount
   React.useEffect(() => {
     fetchAccountDetails();
   }, []);
@@ -94,55 +67,75 @@ export default function AccountSetupScreen() {
   }
 
   function isServiceLinked(provider: string): boolean {
-    if (!accountDetails?.accounts) return false;
-    return accountDetails.accounts.some(
-      (account) => account.provider.toLowerCase() === provider.toLowerCase()
+    if (!accountDetails?.linkedAccounts) return false;
+
+    return accountDetails.linkedAccounts.some(
+      (acc) => acc.provider.toLowerCase() === provider.toLowerCase()
     );
   }
 
   async function handleLinkService(provider: string) {
     setConnectingService(provider);
-
     const result = await startOAuth(provider, 'connect');
-
     if (result.success) {
       Alert.alert('Success', `${provider} account connected successfully!`);
-      // Refresh account details to show the new linked service
       await fetchAccountDetails();
     } else {
       Alert.alert('Connection Failed', result.error || 'An error occurred');
     }
-
     setConnectingService(null);
+  }
+
+  async function handleUnlinkService(provider: string, serviceName: string) {
+    Alert.alert(
+      `Disconnect ${serviceName}`,
+      `Are you sure you want to disconnect your ${serviceName} account?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Disconnect',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setDisconnectingService(provider);
+              const { error } = await authApi.unlinkOAuthAccount(provider);
+
+              if (error) {
+                Alert.alert('Cannot Disconnect', typeof error === 'string' ? error : 'Failed to unlink account');
+              } else {
+                await fetchAccountDetails();
+              }
+            } catch (err) {
+              Alert.alert('Error', 'An unexpected error occurred');
+            } finally {
+              setDisconnectingService(null);
+            }
+          }
+        }
+      ]
+    );
   }
 
   async function handleSetPassword() {
     setPasswordError('');
-
     if (password.length < 6) {
       setPasswordError('Password must be at least 6 characters');
       return;
     }
-
     if (password !== confirmPassword) {
       setPasswordError('Passwords do not match');
       return;
     }
-
     setPasswordLoading(true);
-
     const result = await updatePassword(password);
-
     if (result.error) {
       setPasswordError(result.error);
     } else {
       setPassword('');
       setConfirmPassword('');
-      // Refresh account details
       await fetchAccountDetails();
       Alert.alert('Success', 'Password has been set successfully!');
     }
-
     setPasswordLoading(false);
   }
 
@@ -165,10 +158,11 @@ export default function AccountSetupScreen() {
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} style={{ backgroundColor: colors.background }}>
-        <View className="flex-1 px-6 py-8" style={{ backgroundColor: colors.background }}>
+        <View className="flex-1 px-6 py-8">
+
           {/* Header */}
           <View className="mb-6">
-            <Text variant="h3" style={{ color: colors.foreground, marginBottom: 8, textAlign: 'center' }}>
+            <Text style={{ color: colors.foreground, fontSize: 24, fontWeight: 'bold', marginBottom: 8, textAlign: 'center' }}>
               Set up your account
             </Text>
             <Text style={{ color: colors.mutedForeground, textAlign: 'center' }}>
@@ -179,11 +173,11 @@ export default function AccountSetupScreen() {
             </Text>
           </View>
 
-          {/* Password Setup Section (if no password) */}
+          {/* Password Setup (Affiché uniquement si pas de mdp) */}
           {!accountDetails?.hasPassword && (
             <Card className="mb-6" style={{ backgroundColor: colors.card, borderColor: colors.border }}>
               <CardHeader>
-                <CardTitle style={{ color: colors.foreground, fontSize: 18 }}>Set up your password</CardTitle>
+                <CardTitle style={{ color: colors.foreground }}>Set up your password</CardTitle>
                 <CardDescription style={{ color: colors.mutedForeground }}>
                   Create a password to secure your account
                 </CardDescription>
@@ -197,24 +191,19 @@ export default function AccountSetupScreen() {
                     placeholder="Enter your password"
                     value={password}
                     onChangeText={setPassword}
-                    returnKeyType="next"
-                    onSubmitEditing={() => confirmPasswordRef.current?.focus()}
-                    style={{ color: colors.foreground, backgroundColor: colors.input, borderColor: colors.border }}
+                    style={{ color: colors.foreground, backgroundColor: colors.background, borderColor: colors.border }}
                     placeholderTextColor={colors.mutedForeground}
                   />
                 </View>
                 <View className="gap-1.5">
                   <Label htmlFor="confirmPassword" style={{ color: colors.foreground }}>Confirm Password</Label>
                   <Input
-                    ref={confirmPasswordRef}
                     id="confirmPassword"
                     secureTextEntry
                     placeholder="Confirm your password"
                     value={confirmPassword}
                     onChangeText={setConfirmPassword}
-                    returnKeyType="done"
-                    onSubmitEditing={handleSetPassword}
-                    style={{ color: colors.foreground, backgroundColor: colors.input, borderColor: colors.border }}
+                    style={{ color: colors.foreground, backgroundColor: colors.background, borderColor: colors.border }}
                     placeholderTextColor={colors.mutedForeground}
                   />
                 </View>
@@ -224,6 +213,7 @@ export default function AccountSetupScreen() {
                 <Button
                   onPress={handleSetPassword}
                   disabled={passwordLoading || !password || !confirmPassword}
+                  style={{ backgroundColor: colors.primary }}
                 >
                   <Text style={{ color: colors.primaryForeground, fontWeight: '600' }}>
                     {passwordLoading ? 'Setting Password...' : 'Set Password'}
@@ -240,28 +230,39 @@ export default function AccountSetupScreen() {
               {SERVICES.map((service) => {
                 const isLinked = isServiceLinked(service.id);
                 const isConnecting = connectingService === service.id;
+                const isDisconnecting = disconnectingService === service.id;
 
                 return (
-                  <Card key={service.id} style={{ backgroundColor: colors.card, borderColor: colors.border }}>
+                  <Card
+                    key={service.id}
+                    style={{
+                      backgroundColor: colors.card,
+                      borderColor: isLinked ? '#22c55e' : colors.border,
+                      borderWidth: isLinked ? 2 : 1
+                    }}
+                  >
                     <Pressable
-                      onPress={() => !isLinked && !isConnecting && handleLinkService(service.id)}
-                      disabled={isLinked || isConnecting || oauthLoading}
+                      onPress={() => {
+                        if (isConnecting || isDisconnecting || oauthLoading) return;
+                        if (isLinked) {
+                          handleUnlinkService(service.id, service.name);
+                        } else {
+                          handleLinkService(service.id);
+                        }
+                      }}
+                      disabled={isConnecting || isDisconnecting || oauthLoading}
                     >
                       <CardContent className="flex-row items-center gap-4 py-4">
                         <View
                           className="h-12 w-12 items-center justify-center rounded-xl"
-                          style={{ backgroundColor: colors.muted }}
+                          style={{ backgroundColor: colors.secondary }}
                         >
                           <Image
                             source={service.icon}
                             className="h-6 w-6"
                             resizeMode="contain"
                             tintColor={Platform.select({
-                              native: service.useTint
-                                ? isDark
-                                  ? 'white'
-                                  : 'black'
-                                : undefined,
+                              native: service.useTint ? (isDark ? 'white' : 'black') : undefined,
                             })}
                           />
                         </View>
@@ -270,20 +271,26 @@ export default function AccountSetupScreen() {
                           <Text style={{ color: colors.mutedForeground, fontSize: 14 }}>{service.description}</Text>
                         </View>
                         <View>
-                          {isLinked ? (
-                            <View style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)', borderRadius: 9999, paddingHorizontal: 12, paddingVertical: 4 }}>
-                              <Text style={{ color: '#22c55e', fontSize: 12, fontWeight: '500' }}>Connected</Text>
-                            </View>
+                          {isDisconnecting ? (
+                             <ActivityIndicator size="small" color={colors.destructive} />
                           ) : isConnecting ? (
-                            <View style={{ backgroundColor: colors.muted, borderRadius: 9999, paddingHorizontal: 12, paddingVertical: 4, flexDirection: 'row', alignItems: 'center' }}>
-                              <ActivityIndicator size="small" color={colors.primary} style={{ marginRight: 4 }} />
-                              <Text style={{ color: colors.mutedForeground, fontSize: 12, fontWeight: '500' }}>
-                                Connecting...
-                              </Text>
+                            <ActivityIndicator size="small" color={colors.primary} />
+                          ) : isLinked ? (
+                            <View
+                              style={{
+                                backgroundColor: '#22c55e',
+                                borderRadius: 9999,
+                                width: 32,
+                                height: 32,
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                              }}
+                            >
+                              <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>✓</Text>
                             </View>
                           ) : (
-                            <View style={{ backgroundColor: colors.secondary, borderRadius: 9999, paddingHorizontal: 12, paddingVertical: 4 }}>
-                              <Text style={{ color: colors.secondaryForeground, fontSize: 12, fontWeight: '500' }}>
+                            <View style={{ backgroundColor: colors.primary, borderRadius: 9999, paddingHorizontal: 12, paddingVertical: 6 }}>
+                              <Text style={{ color: colors.primaryForeground, fontSize: 12, fontWeight: '500' }}>
                                 Connect
                               </Text>
                             </View>
@@ -299,10 +306,7 @@ export default function AccountSetupScreen() {
 
           {/* Footer */}
           <View className="mt-auto gap-4">
-            <Text style={{ color: colors.mutedForeground, textAlign: 'center', fontSize: 14 }}>
-              You can link your accounts later at any time in your account settings
-            </Text>
-            <Button onPress={onContinue} size="lg" className="w-full">
+            <Button onPress={onContinue} size="lg" className="w-full" style={{ backgroundColor: colors.primary }}>
               <Text style={{ color: colors.primaryForeground, fontWeight: '600' }}>
                 Continue to Dashboard
               </Text>

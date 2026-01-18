@@ -110,7 +110,7 @@ async function request<T>(
     if (__DEV__) console.log(`[REQ] ${baseUrl}${endpoint}`);
 
     const headers: HeadersInit = {
-      'Content-Type': 'application/json',
+      ...(options.body && { 'Content-Type': 'application/json' }),
       ...(token && { Authorization: `Bearer ${token}` }),
       ...options.headers,
     };
@@ -155,16 +155,20 @@ export interface OAuthAccount {
   created_at: string;
 }
 
-export interface LinkedAccountInfo {
+export interface LinkedAccount {
   id: string;
   provider: string;
-  scopes: string[];
+  provider_account_id: string;
+  expires_at?: string;
+  scopes?: string[];
 }
 
-export interface AccountDetails extends User {
-  accounts: OAuthAccount[];
-  linkedAccounts?: LinkedAccountInfo[];
+export interface AccountDetails {
+  id: string;
+  email: string;
+  username: string;
   hasPassword: boolean;
+  linkedAccounts: LinkedAccount[];
 }
 
 export const authApi = {
@@ -204,11 +208,8 @@ export const authApi = {
   oauthLink: (provider: string, code: string) =>
     api.post<{ message: string }>('/auth/oauth/link', { provider, code }),
 
-  getOAuthAccounts: () =>
-    api.get<{ accounts: OAuthAccount[] }>('/auth/oauth/accounts'),
-
   unlinkOAuthAccount: (provider: string) =>
-    api.delete<{ message: string }>(`/auth/oauth/accounts/${provider}`),
+    api.delete<{ message: string }>(`/auth/account/providers/${provider}`),
 };
 
 // Area types
@@ -229,12 +230,19 @@ export interface Area {
   }[];
 }
 
+export interface ServiceActionValue {
+  name: string;
+  description: string;
+  example?: string;
+}
+
 export interface ServiceAction {
   id: string;
   name: string;
   description: string;
   parameters: { name: string; type: string; description: string; required: boolean }[];
   scopes?: string[];
+  return_values?: ServiceActionValue[];
 }
 
 export interface ServiceReaction {
@@ -256,14 +264,20 @@ export interface Service {
 export const areasApi = {
   list: () => api.get<Area[]>('/areas'),
 
+  get: (id: string) => api.get<Area>(`/areas/${id}`),
+
   create: (data: {
     name: string;
     action: { name: string; parameters: Record<string, unknown> };
     reactions: { name: string; parameters: Record<string, unknown> }[];
   }) => api.post<{ message: string; area: Area }>('/areas', data),
 
-  update: (id: string, data: { is_active?: boolean; name?: string }) =>
-    api.put<{ success: boolean }>(`/areas/${id}`, data),
+  update: (id: string, data: {
+    is_active?: boolean;
+    name?: string;
+    action?: { name: string; parameters: Record<string, unknown> };
+    reactions?: { name: string; parameters: Record<string, unknown> }[];
+  }) => api.put<{ success: boolean }>(`/areas/${id}`, data),
 
   delete: (id: string) => api.delete<{ success: boolean }>(`/areas/${id}`),
 };
