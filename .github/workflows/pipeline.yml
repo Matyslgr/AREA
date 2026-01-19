@@ -41,6 +41,29 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: 📱 Generate Android APK (Release)
+        run: |
+          cd apps/mobile
+          npx expo prebuild --platform android
+
+          echo "org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=2g" >> android/gradle.properties
+
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease
+
+      - name: 🚀 Prepare Release Assets
+        run: |
+          mkdir -p release-assets
+          cp apps/mobile/android/app/build/outputs/apk/release/app-release.apk release-assets/client.apk
+
+      - name: 📤 Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-files
+          path: release-assets/
+          if-no-files-found: error
+
   mirror:
     name: 🪞 Push to Epitech Mirror
     needs: [build]

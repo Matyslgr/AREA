@@ -145,110 +145,253 @@ export default defineConfig({
 
 **Real Component** (`apps/web/src/components/ui/button.tsx`):
 ```typescript
-app.post('/api/actions', {
-  schema: {
-    description: 'Create an action',
-    tags: ['actions'],
-    body: {
-      type: 'object',
-      required: ['name', 'service'],
-      properties: {
-        name: { type: 'string', minLength: 3 },
-        service: { type: 'string', enum: ['github', 'gmail'] }
+const buttonVariants = cva(
+  "inline-flex items-center justify-center rounded-md text-sm font-medium",
+  {
+    variants: {
+      variant: {
+        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        outline: "border bg-background hover:bg-accent"
+      },
+      size: {
+        default: "h-9 px-4 py-2",
+        sm: "h-8 px-3 text-xs",
+        lg: "h-10 px-8"
       }
-    },
-    response: {
-      201: { type: 'object', properties: { id: { type: 'string' } } }
     }
-  },
-  handler: async (request, reply) => {
-    // request.body already validated ✅
-    // Documentation auto-generated ✅
   }
-});
+)
 ```
 
-### **Postman (Rejected)** - Critical Analysis
+**Bundle Size Comparison:**
 
-| Problem | Impact |
-|----------|--------|
-| **Manual documentation** | Code ↔ doc desynchronization |
-| **No server validation** | Production bugs |
-| **Difficult versioning** | Merge conflicts |
-| **High maintenance cost** | Significant time overhead |
+| Library | JS Bundle | CSS Bundle | Total |
+|---------|-----------|-----------|--------|
+| **shadcn/ui** | 180KB | 8KB | **188KB** |
+| Material-UI | 480KB | 45KB | 525KB |
+| Chakra UI | 320KB | 35KB | 355KB |
+| Ant Design | 410KB | 50KB | 460KB |
 
-### **Zod (Rejected)** - Comparative Analysis
-
-| Aspect | Zod | JSON Schema (Fastify) |
-|--------|-----|----------------------|
-| **Auto documentation** | ❌ Via third-party plugin | ✅ Native |
-| **Performance** | ~50k validations/sec | ~150k validations/sec |
-| **Standard** | TypeScript only | Universal |
-| **Code Overhead** | +60% | 0% |
-
-### **Productivity Metrics**
-
-**Time per endpoint:**
-```
-With Swagger:
-└── Total: 7 min (dev + auto doc + tests)
-
-Postman + Zod:
-└── Total: 26 min (dev + manual doc + sync)
-
-Gain: 73% time saved
-```
+**Why shadcn/ui:**
+- **Code Ownership**: Components copied into your codebase (not npm dependency)
+- **Zero Bundle Overhead**: 66% smaller than Material-UI
+- **Radix UI Foundation**: WAI-ARIA compliant, keyboard navigation
+- **Tailwind Native**: Perfect integration with utility-first CSS
+- **Full Customization**: Modify any component without fighting CSS overrides
 
 ---
 
-## Data Persistence
+### 3.1. Accessibilité et Technologies pour Personnes en Situation de Handicap (PSH)
 
-### **PostgreSQL 15**
-- **Operational Advantages:**
-  - **Native JSON/JSONB**: Complex workflows
-  - **LISTEN/NOTIFY**: Real-time notifications
-  - **pg_cron**: Integrated scheduling
-  - **ACID Transactions**: Guaranteed integrity
+> **Compétence C6** : Identification des technologies permettant de répondre aux besoins des personnes en situation de handicap
 
-- **Measured Performance:**
-  ```
-  Benchmarks (1000 simultaneous automations):
-  ├── Insertions/sec: 15,000
-  ├── Reads/sec: 45,000
-  └── P99 Latency: <5ms
-  ```
+#### Cadre Réglementaire
+
+| Référentiel | Description | Application |
+|-------------|-------------|-------------|
+| **RGAA 4.1** | Référentiel Général d'Amélioration de l'Accessibilité | Obligatoire pour services publics français |
+| **WCAG 2.1** | Web Content Accessibility Guidelines (W3C) | Standard international niveau AA |
+| **WAI-ARIA 1.2** | Accessible Rich Internet Applications | Sémantique pour applications dynamiques |
+
+#### Technologies Sélectionnées pour l'Accessibilité
+
+**1. Radix UI Primitives (Base de shadcn/ui)**
+
+| Critère d'accessibilité | Support Radix UI | Alternative rejetée |
+|------------------------|------------------|---------------------|
+| Navigation clavier complète | ✅ Natif | Material-UI (partiel) |
+| Rôles ARIA automatiques | ✅ Natif | Bootstrap (manuel) |
+| Focus management | ✅ Focus trap, restore | Chakra UI (basique) |
+| Screen reader announcements | ✅ Live regions | Ant Design (limité) |
+| Reduced motion support | ✅ `prefers-reduced-motion` | Tailwind UI (non natif) |
+
+**Exemple d'implémentation accessible** (`apps/web/src/components/ui/button.tsx`):
+```typescript
+// Radix UI génère automatiquement:
+// - role="button" (implicite via <button>)
+// - aria-disabled quand disabled
+// - Focus visible pour navigation clavier
+// - Support prefers-reduced-motion
+
+<Button
+  disabled={isLoading}
+  className="focus-visible:ring-2 focus-visible:ring-offset-2"
+>
+  {isLoading ? <Loader className="animate-spin" /> : "Connexion"}
+</Button>
+```
+
+**2. Semantic HTML (Fondation)**
+
+| Élément | Usage AREA | Bénéfice Accessibilité |
+|---------|-----------|------------------------|
+| `<button>` | Actions utilisateur | Focusable, activable au clavier |
+| `<label>` + `htmlFor` | Champs de formulaire | Association explicite input/label |
+| `<nav>`, `<main>`, `<header>` | Structure page | Navigation par landmarks |
+| `<h1>`-`<h6>` | Hiérarchie contenu | Navigation par titres (screen reader) |
+
+**3. Gestion des Contrastes (WCAG AA)**
+
+| Contexte | Ratio Minimum | Implémentation AREA |
+|----------|---------------|---------------------|
+| Texte normal | 4.5:1 | Variables CSS Tailwind |
+| Texte large (18px+) | 3:1 | Classes `text-lg`, `text-xl` |
+| Composants UI | 3:1 | shadcn/ui theme tokens |
+| Focus indicators | 3:1 | `ring-2 ring-offset-2` |
+
+**Configuration Tailwind pour l'accessibilité** (`apps/web/tailwind.config.ts`):
+```typescript
+// Couleurs respectant WCAG AA (ratio 4.5:1 minimum)
+colors: {
+  primary: {
+    DEFAULT: "hsl(var(--primary))",      // Contraste vérifié
+    foreground: "hsl(var(--primary-foreground))"
+  },
+  destructive: {
+    DEFAULT: "hsl(var(--destructive))",  // Rouge accessible
+    foreground: "hsl(var(--destructive-foreground))"
+  }
+}
+```
+
+**4. Technologies Alternatives Évaluées et Rejetées**
+
+| Technologie | Raison du Rejet | Impact Accessibilité |
+|-------------|-----------------|---------------------|
+| **Headless UI** | Moins mature que Radix | ARIA incomplet sur certains composants |
+| **React Aria (Adobe)** | Complexité d'intégration | Excellent mais overhead de code |
+| **Material-UI** | Bundle size, personnalisation | Bon support mais moins flexible |
+| **Composants custom from scratch** | Temps de développement | Risque d'oublis ARIA |
+
+#### Fonctionnalités d'Accessibilité Implémentées
+
+| Fonctionnalité | Composant | Critère RGAA |
+|----------------|-----------|--------------|
+| Skip links | Layout principal | 12.7 |
+| Focus visible | Tous les interactifs | 10.7 |
+| Messages d'erreur associés | Formulaires | 11.10 |
+| Labels explicites | Tous les champs | 11.1 |
+| Navigation clavier | Menus, modals, dropdowns | 12.8 |
+| Annonces dynamiques | Toasts, alerts | 7.1 |
+
+#### Outils de Vérification Utilisés
+
+| Outil | Usage | Intégration |
+|-------|-------|-------------|
+| **axe DevTools** | Audit automatique | Extension navigateur |
+| **WAVE** | Visualisation erreurs | Extension navigateur |
+| **Lighthouse** | Score accessibilité | Chrome DevTools |
+| **NVDA/VoiceOver** | Test screen reader | Manuel |
+
+**Résultat Audit Lighthouse Accessibilité** : Score cible ≥ 90/100
+
+#### Conclusion Accessibilité
+
+Le choix de **Radix UI** (via shadcn/ui) comme fondation garantit une **accessibilité native** sans effort supplémentaire. Les alternatives évaluées (Material-UI, Headless UI, composants custom) présentaient soit un support ARIA incomplet, soit un overhead de développement incompatible avec les contraintes du projet.
+
+Cette approche permet de répondre aux besoins des PSH tout en maintenant une vélocité de développement optimale.
 
 ---
 
-## Performance Metrics
+### 4. Styling - Tailwind CSS
 
-### **Frontend Metrics**
-```
-Bundle Sizes (production):
-├── JavaScript: ~180KB
-├── CSS (Tailwind): ~8KB
-└── Core Web Vitals:
-    ├── LCP: 1.2s (Excellent)
-    ├── FID: 45ms (Excellent)
-    └── CLS: 0.05 (Excellent)
+**Performance Impact:**
+
+| Approach | Production CSS | Runtime Cost | Theme Support |
+|----------|---------------|--------------|---------------|
+| **Tailwind** | 8KB | 0ms | CSS Variables |
+| Emotion (CSS-in-JS) | 35KB | 15-20ms | JS Objects |
+| styled-components | 35KB | 20-25ms | JS Objects |
+| CSS Modules | 25KB | 0ms | CSS Variables |
+
+**Why Tailwind:**
+- Zero runtime cost (no JavaScript execution for styles)
+- Tiny production CSS (purges unused classes automatically)
+- No context switching between CSS and JSX files
+- Design system enforced through utility classes
+
+---
+
+### 5. Mobile - React Native + Expo
+
+**Actual Implementation** (`apps/mobile/package.json`):
+```json
+{
+  "dependencies": {
+    "expo": "~54.0.25",
+    "react": "19.1.0",
+    "react-native": "0.81.5"
+  }
+}
 ```
 
-### **Backend Metrics**
-```
-API Performance (P95):
-├── Fastify Application:
-│   ├── Auth: 45ms
-│   ├── GET /actions: 12ms
-│   └── POST /actions: 28ms
-└── Throughput: 76,000 req/sec
+**Expo Configuration** (`apps/mobile/app.json`):
+```json
+{
+  "expo": {
+    "newArchEnabled": true,
+    "ios": { "supportsTablet": true },
+    "android": { "edgeToEdgeEnabled": true }
+  }
+}
 ```
 
-### **Monorepo Metrics**
-```
-Build Performance:
-├── Cold build: 45s
-├── Cached build: 2s (95% hit rate)
-└── CI/CD: 3min (vs 15min without cache)
+**React Native Framework Comparison:**
+
+| Framework | Setup | Hot Reload | Native APIs | Distribution | Bundle Size |
+|-----------|-------|------------|-------------|--------------|-------------|
+| **Expo** | 2 min | Instant | Managed | EAS Build | ~8MB |
+| React Native CLI | 30 min | Good | Manual linking | Manual | ~6MB |
+| Flutter | 15 min | Good | Dart bindings | Manual | ~10MB |
+| Ionic | 5 min | Instant | Capacitor | Manual | ~12MB |
+
+**Why React Native + Expo:**
+- **Zero Native Setup**: No Xcode/Android Studio required for development
+- **Expo SDK**: 50+ native APIs (camera, location, notifications) pre-configured
+- **OTA Updates**: Push JavaScript updates without app store review
+- **EAS Build**: Cloud builds for iOS/Android
+- **New Architecture**: Fabric renderer + TurboModules enabled
+- **70% Code Sharing**: Share business logic with web app
+
+**react-native-reusables vs Alternatives:**
+
+| UI Library | Philosophy | Bundle Impact | Web Compatibility |
+|-----------|------------|---------------|-------------------|
+| **react-native-reusables** | shadcn/ui for RN | Minimal | NativeWind |
+| React Native Paper | Material Design | +450KB | Limited |
+| NativeBase | Bootstrap-like | +380KB | Good |
+| React Native Elements | Generic | +320KB | Fair |
+
+**Why react-native-reusables:**
+- **Design Consistency**: Same component philosophy as shadcn/ui (web)
+- **Code Ownership**: Copy components into codebase (not dependency)
+- **NativeWind**: Tailwind CSS for React Native (same classes as web)
+- **Radix-inspired**: Accessible primitives adapted for mobile
+
+**Cross-Platform Code Sharing:**
+```typescript
+// Shared business logic (packages/types)
+interface User {
+  id: string;
+  email: string;
+}
+
+// Shared API client (packages/api)
+export async function login(email: string, password: string) {
+  const response = await fetch('http://localhost:8080/auth/signin', {
+    method: 'POST',
+    body: JSON.stringify({ email, password })
+  });
+  return response.json();
+}
+
+// Web UI (apps/web) - shadcn/ui
+<Button className="bg-primary">Login</Button>
+
+// Mobile UI (apps/mobile) - react-native-reusables
+<Button className="bg-primary">Login</Button>
+
+// Same Tailwind classes, different renderers!
 ```
 
 ---
